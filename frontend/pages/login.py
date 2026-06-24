@@ -1,3 +1,6 @@
+"""
+pages/login.py – Login form rendered inside the main app
+"""
 import streamlit as st
 from frontend.utils.api_client import login
 
@@ -47,7 +50,7 @@ def render():
                 st.session_state.user_id    = token_data["user_id"]
                 st.session_state.username   = token_data["username"]
                 st.session_state.role       = token_data["role"]
-                st.session_state.page       = "admin" if token_data["role"] == "admin" else "home"
+                st.session_state.page       = "admin" if token_data["role"] == "admin" else "projects"
                 st.rerun()
 
         st.markdown(
