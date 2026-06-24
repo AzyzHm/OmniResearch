@@ -1,0 +1,30 @@
+from google import genai
+from backend.config.settings import get_settings
+
+def get_gemini_response(message: str, history: list[dict], temperature: float = 0.7) -> str:
+    """
+    Send a message to Gemini with conversation history and return the response text.
+    history format: [{"role": "user"|"assistant", "content": "..."}]
+    """
+    settings = get_settings()
+    client = genai.Client(api_key=settings.gemini_api_key)
+
+    contents = []
+    for entry in history:
+        contents.append({
+            "role": "user" if entry["role"] == "user" else "model",
+            "parts": [{"text": entry["content"]}],
+        })
+    contents.append({
+        "role": "user",
+        "parts": [{"text": message}],
+    })
+
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=contents,
+        config=genai.types.GenerateContentConfig(
+            temperature=temperature,
+        ),
+    )
+    return response.text # type: ignore
