@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import List
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
-from backend.config.env import supabase_url, supabase_service_key, jwt_secret
+from backend.config.env import supabase_url, supabase_service_key, jwt_secret, gemini_api_key, gemini_model
 
 
 class Settings(BaseSettings):
@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
 
     cors_origins: str = "http://localhost:8501,http://127.0.0.1:8501"
+
+    gemini_api_key: str = gemini_api_key
+    gemini_model: str = gemini_model
+ 
+    chroma_persist_dir: str = "vector_database"
+
 
     @property
     def cors_origins_list(self) -> List[str]:

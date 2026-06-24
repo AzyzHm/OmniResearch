@@ -1,10 +1,31 @@
+"""
+utils/api_client.py – HTTP wrapper around the OmniResearch FastAPI backend.
+
+All functions raise RuntimeError with a human-readable message on failure
+so callers can do: st.error(str(e)).
+
+NOTE ON CORS
+────────────
+Streamlit makes HTTP calls from the Python server process, not the browser,
+so these calls are never subject to browser CORS restrictions.
+"""
 from __future__ import annotations
+
+from typing import Any
+
+import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from frontend.utils.config import API_BASE, _TIMEOUT
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_BASE: str = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
+_TIMEOUT: int = 30  # increased for Gemini calls
 
 
+# ── Resilient session ─────────────────────────────────────────────────────────
 def _build_session() -> requests.Session:
     session = requests.Session()
     retry = Retry(
@@ -22,6 +43,7 @@ def _build_session() -> requests.Session:
 _session = _build_session()
 
 
+# ── Internal dispatcher ───────────────────────────────────────────────────────
 def _call(
     method: str,
     path: str,
@@ -29,20 +51,15 @@ def _call(
     token: str | None = None,
     json: dict | None = None,
     params: dict | None = None,
-) -> dict:
-    """
-    Central dispatcher for all API calls.
-    Raises RuntimeError with a clean message on any failure.
-    """
+) -> Any:
     headers: dict[str, str] = {"Content-Type": "application/json", "Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    url = f"{API_BASE}{path}"
     try:
         resp = _session.request(
             method,
-            url,
+            f"{API_BASE}{path}",
             headers=headers,
             json=json,
             params=params,
@@ -65,22 +82,87 @@ def _call(
             detail = resp.text
         raise RuntimeError(detail)
 
-    # 204 No Content
     if resp.status_code == 204 or not resp.content:
-        return {}
+        return None
 
     return resp.json()
 
 
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
 def register(username: str, password: str) -> dict:
-    """Register a new user. Returns {message}."""
     return _call("POST", "/auth/register", json={"username": username, "password": password})
 
 
 def login(username: str, password: str) -> dict:
-    """Authenticate a user. Returns {access_token, token_type, user_id, username, role}."""
     return _call("POST", "/auth/login", json={"username": username, "password": password})
 
+
+# ── Projects ──────────────────────────────────────────────────────────────────
+
+def list_projects(token: str) -> list:
+    return _call("GET", "/projects", token=token) or []
+
+
+def create_project(token: str, name: str) -> dict:
+    return _call("POST", "/projects", token=token, json={"name": name})
+
+
+def rename_project(token: str, project_id: str, name: str) -> dict:
+    return _call("PUT", f"/projects/{project_id}", token=token, json={"name": name})
+
+
+def delete_project(token: str, project_id: str) -> None:
+    _call("DELETE", f"/projects/{project_id}", token=token)
+
+
+# ── Chats ─────────────────────────────────────────────────────────────────────
+
+def list_chats(token: str, project_id: str) -> list:
+    return _call("GET", f"/projects/{project_id}/chats", token=token) or []
+
+
+def create_chat(token: str, project_id: str, name: str = "New Chat") -> dict:
+    return _call("POST", f"/projects/{project_id}/chats", token=token, json={"name": name})
+
+
+def rename_chat(token: str, chat_id: str, name: str) -> dict:
+    return _call("PUT", f"/chats/{chat_id}", token=token, json={"name": name})
+
+
+def delete_chat(token: str, chat_id: str) -> None:
+    _call("DELETE", f"/chats/{chat_id}", token=token)
+
+
+def send_message(token: str, chat_id: str, message: str, history: list[dict]) -> dict:
+    return _call(
+        "POST",
+        f"/chats/{chat_id}/message",
+        token=token,
+        json={"message": message, "history": history},
+    )
+
+
+# ── Collections ───────────────────────────────────────────────────────────────
+
+def list_collections(token: str, project_id: str) -> list:
+    return _call("GET", f"/projects/{project_id}/collections", token=token) or []
+
+
+def create_collection(token: str, project_id: str, name: str, col_type: str) -> dict:
+    return _call(
+        "POST",
+        f"/projects/{project_id}/collections",
+        token=token,
+        json={"name": name, "type": col_type},
+    )
+
+
+def delete_collection(token: str, collection_id: str) -> None:
+    _call("DELETE", f"/collections/{collection_id}", token=token)
+
+
+# ── Admin ─────────────────────────────────────────────────────────────────────
 
 def admin_list_users(token: str, pending_only: bool = False) -> dict:
     return _call("GET", "/admin/users", token=token, params={"pending_only": pending_only})
@@ -98,12 +180,7 @@ def admin_delete_user(token: str, user_id: str) -> dict:
     return _call("DELETE", f"/admin/users/{user_id}", token=token)
 
 
-def admin_get_logs(
-    token: str,
-    limit: int = 100,
-    offset: int = 0,
-    username: str = "",
-) -> dict:
+def admin_get_logs(token: str, limit: int = 100, offset: int = 0, username: str = "") -> dict:
     params: dict = {"limit": limit, "offset": offset}
     if username:
         params["username"] = username
