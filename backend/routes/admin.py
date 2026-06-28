@@ -7,9 +7,6 @@ from backend.models import (LoginLogListResponse, LoginLogOut, MessageResponse, 
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 
-
-# ── Users ─────────────────────────────────────────────────────────────────────
-
 @router.get(
     "/users",
     response_model=UserListResponse,
@@ -36,7 +33,6 @@ async def list_users(
 async def approve_user(user_id: str, _: dict = Depends(require_admin)):
     db = get_supabase()
 
-    # Verify user exists and is not already approved
     result = db.table("users").select("id, username, is_approved").eq("id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
@@ -61,7 +57,6 @@ async def change_role(
 ):
     db = get_supabase()
 
-    # Prevent admin from demoting themselves
     if current_admin["sub"] == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,7 +80,6 @@ async def change_role(
 async def delete_user(user_id: str, current_admin: dict = Depends(require_admin)):
     db = get_supabase()
 
-    # Prevent self-deletion
     if current_admin["sub"] == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -97,12 +91,8 @@ async def delete_user(user_id: str, current_admin: dict = Depends(require_admin)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     username = result.data[0]["username"]
-    # Cascade deletes login_logs via FK
     db.table("users").delete().eq("id", user_id).execute()
     return MessageResponse(message=f"User '{username}' has been deleted.")
-
-
-# ── Login Logs ────────────────────────────────────────────────────────────────
 
 @router.get(
     "/logs",
@@ -128,7 +118,6 @@ async def get_logs(
     result = query.execute()
     logs  = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
 
-    # Total count
     count_query = db.table("login_logs").select("id", count="exact") # type: ignore
     if username:
         count_query = count_query.ilike("username", f"%{username}%")
@@ -137,8 +126,6 @@ async def get_logs(
 
     return LoginLogListResponse(logs=logs, total=total)
 
-
-# ── Stats ─────────────────────────────────────────────────────────────────────
 
 @router.get(
     "/stats",
@@ -152,7 +139,6 @@ async def get_stats(_: dict = Depends(require_admin)):
     admin_users   = db.table("users").select("id", count="exact").eq("role", "admin").execute().count or 0 # type: ignore
     total_logins  = db.table("login_logs").select("id", count="exact").execute().count or 0 # type: ignore
  
-    # Last 7 logins
     recent = (
         db.table("login_logs")
         .select("username, login_time, ip_address")

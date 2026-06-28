@@ -1,9 +1,3 @@
-"""
-app.py – OmniResearch Streamlit entry point + page router.
-
-Run from the project root:
-    streamlit run frontend/app.py
-"""
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -17,7 +11,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Global CSS ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
     [data-testid="stSidebarNav"], #MainMenu, footer, header { display:none !important; }
@@ -87,14 +80,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Session init ──────────────────────────────────────────────────────────────
 init()
 
-# ── Router ────────────────────────────────────────────────────────────────────
 def _route():
     page = st.session_state.page
 
-    # Guard: unauthenticated users → login or signup only
     if not st.session_state.token and page not in ("login", "signup"):
         st.session_state.page = "login"
         page = "login"

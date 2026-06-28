@@ -7,14 +7,11 @@ DEFAULTS: dict = {
     "user_id": None,
     "username": None,
     "role": None,
-    # Workspace
     "active_project_id": None,
     "active_project_name": None,
     "active_chat_id": None,
     "active_chat_name": None,
-    # chat_histories: {chat_id: [{"role": "user"|"assistant", "content": "..."}]}
     "chat_histories": {},
-    # active_collections: set of collection_ids selected for the current chat
     "active_collections": set(),
 }
 

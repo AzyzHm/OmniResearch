@@ -11,8 +11,6 @@ from backend.models.log import MessageResponse
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# ── Register ──────────────────────────────────────────────────────────────────
-
 @router.post(
     "/register",
     response_model=MessageResponse,
@@ -22,7 +20,6 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def register(payload: RegisterRequest):
     db = get_supabase()
 
-    # 1. Check for duplicate username
     existing = (
         db.table("users")
         .select("id")
@@ -35,7 +32,6 @@ async def register(payload: RegisterRequest):
             detail="Username already taken.",
         )
 
-    # 2. Insert new user (role=user, is_approved=False)
     hashed = hash_password(payload.password)
     db.table("users").insert(
         {
@@ -50,9 +46,6 @@ async def register(payload: RegisterRequest):
         message="Account created successfully. Please wait for an administrator to approve your account."
     )
 
-
-# ── Login ─────────────────────────────────────────────────────────────────────
-
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -61,7 +54,6 @@ async def register(payload: RegisterRequest):
 async def login(payload: LoginRequest, request: Request):
     db = get_supabase()
 
-    # 1. Fetch user record
     result = (
         db.table("users")
         .select("id, username, password, role, is_approved")
@@ -76,21 +68,18 @@ async def login(payload: LoginRequest, request: Request):
 
     user : Any = result.data[0]
 
-    # 2. Verify password
     if not verify_password(payload.password, user["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password.",
         )
 
-    # 3. Check approval (admins are always approved)
     if user["role"] != "admin" and not user["is_approved"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account is pending admin approval.",
         )
 
-    # 4. Record login event
     ip = request.client.host if request.client else None
     db.table("login_logs").insert(
         {
@@ -101,7 +90,6 @@ async def login(payload: LoginRequest, request: Request):
         }
     ).execute()
 
-    # 5. Issue JWT
     token = create_access_token(
         user_id=user["id"],
         username=user["username"],

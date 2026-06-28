@@ -16,7 +16,6 @@ def _password_strength(pw: str) -> tuple[int, str, str]:
 
 
 def render():
-    # ── Header ────────────────────────────────────────────────────────────────
     st.markdown(
         """
         <div style='text-align:center; padding: 2rem 0 1rem;'>
@@ -31,7 +30,6 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # ── Card ──────────────────────────────────────────────────────────────────
     col_l, card, col_r = st.columns([1, 1.6, 1])
     with card:
         st.markdown(
@@ -57,7 +55,6 @@ def render():
             key="reg_confirm",
         )
 
-        # Live password-strength indicator
         if password:
             score, label, color = _password_strength(password)
             pct = int(score / 4 * 100)
@@ -79,7 +76,6 @@ def render():
         st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
         if st.button("Create Account →", use_container_width=True, type="primary"):
-            # Client-side validation
             errors = []
             if not username:
                 errors.append("Username is required.")

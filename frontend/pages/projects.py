@@ -1,20 +1,9 @@
-"""
-pages/projects.py – Project dashboard.
-
-Shows all projects belonging to the current user as cards in a grid.
-Actions: open, rename (inline), delete (with confirmation).
-"""
 import streamlit as st
 import pandas as pd
 from frontend.utils import api_client as api
 from frontend.utils.session import logout, open_project
 
-# ── Type badges ───────────────────────────────────────────────────────────────
 _TYPE_ICON = {"documents": "📄", "urls": "🔗", "text": "📝"}
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
 def _load_projects() -> list:
     try:
         return api.list_projects(st.session_state.token) or []
@@ -38,8 +27,6 @@ def _header():
     st.markdown("---")
 
 
-# ── Create project form ───────────────────────────────────────────────────────
-
 def _create_section():
     with st.expander("➕ New Project", expanded=False):
         with st.form("create_project_form", clear_on_submit=True):
@@ -56,16 +43,12 @@ def _create_section():
                 except RuntimeError as e:
                     st.error(str(e))
 
-
-# ── Individual project card ───────────────────────────────────────────────────
-
 def _project_card(project: dict):
     pid = project["id"]
     name = project["name"]
     created = pd.to_datetime(project["created_at"]).strftime("%d %b %Y")
     updated = pd.to_datetime(project["updated_at"]).strftime("%d %b %Y")
 
-    # State keys
     rename_key  = f"renaming_{pid}"
     confirm_key = f"confirm_del_{pid}"
 
@@ -85,27 +68,23 @@ def _project_card(project: dict):
         )
 
         col_open, col_rename, col_delete = st.columns([2, 1, 1])
-
-        # Open
+  
         with col_open:
             if st.button("Open →", key=f"open_{pid}", use_container_width=True, type="primary"):
                 open_project(pid, name)
 
-        # Rename toggle
         with col_rename:
             if st.button("✏️ Rename", key=f"rename_btn_{pid}", use_container_width=True):
                 st.session_state[rename_key] = not st.session_state.get(rename_key, False)
                 st.session_state.pop(confirm_key, None)
                 st.rerun()
 
-        # Delete toggle
         with col_delete:
             if st.button("🗑️ Delete", key=f"del_btn_{pid}", use_container_width=True):
                 st.session_state[confirm_key] = True
                 st.session_state.pop(rename_key, None)
                 st.rerun()
 
-        # ── Inline rename form ────────────────────────────────────────────────
         if st.session_state.get(rename_key):
             with st.form(f"rename_form_{pid}", clear_on_submit=True):
                 new_name = st.text_input("New name", value=name, key=f"new_name_{pid}")
@@ -129,7 +108,6 @@ def _project_card(project: dict):
                 del st.session_state[rename_key]
                 st.rerun()
 
-        # ── Delete confirmation ───────────────────────────────────────────────
         if st.session_state.get(confirm_key):
             st.warning(f"⚠️ Delete **{name}**? All chats and collections will be lost.")
             c_yes, c_no = st.columns(2)
@@ -151,8 +129,6 @@ def _project_card(project: dict):
         st.markdown("<div style='height:.4rem'></div>", unsafe_allow_html=True)
 
 
-# ── Main render ───────────────────────────────────────────────────────────────
-
 def render():
     _header()
     _create_section()
@@ -173,7 +149,6 @@ def render():
         )
         return
 
-    # Render cards in a 2-column grid
     left_col, right_col = st.columns(2)
     for i, project in enumerate(projects):
         with left_col if i % 2 == 0 else right_col:

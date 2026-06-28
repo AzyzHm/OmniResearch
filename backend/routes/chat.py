@@ -1,14 +1,3 @@
-"""
-routes/chats.py – Chat CRUD and Gemini test message endpoint.
-
-Structure
-─────────
-GET    /projects/{project_id}/chats          → list chats in a project
-POST   /projects/{project_id}/chats          → create chat
-PUT    /chats/{chat_id}                      → rename chat
-DELETE /chats/{chat_id}                      → delete chat
-POST   /chats/{chat_id}/message              → send message → Gemini → response
-"""
 from typing import Any
 
 from backend.config.models import get_gemini_response
@@ -25,9 +14,6 @@ from backend.models.chat import (
 )
 
 router = APIRouter(tags=["Chats"])
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _verify_project_owner(project_id: str, user_id: str) -> None:
     """Raise 404 if the project doesn't belong to the user."""
@@ -49,7 +35,6 @@ def _own_chat(chat_id: str, user_id: str) -> dict:
     Returns the chat row.
     """
     db = get_supabase()
-    # Join via projects table
     result = (
         db.table("chats")
         .select("*, projects(user_id)")
@@ -63,9 +48,6 @@ def _own_chat(chat_id: str, user_id: str) -> dict:
     if project.get("user_id") != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found.")
     return row
-
-
-# ── List ──────────────────────────────────────────────────────────────────────
 
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])
 async def list_chats(
@@ -82,9 +64,6 @@ async def list_chats(
         .execute()
     )
     return result.data
-
-
-# ── Create ────────────────────────────────────────────────────────────────────
 
 @router.post(
     "/projects/{project_id}/chats",
@@ -106,9 +85,6 @@ async def create_chat(
     row: Any = result.data[0]
     return row
 
-
-# ── Rename ────────────────────────────────────────────────────────────────────
-
 @router.put("/chats/{chat_id}", response_model=ChatOut)
 async def rename_chat(
     chat_id: str,
@@ -126,9 +102,6 @@ async def rename_chat(
     row: Any = result.data[0]
     return row
 
-
-# ── Delete ────────────────────────────────────────────────────────────────────
-
 @router.delete("/chats/{chat_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_chat(
     chat_id: str,
@@ -137,9 +110,6 @@ async def delete_chat(
     _own_chat(chat_id, current_user["sub"])
     db = get_supabase()
     db.table("chats").delete().eq("id", chat_id).execute()
-
-
-# ── Send message → Gemini ─────────────────────────────────────────────────────
 
 @router.post("/chats/{chat_id}/message", response_model=ChatMessageResponse)
 async def send_message(

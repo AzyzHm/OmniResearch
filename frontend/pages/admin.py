@@ -12,8 +12,6 @@ from frontend.utils.api_client import (
 )
 
 
-# ── Small helpers ─────────────────────────────────────────────────────────────
-
 def _metric_card(label: str, value, delta: str = "", color: str = "#6C63FF"):
     st.markdown(
         f"""
@@ -36,12 +34,9 @@ def _badge(text: str, color: str):
     )
 
 
-# ── Main render ───────────────────────────────────────────────────────────────
-
 def render():
     token = st.session_state.get("token", "")
 
-    # ── Top bar ───────────────────────────────────────────────────────────────
     col_title, col_user, col_logout = st.columns([5, 2, 1])
     with col_title:
         st.markdown(
@@ -62,15 +57,10 @@ def render():
             st.rerun()
 
     st.markdown("---")
-
-    # ── Tabs ──────────────────────────────────────────────────────────────────
     tab_overview, tab_users, tab_logs = st.tabs(
         ["📊 Overview", "👥 User Management", "📋 Login Logs"]
     )
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # TAB 1 – OVERVIEW
-    # ═════════════════════════════════════════════════════════════════════════
     with tab_overview:
         try:
             stats = admin_get_stats(token)
@@ -88,7 +78,6 @@ def render():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Recent logins mini-table
         if stats["recent_logins"]:
             st.markdown("#### Recent Login Activity")
             df = pd.DataFrame(stats["recent_logins"])
@@ -98,9 +87,6 @@ def render():
         else:
             st.info("No login activity yet.")
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # TAB 2 – USER MANAGEMENT
-    # ═════════════════════════════════════════════════════════════════════════
     with tab_users:
         st.markdown("#### Registered Users")
 
@@ -156,7 +142,6 @@ def render():
                         if not is_self:
                             btn_col1, btn_col2, btn_col3 = st.columns(3)
 
-                            # Approve
                             with btn_col1:
                                 if not user["is_approved"]:
                                     if st.button(
@@ -172,10 +157,9 @@ def render():
                                         except RuntimeError as e:
                                             st.error(str(e))
 
-                            # Toggle role
                             with btn_col2:
                                 new_role = "admin" if user["role"] == "user" else "user"
-                                lbl = "👑" if new_role == "admin" else "👤"
+                                lbl = "Promote" if new_role == "admin" else "Demote"
                                 if st.button(
                                     lbl,
                                     key=f"role_{user['id']}",
@@ -189,17 +173,15 @@ def render():
                                     except RuntimeError as e:
                                         st.error(str(e))
 
-                            # Delete
                             with btn_col3:
                                 if st.button(
-                                    "🗑️",
+                                    "Delete",
                                     key=f"del_{user['id']}",
                                     help="Delete user",
                                     use_container_width=True,
                                 ):
                                     st.session_state[f"confirm_del_{user['id']}"] = True
 
-                            # Deletion confirmation
                             if st.session_state.get(f"confirm_del_{user['id']}"):
                                 st.warning(
                                     f"⚠️ Delete **{user['username']}**? This cannot be undone."
@@ -228,9 +210,6 @@ def render():
                     unsafe_allow_html=True,
                 )
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # TAB 3 – LOGIN LOGS
-    # ═════════════════════════════════════════════════════════════════════════
     with tab_logs:
         st.markdown("#### Login Activity Log")
 
@@ -273,7 +252,6 @@ def render():
                 df_display.columns = ["Username", "Login Time (UTC)", "IP Address"]
                 st.dataframe(df_display, use_container_width=True, hide_index=True)
 
-                # Chart: logins per day
                 st.markdown("#### Logins Per Day")
                 df["date"] = df["login_time"].dt.date
                 chart_df = df.groupby("date").size().reset_index(name="logins")

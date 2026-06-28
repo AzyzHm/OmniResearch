@@ -1,12 +1,8 @@
-"""
-pages/login.py – Login form rendered inside the main app
-"""
 import streamlit as st
 from frontend.utils.api_client import login
 
 
 def render():
-    # ── Header ────────────────────────────────────────────────────────────────
     st.markdown(
         """
         <div style='text-align:center; padding: 2rem 0 1rem;'>
@@ -21,7 +17,6 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # ── Card ──────────────────────────────────────────────────────────────────
     col_l, card, col_r = st.columns([1, 1.6, 1])
     with card:
         st.markdown(
@@ -45,7 +40,6 @@ def render():
                         st.error(str(e))
                         return
 
-                # Store session
                 st.session_state.token      = token_data["access_token"]
                 st.session_state.user_id    = token_data["user_id"]
                 st.session_state.username   = token_data["username"]

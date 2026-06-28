@@ -1,14 +1,3 @@
-"""
-chroma_client.py – ChromaDB persistent client and collection helpers.
-
-Role in the architecture
-─────────────────────────
-Supabase  → stores collection metadata (id, name, type, project_id)
-ChromaDB  → stores the actual vector embeddings and document chunks
-
-The Supabase collection `id` (UUID) is used as the ChromaDB collection name,
-so both sides are always in sync via that shared key.
-"""
 from functools import lru_cache
 from chromadb import PersistentClient
 from chromadb.config import Settings as ChromaSettings
