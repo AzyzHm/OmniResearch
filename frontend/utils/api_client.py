@@ -1,31 +1,14 @@
-"""
-utils/api_client.py – HTTP wrapper around the OmniResearch FastAPI backend.
-
-All functions raise RuntimeError with a human-readable message on failure
-so callers can do: st.error(str(e)).
-
-NOTE ON CORS
-────────────
-Streamlit makes HTTP calls from the Python server process, not the browser,
-so these calls are never subject to browser CORS restrictions.
-"""
 from __future__ import annotations
 
 from typing import Any
 
-import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from dotenv import load_dotenv
 
-load_dotenv()
-
-API_BASE: str = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
-_TIMEOUT: int = 30  # increased for Gemini calls
+from frontend.utils.config import API_BASE, _TIMEOUT
 
 
-# ── Resilient session ─────────────────────────────────────────────────────────
 def _build_session() -> requests.Session:
     session = requests.Session()
     retry = Retry(
@@ -42,8 +25,6 @@ def _build_session() -> requests.Session:
 
 _session = _build_session()
 
-
-# ── Internal dispatcher ───────────────────────────────────────────────────────
 def _call(
     method: str,
     path: str,
@@ -88,8 +69,6 @@ def _call(
     return resp.json()
 
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
-
 def register(username: str, password: str) -> dict:
     return _call("POST", "/auth/register", json={"username": username, "password": password})
 
@@ -97,8 +76,6 @@ def register(username: str, password: str) -> dict:
 def login(username: str, password: str) -> dict:
     return _call("POST", "/auth/login", json={"username": username, "password": password})
 
-
-# ── Projects ──────────────────────────────────────────────────────────────────
 
 def list_projects(token: str) -> list:
     return _call("GET", "/projects", token=token) or []
@@ -116,7 +93,6 @@ def delete_project(token: str, project_id: str) -> None:
     _call("DELETE", f"/projects/{project_id}", token=token)
 
 
-# ── Chats ─────────────────────────────────────────────────────────────────────
 
 def list_chats(token: str, project_id: str) -> list:
     return _call("GET", f"/projects/{project_id}/chats", token=token) or []
@@ -143,8 +119,6 @@ def send_message(token: str, chat_id: str, message: str, history: list[dict]) ->
     )
 
 
-# ── Collections ───────────────────────────────────────────────────────────────
-
 def list_collections(token: str, project_id: str) -> list:
     return _call("GET", f"/projects/{project_id}/collections", token=token) or []
 
@@ -161,8 +135,6 @@ def create_collection(token: str, project_id: str, name: str, col_type: str) -> 
 def delete_collection(token: str, collection_id: str) -> None:
     _call("DELETE", f"/collections/{collection_id}", token=token)
 
-
-# ── Admin ─────────────────────────────────────────────────────────────────────
 
 def admin_list_users(token: str, pending_only: bool = False) -> dict:
     return _call("GET", "/admin/users", token=token, params={"pending_only": pending_only})

@@ -8,7 +8,6 @@ from frontend.utils.session import (
     select_chat,
 )
 
-# ── Colour constants ──────────────────────────────────────────────────────────
 _TYPE_COLOR = {
     "documents": "#6C63FF",
     "urls":      "#3498DB",
@@ -21,10 +20,6 @@ _TYPE_ICON = {
 }
 COLLECTION_TYPES = ["documents", "urls", "text"]
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# TOP BAR
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _top_bar():
     c_back, c_title, c_logout = st.columns([1, 6, 1])
@@ -46,10 +41,6 @@ def _top_bar():
     st.markdown("---")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# LEFT PANEL – Chats
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _chats_panel(token: str, project_id: str):
     st.markdown(
         "<p style='color:#9B97C9; font-size:.8rem; text-transform:uppercase; "
@@ -57,7 +48,6 @@ def _chats_panel(token: str, project_id: str):
         unsafe_allow_html=True,
     )
 
-    # New chat button
     if st.button("＋ New Chat", use_container_width=True, key="new_chat_btn"):
         try:
             chat = api.create_chat(token, project_id)
@@ -68,7 +58,6 @@ def _chats_panel(token: str, project_id: str):
 
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
-    # Load chat list
     try:
         chats = api.list_chats(token, project_id)
     except RuntimeError as e:
@@ -86,13 +75,11 @@ def _chats_panel(token: str, project_id: str):
         cname = chat["name"]
         is_active = cid == active_id
 
-        # Highlight active chat
         btn_label = f"{'▶ ' if is_active else ''}{cname}"
         if st.button(btn_label, key=f"chat_btn_{cid}", use_container_width=True):
             select_chat(cid, cname)
             st.rerun()
 
-        # Rename / delete for active chat
         if is_active:
             rc1, rc2 = st.columns(2)
             with rc1:
@@ -106,7 +93,6 @@ def _chats_panel(token: str, project_id: str):
                     st.session_state[f"confirm_del_chat_{cid}"] = True
                     st.rerun()
 
-            # Inline rename
             if st.session_state.get(f"renaming_chat_{cid}"):
                 with st.form(f"rename_chat_form_{cid}", clear_on_submit=True):
                     new_name = st.text_input("New name", value=cname)
@@ -128,7 +114,6 @@ def _chats_panel(token: str, project_id: str):
                     del st.session_state[f"renaming_chat_{cid}"]
                     st.rerun()
 
-            # Delete confirmation
             if st.session_state.get(f"confirm_del_chat_{cid}"):
                 st.warning(f"Delete **{cname}**?")
                 cy, cn = st.columns(2)
@@ -153,10 +138,6 @@ def _chats_panel(token: str, project_id: str):
             unsafe_allow_html=True,
         )
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CENTER PANEL – Chat messages
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _chat_area():
     chat_id   = st.session_state.get("active_chat_id")
@@ -196,10 +177,6 @@ def _chat_area():
                 st.markdown(msg["content"])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# RIGHT PANEL – Collections / Sources
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _collections_panel(token: str, project_id: str):
     st.markdown(
         "<p style='color:#9B97C9; font-size:.8rem; text-transform:uppercase; "
@@ -207,18 +184,15 @@ def _collections_panel(token: str, project_id: str):
         unsafe_allow_html=True,
     )
 
-    # Load collections
     try:
         collections = api.list_collections(token, project_id)
     except RuntimeError as e:
         st.error(str(e))
         return
 
-    # Active collection toggles (stored as a set of IDs in session)
     if "active_collections" not in st.session_state:
         st.session_state.active_collections = set()
 
-    # ── Collection list ───────────────────────────────────────────────────────
     if collections:
         for col in collections:
             col_id   = col["id"]
@@ -257,7 +231,6 @@ def _collections_panel(token: str, project_id: str):
                     st.session_state[f"confirm_del_col_{col_id}"] = True
                     st.rerun()
 
-            # Delete confirmation
             if st.session_state.get(f"confirm_del_col_{col_id}"):
                 st.warning(f"Delete **{col_name}**?")
                 dc1, dc2 = st.columns(2)
@@ -286,7 +259,6 @@ def _collections_panel(token: str, project_id: str):
 
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
-    # ── Create collection form ────────────────────────────────────────────────
     with st.expander("➕ Add Collection"):
         with st.form("new_collection_form", clear_on_submit=True):
             col_name = st.text_input("Name", placeholder="My documents")
@@ -308,10 +280,6 @@ def _collections_panel(token: str, project_id: str):
                     st.error(str(e))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CHAT INPUT HANDLER
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _handle_input(token: str):
     """
     st.chat_input() renders at the very bottom of the page (outside columns).
@@ -325,10 +293,8 @@ def _handle_input(token: str):
     if not prompt:
         return
 
-    # Add user message to history immediately (optimistic update)
     append_message(chat_id, "user", prompt)
 
-    # Build history for the API (exclude the message we just added)
     history = get_history(chat_id)[:-1]
     api_history = [{"role": m["role"], "content": m["content"]} for m in history]
 
@@ -342,10 +308,6 @@ def _handle_input(token: str):
     append_message(chat_id, "assistant", reply)
     st.rerun()
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN RENDER
-# ─────────────────────────────────────────────────────────────────────────────
 
 def render():
     token      = st.session_state.token
@@ -368,5 +330,4 @@ def render():
     with right:
         _collections_panel(token, project_id)
 
-    # Chat input — always at the bottom, only active when a chat is selected
     _handle_input(token)

@@ -1,9 +1,3 @@
-"""
-routes/projects.py – Full CRUD for user projects.
-
-Every route reads user_id from the JWT so users can only
-see and modify their own projects.
-"""
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -29,9 +23,6 @@ def _own_project(project_id: str, user_id: str) -> dict:
     row: Any = result.data[0]
     return row
 
-
-# ── List ──────────────────────────────────────────────────────────────────────
-
 @router.get("", response_model=list[ProjectOut])
 async def list_projects(current_user: dict = Depends(get_current_user)):
     """Return all projects that belong to the authenticated user."""
@@ -44,9 +35,6 @@ async def list_projects(current_user: dict = Depends(get_current_user)):
         .execute()
     )
     return result.data
-
-
-# ── Create ────────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
 async def create_project(
@@ -61,9 +49,6 @@ async def create_project(
         raise HTTPException(status_code=500, detail="Failed to create project.")
     row: Any = result.data[0]
     return row
-
-
-# ── Rename ────────────────────────────────────────────────────────────────────
 
 @router.put("/{project_id}", response_model=ProjectOut)
 async def rename_project(
@@ -83,14 +68,11 @@ async def rename_project(
     return row
 
 
-# ── Delete ────────────────────────────────────────────────────────────────────
-
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     project_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    _own_project(project_id, current_user["sub"])   # ownership check
+    _own_project(project_id, current_user["sub"])
     db = get_supabase()
-    # Cascade in Supabase removes chats and collections automatically
     db.table("projects").delete().eq("id", project_id).execute()

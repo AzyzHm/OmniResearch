@@ -1,13 +1,3 @@
-"""
-routes/collections.py – Collection CRUD, mirrored in ChromaDB.
-
-Every collection created in Supabase gets a corresponding ChromaDB collection
-keyed by the same UUID.  Deletion removes both.
-
-GET    /projects/{project_id}/collections   → list collections
-POST   /projects/{project_id}/collections   → create (Supabase + ChromaDB)
-DELETE /collections/{collection_id}         → delete (Supabase + ChromaDB)
-"""
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -18,9 +8,6 @@ from backend.database.db import get_supabase
 from backend.models.collection import CollectionCreate, CollectionOut
 
 router = APIRouter(tags=["Collections"])
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _verify_project_owner(project_id: str, user_id: str) -> None:
     db = get_supabase()
@@ -52,9 +39,6 @@ def _own_collection(collection_id: str, user_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found.")
     return row
 
-
-# ── List ──────────────────────────────────────────────────────────────────────
-
 @router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])
 async def list_collections(
     project_id: str,
@@ -71,9 +55,6 @@ async def list_collections(
     )
     return result.data
 
-
-# ── Create ────────────────────────────────────────────────────────────────────
-
 @router.post(
     "/projects/{project_id}/collections",
     response_model=CollectionOut,
@@ -87,7 +68,6 @@ async def create_collection(
     _verify_project_owner(project_id, current_user["sub"])
     db = get_supabase()
 
-    # 1. Insert metadata into Supabase
     result = db.table("collections").insert(
         {"project_id": project_id, "name": body.name, "type": body.type}
     ).execute()
@@ -96,7 +76,6 @@ async def create_collection(
 
     row: Any = result.data[0]
 
-    # 2. Mirror in ChromaDB using the Supabase UUID as the collection name
     create_chroma_collection(
         collection_id=row["id"],
         metadata={"name": body.name, "type": body.type, "project_id": project_id},
@@ -104,8 +83,6 @@ async def create_collection(
 
     return row
 
-
-# ── Delete ────────────────────────────────────────────────────────────────────
 
 @router.delete("/collections/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_collection(
@@ -115,8 +92,6 @@ async def delete_collection(
     _own_collection(collection_id, current_user["sub"])
     db = get_supabase()
 
-    # 1. Remove from ChromaDB first (safe even if it doesn't exist)
     delete_chroma_collection(collection_id)
 
-    # 2. Remove metadata from Supabase
     db.table("collections").delete().eq("id", collection_id).execute()
