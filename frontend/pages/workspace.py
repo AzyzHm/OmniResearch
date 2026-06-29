@@ -83,12 +83,12 @@ def _chats_panel(token: str, project_id: str):
         if is_active:
             rc1, rc2 = st.columns(2)
             with rc1:
-                if st.button("✏️", key=f"rename_chat_{cid}", use_container_width=True,
+                if st.button("Rename", key=f"rename_chat_{cid}", use_container_width=True,
                              help="Rename chat"):
                     st.session_state[f"renaming_chat_{cid}"] = True
                     st.rerun()
             with rc2:
-                if st.button("🗑️", key=f"del_chat_{cid}", use_container_width=True,
+                if st.button("Delete", key=f"del_chat_{cid}", use_container_width=True,
                              help="Delete chat"):
                     st.session_state[f"confirm_del_chat_{cid}"] = True
                     st.rerun()
