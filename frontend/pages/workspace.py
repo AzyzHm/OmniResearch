@@ -3,7 +3,7 @@ import streamlit as st
 from frontend.utils import api_client as api
 from frontend.utils.session import (
     append_message,
-    get_history,
+    load_chat_history,
     logout,
     select_chat,
 )
@@ -163,7 +163,7 @@ def _chat_area():
         unsafe_allow_html=True,
     )
 
-    history = get_history(chat_id)
+    history = load_chat_history(chat_id)
 
     if not history:
         st.markdown(
@@ -293,19 +293,20 @@ def _handle_input(token: str):
     if not prompt:
         return
 
+    load_chat_history(chat_id)
     append_message(chat_id, "user", prompt)
-
-    history = get_history(chat_id)[:-1]
-    api_history = [{"role": m["role"], "content": m["content"]} for m in history]
 
     with st.spinner("Thinking…"):
         try:
-            result = api.send_message(token, chat_id, prompt, api_history)
+            result = api.send_message(token, chat_id, prompt)
             reply = result["response"]
+            append_message(chat_id, "assistant", reply)
         except RuntimeError as e:
-            reply = f"⚠️ Error: {e}"
+            history = st.session_state.chat_histories.get(chat_id, [])
+            if history and history[-1]["role"] == "user":
+                history.pop()
+            st.error(f"⚠️ {e}")
 
-    append_message(chat_id, "assistant", reply)
     st.rerun()
 
 

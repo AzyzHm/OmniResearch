@@ -25,6 +25,7 @@ def _build_session() -> requests.Session:
 
 _session = _build_session()
 
+
 def _call(
     method: str,
     path: str,
@@ -68,7 +69,6 @@ def _call(
 
     return resp.json()
 
-
 def register(username: str, password: str) -> dict:
     return _call("POST", "/auth/register", json={"username": username, "password": password})
 
@@ -93,7 +93,6 @@ def delete_project(token: str, project_id: str) -> None:
     _call("DELETE", f"/projects/{project_id}", token=token)
 
 
-
 def list_chats(token: str, project_id: str) -> list:
     return _call("GET", f"/projects/{project_id}/chats", token=token) or []
 
@@ -110,14 +109,19 @@ def delete_chat(token: str, chat_id: str) -> None:
     _call("DELETE", f"/chats/{chat_id}", token=token)
 
 
-def send_message(token: str, chat_id: str, message: str, history: list[dict]) -> dict:
+def get_messages(token: str, chat_id: str) -> list:
+    """Fetch persisted messages for a chat (oldest first)."""
+    return _call("GET", f"/chats/{chat_id}/messages", token=token) or []
+
+
+def send_message(token: str, chat_id: str, message: str) -> dict:
+    """Send a message; backend fetches context and calls Gemini."""
     return _call(
         "POST",
         f"/chats/{chat_id}/message",
         token=token,
-        json={"message": message, "history": history},
+        json={"message": message},
     )
-
 
 def list_collections(token: str, project_id: str) -> list:
     return _call("GET", f"/projects/{project_id}/collections", token=token) or []
