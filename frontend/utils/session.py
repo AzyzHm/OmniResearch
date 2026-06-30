@@ -62,5 +62,27 @@ def append_message(chat_id: str, role: str, content: str) -> None:
 
 
 def get_history(chat_id: str) -> list[dict]:
-    """Return the message history for a chat (empty list if none)."""
+    """Return the in-memory message history for a chat (empty list if none)."""
     return st.session_state.chat_histories.get(chat_id, [])
+
+
+def load_chat_history(chat_id: str) -> list[dict]:
+    """
+    Return the message history for a chat.
+
+    On first access, fetches from the API and caches in session state.
+    Subsequent calls within the same session return the cached list directly,
+    avoiding a round-trip on every Streamlit rerun.
+    """
+    histories: dict = st.session_state.chat_histories
+    if chat_id not in histories:
+        from frontend.utils import api_client as api  # local import avoids circular deps
+        token: str = st.session_state.token or ""
+        try:
+            raw = api.get_messages(token, chat_id)
+            histories[chat_id] = [
+                {"role": m["role"], "content": m["content"]} for m in raw
+            ]
+        except RuntimeError:
+            histories[chat_id] = []
+    return histories[chat_id]

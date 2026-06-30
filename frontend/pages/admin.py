@@ -145,7 +145,7 @@ def render():
                             with btn_col1:
                                 if not user["is_approved"]:
                                     if st.button(
-                                        "✅",
+                                        "Approve",
                                         key=f"approve_{user['id']}",
                                         help="Approve account",
                                         use_container_width=True,

@@ -1,9 +1,10 @@
-from typing import Any
-
-from backend.config.models import get_gemini_response
+from typing import Any, cast
+ 
 from fastapi import APIRouter, Depends, HTTPException, status
-
+ 
 from backend.config.auth import get_current_user
+from backend.config.models import get_gemini_response
+from backend.config.settings import get_settings
 from backend.database.db import get_supabase
 from backend.models.chat import (
     ChatCreate,
@@ -11,10 +12,12 @@ from backend.models.chat import (
     ChatMessageResponse,
     ChatOut,
     ChatUpdate,
+    MessageOut,
 )
-
+ 
 router = APIRouter(tags=["Chats"])
-
+ 
+ 
 def _verify_project_owner(project_id: str, user_id: str) -> None:
     """Raise 404 if the project doesn't belong to the user."""
     db = get_supabase()
@@ -27,8 +30,8 @@ def _verify_project_owner(project_id: str, user_id: str) -> None:
     )
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found.")
-
-
+ 
+ 
 def _own_chat(chat_id: str, user_id: str) -> dict:
     """
     Fetch a chat and verify through its project that it belongs to the user.
@@ -49,6 +52,7 @@ def _own_chat(chat_id: str, user_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found.")
     return row
 
+ 
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])
 async def list_chats(
     project_id: str,
@@ -64,7 +68,8 @@ async def list_chats(
         .execute()
     )
     return result.data
-
+ 
+ 
 @router.post(
     "/projects/{project_id}/chats",
     response_model=ChatOut,
@@ -84,7 +89,8 @@ async def create_chat(
         raise HTTPException(status_code=500, detail="Failed to create chat.")
     row: Any = result.data[0]
     return row
-
+ 
+ 
 @router.put("/chats/{chat_id}", response_model=ChatOut)
 async def rename_chat(
     chat_id: str,
@@ -101,7 +107,8 @@ async def rename_chat(
     )
     row: Any = result.data[0]
     return row
-
+ 
+ 
 @router.delete("/chats/{chat_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_chat(
     chat_id: str,
@@ -110,22 +117,70 @@ async def delete_chat(
     _own_chat(chat_id, current_user["sub"])
     db = get_supabase()
     db.table("chats").delete().eq("id", chat_id).execute()
+ 
+ 
+@router.get("/chats/{chat_id}/messages", response_model=list[MessageOut])
+async def get_messages(
+    chat_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Return the most recent ui_history_limit messages for a chat, oldest first."""
+    _own_chat(chat_id, current_user["sub"])
+    db = get_supabase()
+    settings = get_settings()
 
+    result = (
+        db.table("messages")
+        .select("id, chat_id, role, content, created_at")
+        .eq("chat_id", chat_id)
+        .order("created_at", desc=True)
+        .limit(settings.ui_history_limit)
+        .execute()
+    )
+    return list(reversed(result.data))
+ 
+ 
 @router.post("/chats/{chat_id}/message", response_model=ChatMessageResponse)
 async def send_message(
     chat_id: str,
     body: ChatMessageRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    """
+    1. Persist the user message.
+    2. Fetch the last llm_context_limit messages as Gemini context.
+    3. Call Gemini.
+    4. Persist the assistant reply.
+    5. Return the reply.
+    """
     _own_chat(chat_id, current_user["sub"])
-
-    history = [{"role": e.role, "content": e.content} for e in body.history]
-
+    db = get_supabase()
+    settings = get_settings()
+ 
+    db.table("messages").insert(
+        {"chat_id": chat_id, "role": "user", "content": body.message}
+    ).execute()
+ 
+    ctx = (
+        db.table("messages")
+        .select("role, content")
+        .eq("chat_id", chat_id)
+        .order("created_at", desc=True)
+        .limit(settings.llm_context_limit)
+        .execute()
+    )
+    context_messages = cast(list[dict[str, Any]], list(reversed(ctx.data)))
+ 
     try:
-        reply = get_gemini_response(body.message, history)
-        return ChatMessageResponse(response=reply)
+        reply = get_gemini_response(context_messages)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Gemini error: {exc}",
         )
+ 
+    db.table("messages").insert(
+        {"chat_id": chat_id, "role": "assistant", "content": reply}
+    ).execute()
+ 
+    return ChatMessageResponse(response=reply)
