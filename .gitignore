@@ -1,0 +1,10 @@
+.env
+.venv
+
+playground
+
+project_description.md
+vector_database/*
+
+**/__pycache__
+.pytest_cache
