@@ -17,11 +17,15 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = gemini_api_key
     gemini_model: str = gemini_model
- 
+
     chroma_persist_dir: str = "vector_database"
 
     ui_history_limit: int = 50
     llm_context_limit: int = 10
+
+    embedding_model: str = "embeddinggemma"
+    chunk_size: int = 1000
+    chunk_overlap: int = 150
 
 
     @property

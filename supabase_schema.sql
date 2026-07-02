@@ -85,3 +85,18 @@ CREATE TABLE IF NOT EXISTS public.messages (
 
 CREATE INDEX IF NOT EXISTS idx_messages_chat_time
     ON public.messages(chat_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.collection_items (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    collection_id UUID NOT NULL REFERENCES public.collections(id) ON DELETE CASCADE,
+    name          TEXT NOT NULL,
+    source_type   TEXT NOT NULL CHECK (source_type IN ('txt', 'pdf', 'url')),
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    status        TEXT NOT NULL DEFAULT 'processing' CHECK (status IN ('processing', 'ready', 'error')),
+    chunk_count   INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_collection_items_collection
+    ON public.collection_items(collection_id);

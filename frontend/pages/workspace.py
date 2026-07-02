@@ -20,6 +20,17 @@ _TYPE_ICON = {
 }
 COLLECTION_TYPES = ["documents", "urls", "text"]
 
+_UPLOADABLE_TYPES = {
+    "documents": ["pdf"],
+    "text": ["txt"],
+}
+
+_STATUS_BADGE = {
+    "ready":      ("#2ECC71", "Ready"),
+    "processing": ("#F5A623", "Processing…"),
+    "error":      ("#E74C3C", "Error"),
+}
+
 
 def _top_bar():
     c_back, c_title, c_logout = st.columns([1, 6, 1])
@@ -177,6 +188,90 @@ def _chat_area():
                 st.markdown(msg["content"])
 
 
+def _collection_items(token: str, collection_id: str, col_type: str):
+    """Render the per-item list (checkbox, status, delete) and the uploader."""
+    try:
+        items = api.list_collection_items(token, collection_id)
+    except RuntimeError as e:
+        st.error(str(e))
+        items = []
+
+    if items:
+        for item in items:
+            item_id  = item["id"]
+            name     = item["name"]
+            active   = item["is_active"]
+            status   = item["status"]
+            badge_color, badge_label = _STATUS_BADGE.get(status, ("#9B97C9", status))
+
+            ic1, ic2, ic3 = st.columns([0.5, 3.2, 0.5])
+
+            with ic1:
+                checked = st.checkbox(
+                    "", value=active, key=f"item_toggle_{item_id}",
+                    label_visibility="collapsed",
+                    disabled=(status != "ready"),
+                )
+                if checked != active and status == "ready":
+                    try:
+                        api.toggle_collection_item(token, collection_id, item_id, checked)
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.error(str(e))
+
+            with ic2:
+                st.markdown(
+                    f"<span style='font-size:.85rem;'>{name}</span><br>"
+                    f"<span style='background:{badge_color}22; color:{badge_color}; "
+                    f"border:1px solid {badge_color}55; border-radius:8px; "
+                    f"padding:1px 6px; font-size:.68rem;'>{badge_label}</span>",
+                    unsafe_allow_html=True,
+                )
+                if status == "error" and item.get("error_message"):
+                    st.caption(f"⚠️ {item['error_message']}")
+
+            with ic3:
+                if st.button("🗑", key=f"del_item_{item_id}", help=f"Remove {name}",
+                             use_container_width=True):
+                    try:
+                        api.delete_collection_item(token, collection_id, item_id)
+                        st.toast("File removed.", icon="🗑️")
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.error(str(e))
+
+            st.markdown(
+                "<hr style='border-color:#242637; margin:.25rem 0;'>",
+                unsafe_allow_html=True,
+            )
+    else:
+        st.caption("No files yet.")
+
+    if col_type in _UPLOADABLE_TYPES:
+        allowed_ext = _UPLOADABLE_TYPES[col_type]
+        with st.form(f"upload_form_{collection_id}", clear_on_submit=True):
+            uploaded = st.file_uploader(
+                f"Add .{allowed_ext[0]} files",
+                type=allowed_ext,
+                accept_multiple_files=True,
+                key=f"uploader_{collection_id}",
+            )
+            submitted = st.form_submit_button("Upload", type="primary", use_container_width=True)
+        if submitted:
+            if not uploaded:
+                st.warning("Choose at least one file first.")
+            else:
+                with st.spinner(f"Processing {len(uploaded)} file(s)…"):
+                    try:
+                        api.upload_collection_items(token, collection_id, uploaded)
+                        st.toast("Files added!", icon="✅")
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.error(str(e))
+    else:
+        st.caption("🔗 URL ingestion is coming in a future update.")
+
+
 def _collections_panel(token: str, project_id: str):
     st.markdown(
         "<p style='color:#9B97C9; font-size:.8rem; text-transform:uppercase; "
@@ -190,9 +285,6 @@ def _collections_panel(token: str, project_id: str):
         st.error(str(e))
         return
 
-    if "active_collections" not in st.session_state:
-        st.session_state.active_collections = set()
-
     if collections:
         for col in collections:
             col_id   = col["id"]
@@ -201,30 +293,15 @@ def _collections_panel(token: str, project_id: str):
             color    = _TYPE_COLOR.get(col_type, "#9B97C9")
             icon     = _TYPE_ICON.get(col_type, "📦")
 
-            is_active = col_id in st.session_state.active_collections
-
-            c_check, c_info, c_del = st.columns([0.5, 3, 0.5])
-
-            with c_check:
-                checked = st.checkbox(
-                    "", value=is_active, key=f"col_toggle_{col_id}", label_visibility="collapsed"
-                )
-                if checked != is_active:
-                    if checked:
-                        st.session_state.active_collections.add(col_id)
-                    else:
-                        st.session_state.active_collections.discard(col_id)
-                    st.rerun()
-
+            c_info, c_del = st.columns([4, 0.6])
             with c_info:
                 st.markdown(
-                    f"<span style='font-size:.9rem; font-weight:600;'>{col_name}</span><br>"
+                    f"<span style='font-size:.9rem; font-weight:600;'>{col_name}</span> "
                     f"<span style='background:{color}22; color:{color}; border:1px solid {color}55;"
                     f"border-radius:8px; padding:1px 7px; font-size:.72rem;'>"
                     f"{icon} {col_type}</span>",
                     unsafe_allow_html=True,
                 )
-
             with c_del:
                 if st.button("🗑", key=f"del_col_{col_id}", help=f"Delete {col_name}",
                              use_container_width=True):
@@ -232,14 +309,13 @@ def _collections_panel(token: str, project_id: str):
                     st.rerun()
 
             if st.session_state.get(f"confirm_del_col_{col_id}"):
-                st.warning(f"Delete **{col_name}**?")
+                st.warning(f"Delete **{col_name}** and all its files?")
                 dc1, dc2 = st.columns(2)
                 with dc1:
                     if st.button("Yes", key=f"yes_col_{col_id}",
                                  type="primary", use_container_width=True):
                         try:
                             api.delete_collection(token, col_id)
-                            st.session_state.active_collections.discard(col_id)
                             del st.session_state[f"confirm_del_col_{col_id}"]
                             st.toast("Collection deleted.", icon="🗑️")
                             st.rerun()
@@ -250,8 +326,11 @@ def _collections_panel(token: str, project_id: str):
                         del st.session_state[f"confirm_del_col_{col_id}"]
                         st.rerun()
 
+            with st.expander("Files", expanded=False):
+                _collection_items(token, col_id, col_type)
+
             st.markdown(
-                "<hr style='border-color:#2A2D3E; margin:.3rem 0;'>",
+                "<hr style='border-color:#2A2D3E; margin:.4rem 0;'>",
                 unsafe_allow_html=True,
             )
     else:

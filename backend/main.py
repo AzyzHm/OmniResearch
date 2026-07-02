@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.settings import get_settings
 from backend.routes import auth_router, admin_router, projects_router, chats_router, collections_router
+from backend.services.embeddings import warm_up_embedding_model
 
 settings = get_settings()
 
@@ -16,7 +17,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
     expose_headers=["Content-Length"],
     max_age=600,
@@ -27,6 +28,10 @@ app.include_router(admin_router)
 app.include_router(projects_router)
 app.include_router(chats_router)
 app.include_router(collections_router)
+
+
+
+warm_up_embedding_model()
 
 
 @app.get("/health", tags=["Health"])
