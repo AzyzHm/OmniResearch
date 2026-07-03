@@ -57,3 +57,19 @@ class CollectionItemOut(BaseModel):
 
 class CollectionItemUpdate(BaseModel):
     is_active: bool
+
+
+class BulkItemUpdate(BaseModel):
+    item_id: str
+    is_active: bool
+
+
+class BulkItemsUpdateRequest(BaseModel):
+    updates: list[BulkItemUpdate]
+
+    @field_validator("updates")
+    @classmethod
+    def updates_not_empty(cls, v: list[BulkItemUpdate]) -> list[BulkItemUpdate]:
+        if not v:
+            raise ValueError("No changes to apply.")
+        return v
