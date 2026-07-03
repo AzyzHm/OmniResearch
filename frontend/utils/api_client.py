@@ -187,6 +187,7 @@ def delete_collection(token: str, collection_id: str) -> None:
     _call("DELETE", f"/collections/{collection_id}", token=token)
 
 
+
 def list_collection_items(token: str, collection_id: str) -> list:
     return _call("GET", f"/collections/{collection_id}/items", token=token) or []
 
@@ -223,6 +224,40 @@ def toggle_collection_item(token: str, collection_id: str, item_id: str, is_acti
 
 def delete_collection_item(token: str, collection_id: str, item_id: str) -> None:
     _call("DELETE", f"/collections/{collection_id}/items/{item_id}", token=token)
+
+
+def add_url_item(token: str, collection_id: str, url: str) -> dict:
+    return _call(
+        "POST",
+        f"/collections/{collection_id}/items/url",
+        token=token,
+        json={"url": url},
+    )
+
+
+def search_web(token: str, engine: str, query: str, num_results: int = 10, search_depth: str = "basic") -> list:
+    result = _call(
+        "POST",
+        "/search/web",
+        token=token,
+        json={
+            "engine": engine,
+            "query": query,
+            "num_results": num_results,
+            "search_depth": search_depth,
+        },
+    )
+    return (result or {}).get("results", [])
+
+
+def add_search_result_items(token: str, collection_id: str, items: list) -> dict:
+    """items: list of {"url": ..., "title": ..., "content": ...} dicts."""
+    return _call(
+        "POST",
+        f"/collections/{collection_id}/items/from-search",
+        token=token,
+        json={"items": items},
+    )
 
 
 def admin_list_users(token: str, pending_only: bool = False) -> dict:

@@ -19,9 +19,11 @@ from backend.models.collection import (
     CollectionItemUpdate,
     CollectionOut,
 )
+from backend.models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
 from backend.services.embeddings import embed_texts
 from backend.services.extraction import extract_pdf, extract_txt
 from backend.services.text_processing import chunk_text
+from backend.services.web_fetch import fetch_url_markdown
 
 router = APIRouter(tags=["Collections"])
 
@@ -54,6 +56,19 @@ def _own_collection(collection_id: str, user_id: str) -> dict:
     if project.get("user_id") != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found.")
     return row
+
+
+def _existing_urls(collection_id: str) -> set[str]:
+    """URLs already stored as items in this collection (used to reject duplicates)."""
+    db = get_supabase()
+    result = (
+        db.table("collection_items")
+        .select("name")
+        .eq("collection_id", collection_id)
+        .eq("source_type", "url")
+        .execute()
+    )
+    return {row["name"] for row in result.data} #type: ignore
 
 
 @router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])
@@ -141,10 +156,10 @@ async def upload_items(
     """
     Upload one or more files into a collection.
 
-    Only 'text' (.txt) and 'documents' (.pdf) collections accept uploads
-    right now. Each file is extracted, chunked, embedded via the local
-    embeddinggemma model, stored in the collection's Chroma collection
-    (raw chunk text + vector), and tracked as a row in collection_items.
+    Only 'text' (.txt) and 'documents' (.pdf) collections accept uploads.
+    Each file is extracted, chunked, embedded via the local embeddinggemma
+    model, stored in the collection's Chroma collection (raw chunk text +
+    vector), and tracked as a row in collection_items.
     """
     collection = _own_collection(collection_id, current_user["sub"])
     col_type = collection["type"]
@@ -152,7 +167,7 @@ async def upload_items(
     if col_type not in COLLECTION_TYPE_TO_SOURCE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This collection type does not support file uploads yet.",
+            detail="This collection type does not support file uploads.",
         )
 
     expected_ext = COLLECTION_TYPE_TO_EXT[col_type]
@@ -216,6 +231,137 @@ async def upload_items(
         results.append(item_row)
 
     return results
+
+
+@router.post("/collections/{collection_id}/items/url", response_model=CollectionItemOut)
+async def add_url_item(
+    collection_id: str,
+    body: ManualUrlAdd,
+    current_user: dict = Depends(get_current_user),
+):
+    """Manually add a single URL: fetched as markdown via Jina, then chunked + embedded."""
+    collection = _own_collection(collection_id, current_user["sub"])
+    if collection["type"] != "urls":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This collection does not accept URL items.",
+        )
+
+    url = body.url.strip()
+    if url in _existing_urls(collection_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This URL has already been added to this collection.",
+        )
+
+    db = get_supabase()
+    settings = get_settings()
+
+    insert_result = db.table("collection_items").insert({
+        "collection_id": collection_id,
+        "name": url,
+        "source_type": "url",
+        "status": "processing",
+    }).execute()
+    item_row: Any = insert_result.data[0]
+    item_id = item_row["id"]
+
+    try:
+        text = fetch_url_markdown(url)
+        chunks = chunk_text(text, settings.chunk_size, settings.chunk_overlap)
+        if not chunks:
+            raise ValueError("No extractable content was found at this URL.")
+
+        vectors = embed_texts(chunks)
+        add_item_chunks(collection_id, item_id, chunks, vectors, source_name=url)
+
+        update_result = db.table("collection_items").update({
+            "status": "ready",
+            "chunk_count": len(chunks),
+        }).eq("id", item_id).execute()
+        item_row = update_result.data[0]
+
+    except Exception as exc:
+        update_result = db.table("collection_items").update({
+            "status": "error",
+            "error_message": str(exc),
+        }).eq("id", item_id).execute()
+        item_row = update_result.data[0]
+
+    return item_row
+
+
+@router.post(
+    "/collections/{collection_id}/items/from-search",
+    response_model=AddSearchResultsResponse,
+)
+async def add_search_result_items(
+    collection_id: str,
+    body: AddSearchResults,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Bulk-add URLs selected from a Tavily/Exa search modal.
+
+    Content is stored exactly as returned by the search engine (snippet /
+    highlights) — no re-fetch. URLs already present in the collection are
+    skipped rather than erroring the whole batch.
+    """
+    collection = _own_collection(collection_id, current_user["sub"])
+    if collection["type"] != "urls":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This collection does not accept URL items.",
+        )
+
+    db = get_supabase()
+    settings = get_settings()
+    existing = _existing_urls(collection_id)
+
+    added: list[dict] = []
+    skipped: list[str] = []
+
+    for result_item in body.items:
+        url = result_item.url.strip()
+        if not url or url in existing:
+            skipped.append(url)
+            continue
+        existing.add(url)  # guard against duplicates within the same batch
+
+        insert_result = db.table("collection_items").insert({
+            "collection_id": collection_id,
+            "name": url,
+            "source_type": "url",
+            "status": "processing",
+        }).execute()
+        item_row: Any = insert_result.data[0]
+        item_id = item_row["id"]
+
+        try:
+            content = result_item.content.strip()
+            chunks = chunk_text(content, settings.chunk_size, settings.chunk_overlap)
+            if not chunks:
+                raise ValueError("Selected result has no content to store.")
+
+            vectors = embed_texts(chunks)
+            add_item_chunks(collection_id, item_id, chunks, vectors, source_name=url)
+
+            update_result = db.table("collection_items").update({
+                "status": "ready",
+                "chunk_count": len(chunks),
+            }).eq("id", item_id).execute()
+            item_row = update_result.data[0]
+
+        except Exception as exc:
+            update_result = db.table("collection_items").update({
+                "status": "error",
+                "error_message": str(exc),
+            }).eq("id", item_id).execute()
+            item_row = update_result.data[0]
+
+        added.append(item_row)
+
+    return {"added": added, "skipped": skipped}
 
 
 @router.patch("/collections/{collection_id}/items/{item_id}", response_model=CollectionItemOut)
