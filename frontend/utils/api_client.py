@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import requests
@@ -162,13 +163,64 @@ def get_messages(token: str, chat_id: str) -> list:
 
 
 def send_message(token: str, chat_id: str, message: str) -> dict:
-    """Send a message; backend fetches context and calls Gemini."""
+    """Send a message; backend fetches context and calls Gemini. (Non-streaming fallback.)"""
     return _call(
         "POST",
         f"/chats/{chat_id}/message",
         token=token,
         json={"message": message},
     )
+
+
+def send_message_stream(token: str, chat_id: str, message: str):
+    """
+    Yields events from the streaming RAG endpoint as each graph node finishes:
+      {"type": "node", "node": "router"}
+      {"type": "done", "answer": "..."}
+      {"type": "error", "detail": "..."}
+
+    Uses requests' streaming mode: with stream=True, the timeout applies per
+    chunk received rather than to the whole response, so a multi-step RAG
+    run doesn't get killed by _TIMEOUT just because it takes longer overall.
+    """
+    headers: dict[str, str] = {"Content-Type": "application/json", "Accept": "text/event-stream"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        resp = _session.post(
+            f"{API_BASE}/chats/{chat_id}/message/stream",
+            headers=headers,
+            json={"message": message},
+            stream=True,
+            timeout=_TIMEOUT,
+        )
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(
+            f"Cannot reach the API server at {API_BASE}. "
+            "Make sure the FastAPI backend is running."
+        )
+    except requests.exceptions.Timeout:
+        raise RuntimeError("The API server took too long to respond. Please try again.")
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError(f"Network error: {exc}")
+
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json().get("detail", resp.text)
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(detail)
+
+    for line in resp.iter_lines(decode_unicode=True):
+        if not line or not line.startswith("data: "): # type: ignore
+            continue
+        payload = line[len("data: "):]
+        try:
+            event = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        yield event
 
 def list_collections(token: str, project_id: str) -> list:
     return _call("GET", f"/projects/{project_id}/collections", token=token) or []
@@ -185,7 +237,6 @@ def create_collection(token: str, project_id: str, name: str, col_type: str) -> 
 
 def delete_collection(token: str, collection_id: str) -> None:
     _call("DELETE", f"/collections/{collection_id}", token=token)
-
 
 
 def list_collection_items(token: str, collection_id: str) -> list:
@@ -220,6 +271,16 @@ def toggle_collection_item(token: str, collection_id: str, item_id: str, is_acti
         token=token,
         json={"is_active": is_active},
     )
+
+
+def bulk_update_collection_items(token: str, collection_id: str, updates: list[dict]) -> list:
+    """updates: list of {"item_id": ..., "is_active": ...} dicts."""
+    return _call(
+        "PATCH",
+        f"/collections/{collection_id}/items/bulk",
+        token=token,
+        json={"updates": updates},
+    ) or []
 
 
 def delete_collection_item(token: str, collection_id: str, item_id: str) -> None:

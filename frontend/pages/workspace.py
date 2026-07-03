@@ -327,35 +327,56 @@ def _search_modal(token: str, collection_id: str):
 
 
 def _collection_items(token: str, collection_id: str, col_type: str):
-    """Render the per-item list (checkbox, status, delete) and the uploader."""
+    """Render the per-item list (checkbox, status, delete) and the uploader.
+
+    Checkboxes are purely local UI state (backed by their own widget key in
+    st.session_state) until "Save Changes" is clicked — that's what stops a
+    burst of clicks from firing one API request per checkbox.
+    """
     try:
         items = api.list_collection_items(token, collection_id)
     except RuntimeError as e:
         st.error(str(e))
         items = []
 
+    def _checkbox_key(item_id: str) -> str:
+        return f"item_toggle_{collection_id}_{item_id}"
+
+    ready_items = [i for i in items if i["status"] == "ready"]
+
+    for item in items:
+        st.session_state.setdefault(_checkbox_key(item["id"]), item["is_active"])
+
     if items:
+        if ready_items:
+            sa1, sa2 = st.columns(2)
+            with sa1:
+                if st.button("☑️ Select All", key=f"select_all_{collection_id}",
+                             use_container_width=True):
+                    for item in ready_items:
+                        st.session_state[_checkbox_key(item["id"])] = True
+                    st.rerun()
+            with sa2:
+                if st.button("⬜ Deselect All", key=f"deselect_all_{collection_id}",
+                             use_container_width=True):
+                    for item in ready_items:
+                        st.session_state[_checkbox_key(item["id"])] = False
+                    st.rerun()
+
         for item in items:
-            item_id  = item["id"]
-            name     = item["name"]
-            active   = item["is_active"]
-            status   = item["status"]
+            item_id = item["id"]
+            name    = item["name"]
+            status  = item["status"]
             badge_color, badge_label = _STATUS_BADGE.get(status, ("#9B97C9", status))
 
             ic1, ic2, ic3 = st.columns([0.5, 3.2, 0.5])
 
             with ic1:
-                checked = st.checkbox(
-                    "", value=active, key=f"item_toggle_{item_id}",
+                st.checkbox(
+                    "", key=_checkbox_key(item_id),
                     label_visibility="collapsed",
                     disabled=(status != "ready"),
                 )
-                if checked != active and status == "ready":
-                    try:
-                        api.toggle_collection_item(token, collection_id, item_id, checked)
-                        st.rerun()
-                    except RuntimeError as e:
-                        st.error(str(e))
 
             with ic2:
                 st.markdown(
@@ -369,11 +390,12 @@ def _collection_items(token: str, collection_id: str, col_type: str):
                     st.caption(f"⚠️ {item['error_message']}")
 
             with ic3:
-                if st.button("🗑", key=f"del_item_{item_id}", help=f"Remove {name}",
+                if st.button("❌", key=f"del_item_{item_id}", help=f"Remove {name}",
                              use_container_width=True):
                     try:
                         api.delete_collection_item(token, collection_id, item_id)
-                        st.toast("File removed.", icon="🗑️")
+                        st.session_state.pop(_checkbox_key(item_id), None)
+                        st.toast("File removed.", icon="❌")
                         st.rerun()
                     except RuntimeError as e:
                         st.error(str(e))
@@ -382,6 +404,34 @@ def _collection_items(token: str, collection_id: str, col_type: str):
                 "<hr style='border-color:#242637; margin:.25rem 0;'>",
                 unsafe_allow_html=True,
             )
+
+        dirty = {
+            item["id"]: st.session_state[_checkbox_key(item["id"])]
+            for item in ready_items
+            if st.session_state[_checkbox_key(item["id"])] != item["is_active"]
+        }
+
+        if dirty:
+            st.info(f"{len(dirty)} unsaved change(s).")
+            sv1, sv2 = st.columns(2)
+            with sv1:
+                if st.button("💾 Save Changes", key=f"save_toggles_{collection_id}",
+                             type="primary", use_container_width=True):
+                    try:
+                        updates = [
+                            {"item_id": iid, "is_active": val} for iid, val in dirty.items()
+                        ]
+                        api.bulk_update_collection_items(token, collection_id, updates)
+                        st.toast("Changes saved!", icon="✅")
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.error(str(e))
+            with sv2:
+                if st.button("Discard", key=f"discard_toggles_{collection_id}",
+                             use_container_width=True):
+                    for item in ready_items:
+                        st.session_state[_checkbox_key(item["id"])] = item["is_active"]
+                    st.rerun()
     else:
         st.caption("No files yet.")
 
@@ -448,78 +498,88 @@ def _collections_panel(token: str, project_id: str):
         st.error(str(e))
         return
 
-    if collections:
-        for col in collections:
-            col_id   = col["id"]
-            col_name = col["name"]
-            col_type = col["type"]
-            color    = _TYPE_COLOR.get(col_type, "#9B97C9")
-            icon     = _TYPE_ICON.get(col_type, "📦")
+    with st.container(height=620):
+        if collections:
+            for col in collections:
+                col_id   = col["id"]
+                col_name = col["name"]
+                col_type = col["type"]
+                color    = _TYPE_COLOR.get(col_type, "#9B97C9")
+                icon     = _TYPE_ICON.get(col_type, "📦")
 
-            c_info, c_del = st.columns([4, 0.6])
-            with c_info:
-                st.markdown(
-                    f"<span style='font-size:.9rem; font-weight:600;'>{col_name}</span> "
-                    f"<span style='background:{color}22; color:{color}; border:1px solid {color}55;"
-                    f"border-radius:8px; padding:1px 7px; font-size:.72rem;'>"
-                    f"{icon} {col_type}</span>",
-                    unsafe_allow_html=True,
-                )
-            with c_del:
-                if st.button("🗑", key=f"del_col_{col_id}", help=f"Delete {col_name}",
-                             use_container_width=True):
-                    st.session_state[f"confirm_del_col_{col_id}"] = True
-                    st.rerun()
-
-            if st.session_state.get(f"confirm_del_col_{col_id}"):
-                st.warning(f"Delete **{col_name}** and all its files?")
-                dc1, dc2 = st.columns(2)
-                with dc1:
-                    if st.button("Yes", key=f"yes_col_{col_id}",
-                                 type="primary", use_container_width=True):
-                        try:
-                            api.delete_collection(token, col_id)
-                            del st.session_state[f"confirm_del_col_{col_id}"]
-                            st.toast("Collection deleted.", icon="🗑️")
-                            st.rerun()
-                        except RuntimeError as e:
-                            st.error(str(e))
-                with dc2:
-                    if st.button("No", key=f"no_col_{col_id}", use_container_width=True):
-                        del st.session_state[f"confirm_del_col_{col_id}"]
+                c_info, c_del = st.columns([4, 0.6])
+                with c_info:
+                    st.markdown(
+                        f"<span style='font-size:.9rem; font-weight:600;'>{col_name}</span> "
+                        f"<span style='background:{color}22; color:{color}; border:1px solid {color}55;"
+                        f"border-radius:8px; padding:1px 7px; font-size:.72rem;'>"
+                        f"{icon} {col_type}</span>",
+                        unsafe_allow_html=True,
+                    )
+                with c_del:
+                    if st.button("❌", key=f"del_col_{col_id}", help=f"Delete {col_name}",
+                                 use_container_width=True):
+                        st.session_state[f"confirm_del_col_{col_id}"] = True
                         st.rerun()
 
-            with st.expander("Files", expanded=False):
-                _collection_items(token, col_id, col_type)
+                if st.session_state.get(f"confirm_del_col_{col_id}"):
+                    st.warning(f"Delete **{col_name}** and all its files?")
+                    dc1, dc2 = st.columns(2)
+                    with dc1:
+                        if st.button("Yes", key=f"yes_col_{col_id}",
+                                     type="primary", use_container_width=True):
+                            try:
+                                api.delete_collection(token, col_id)
+                                del st.session_state[f"confirm_del_col_{col_id}"]
+                                st.toast("Collection deleted.", icon="❌")
+                                st.rerun()
+                            except RuntimeError as e:
+                                st.error(str(e))
+                    with dc2:
+                        if st.button("No", key=f"no_col_{col_id}", use_container_width=True):
+                            del st.session_state[f"confirm_del_col_{col_id}"]
+                            st.rerun()
 
-            st.markdown(
-                "<hr style='border-color:#2A2D3E; margin:.4rem 0;'>",
-                unsafe_allow_html=True,
-            )
-    else:
-        st.caption("No collections yet.")
+                with st.expander("Files", expanded=False):
+                    _collection_items(token, col_id, col_type)
 
-    st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    "<hr style='border-color:#2A2D3E; margin:.4rem 0;'>",
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.caption("No collections yet.")
 
-    with st.expander("➕ Add Collection"):
-        with st.form("new_collection_form", clear_on_submit=True):
-            col_name = st.text_input("Name", placeholder="My documents")
-            col_type = st.selectbox(
-                "Type",
-                COLLECTION_TYPES,
-                format_func=lambda t: f"{_TYPE_ICON[t]} {t.capitalize()}",
-            )
-            submitted = st.form_submit_button("Create", type="primary", use_container_width=True)
-        if submitted:
-            if not col_name.strip():
-                st.error("Name cannot be empty.")
-            else:
-                try:
-                    api.create_collection(token, project_id, col_name.strip(), col_type)
-                    st.toast("Collection created!", icon="✅")
-                    st.rerun()
-                except RuntimeError as e:
-                    st.error(str(e))
+        st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
+
+        with st.expander("➕ Add Collection"):
+            with st.form("new_collection_form", clear_on_submit=True):
+                col_name = st.text_input("Name", placeholder="My documents")
+                col_type = st.selectbox(
+                    "Type",
+                    COLLECTION_TYPES,
+                    format_func=lambda t: f"{_TYPE_ICON[t]} {t.capitalize()}",
+                )
+                submitted = st.form_submit_button("Create", type="primary", use_container_width=True)
+            if submitted:
+                if not col_name.strip():
+                    st.error("Name cannot be empty.")
+                else:
+                    try:
+                        api.create_collection(token, project_id, col_name.strip(), col_type)
+                        st.toast("Collection created!", icon="✅")
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.error(str(e))
+
+
+_NODE_LABELS = {
+    "router":       "🧭 Deciding if I need to search your sources…",
+    "refine_query": "✏️ Refining your question…",
+    "retrieve":     "🔎 Searching your sources…",
+    "validate":     "🧐 Checking if I found enough…",
+    "generate":     "✍️ Writing the answer…",
+}
 
 
 def _handle_input(token: str):
@@ -538,12 +598,26 @@ def _handle_input(token: str):
     load_chat_history(chat_id)
     append_message(chat_id, "user", prompt)
 
-    with st.spinner("Thinking…"):
+    with st.status("Thinking…", expanded=False) as status_box:
         try:
-            result = api.send_message(token, chat_id, prompt)
-            reply = result["response"]
+            reply = None
+            for event in api.send_message_stream(token, chat_id, prompt):
+                etype = event.get("type")
+                if etype == "node":
+                    label = _NODE_LABELS.get(event["node"], f"Running {event['node']}…")
+                    status_box.update(label=label)
+                elif etype == "done":
+                    reply = event.get("answer") or "⚠️ The model did not return a response."
+                    status_box.update(label="Done", state="complete")
+                elif etype == "error":
+                    raise RuntimeError(event.get("detail", "Unknown error."))
+
+            if reply is None:
+                raise RuntimeError("No response was received from the server.")
             append_message(chat_id, "assistant", reply)
+
         except RuntimeError as e:
+            status_box.update(label="Error", state="error")
             history = st.session_state.chat_histories.get(chat_id, [])
             if history and history[-1]["role"] == "user":
                 history.pop()

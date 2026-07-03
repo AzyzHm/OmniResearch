@@ -14,6 +14,7 @@ from backend.database.db import get_supabase
 from backend.models.collection import (
     COLLECTION_TYPE_TO_EXT,
     COLLECTION_TYPE_TO_SOURCE,
+    BulkItemsUpdateRequest,
     CollectionCreate,
     CollectionItemOut,
     CollectionItemUpdate,
@@ -68,8 +69,10 @@ def _existing_urls(collection_id: str) -> set[str]:
         .eq("source_type", "url")
         .execute()
     )
-    return {row["name"] for row in result.data} #type: ignore
+    return {row["name"] for row in result.data} # type: ignore
 
+
+# ── Collections ──────────────────────────────────────────────────────────────
 
 @router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])
 async def list_collections(
@@ -127,7 +130,6 @@ async def delete_collection(
     delete_chroma_collection(collection_id)
 
     db.table("collections").delete().eq("id", collection_id).execute()
-
 
 
 @router.get("/collections/{collection_id}/items", response_model=list[CollectionItemOut])
@@ -362,6 +364,35 @@ async def add_search_result_items(
         added.append(item_row)
 
     return {"added": added, "skipped": skipped}
+
+
+@router.patch("/collections/{collection_id}/items/bulk", response_model=list[CollectionItemOut])
+async def bulk_update_items(
+    collection_id: str,
+    body: BulkItemsUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Apply many is_active changes in a single request. Used by the collections
+    panel's "Save Changes" button, so toggling several checkboxes only ever
+    triggers one API call instead of one per click.
+    """
+    _own_collection(collection_id, current_user["sub"])
+    db = get_supabase()
+
+    results: list[dict] = []
+    for update in body.updates:
+        result = (
+            db.table("collection_items")
+            .update({"is_active": update.is_active})
+            .eq("id", update.item_id)
+            .eq("collection_id", collection_id)
+            .execute()
+        )
+        if result.data:
+            results.append(result.data[0]) # type: ignore
+
+    return results
 
 
 @router.patch("/collections/{collection_id}/items/{item_id}", response_model=CollectionItemOut)
