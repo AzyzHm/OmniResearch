@@ -42,3 +42,43 @@ def get_chroma_collection(collection_id: str):
     """Return the ChromaDB collection object for querying / adding documents."""
     client = get_chroma()
     return client.get_collection(name=collection_id)
+
+
+def add_item_chunks(
+    collection_id: str,
+    item_id: str,
+    chunks: list[str],
+    embeddings: list[list[float]],
+    source_name: str,
+) -> None:
+    """
+    Add one collection_items row's chunks to its parent Chroma collection.
+
+    Each chunk is stored with both its raw text (documents) and its vector
+    (embeddings), and tagged with item_id/chunk_index metadata so it can be
+    filtered or deleted per-item later (toggle include/exclude, delete file).
+    """
+    collection = get_chroma_collection(collection_id)
+    collection.add(
+        ids=[f"{item_id}_{i}" for i in range(len(chunks))],
+        documents=chunks,
+        embeddings=embeddings,
+        metadatas=[
+            {
+                "item_id": item_id,
+                "collection_id": collection_id,
+                "source_name": source_name,
+                "chunk_index": i,
+            }
+            for i in range(len(chunks))
+        ],
+    )
+
+
+def delete_item_chunks(collection_id: str, item_id: str) -> None:
+    """Delete all chunks belonging to one item from its parent Chroma collection."""
+    try:
+        collection = get_chroma_collection(collection_id)
+        collection.delete(where={"item_id": item_id})
+    except Exception:
+        pass

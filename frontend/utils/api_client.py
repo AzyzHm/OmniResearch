@@ -15,7 +15,7 @@ def _build_session() -> requests.Session:
         total=3,
         backoff_factor=0.3,
         status_forcelist=[502, 503, 504],
-        allowed_methods=["GET", "POST", "PUT", "DELETE"],
+        allowed_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount("http://", adapter)
@@ -45,6 +45,53 @@ def _call(
             headers=headers,
             json=json,
             params=params,
+            timeout=_TIMEOUT,
+        )
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(
+            f"Cannot reach the API server at {API_BASE}. "
+            "Make sure the FastAPI backend is running."
+        )
+    except requests.exceptions.Timeout:
+        raise RuntimeError("The API server took too long to respond. Please try again.")
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError(f"Network error: {exc}")
+
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json().get("detail", resp.text)
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(detail)
+
+    if resp.status_code == 204 or not resp.content:
+        return None
+
+    return resp.json()
+
+
+def _call_multipart(
+    method: str,
+    path: str,
+    *,
+    token: str | None = None,
+    files: list[tuple[str, tuple[str, bytes, str]]],
+) -> Any:
+    """
+    Like _call, but for multipart/form-data uploads. The Content-Type header
+    is intentionally NOT set — requests generates the correct multipart
+    boundary itself when given the `files` argument.
+    """
+    headers: dict[str, str] = {"Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        resp = _session.request(
+            method,
+            f"{API_BASE}{path}",
+            headers=headers,
+            files=files,
             timeout=_TIMEOUT,
         )
     except requests.exceptions.ConnectionError:
@@ -138,6 +185,79 @@ def create_collection(token: str, project_id: str, name: str, col_type: str) -> 
 
 def delete_collection(token: str, collection_id: str) -> None:
     _call("DELETE", f"/collections/{collection_id}", token=token)
+
+
+
+def list_collection_items(token: str, collection_id: str) -> list:
+    return _call("GET", f"/collections/{collection_id}/items", token=token) or []
+
+
+def upload_collection_items(
+    token: str,
+    collection_id: str,
+    uploaded_files: list,
+) -> list:
+    """
+    uploaded_files: list of Streamlit UploadedFile objects
+    (has .name, .type, and .getvalue()).
+    """
+    files = [
+        ("files", (f.name, f.getvalue(), f.type or "application/octet-stream"))
+        for f in uploaded_files
+    ]
+    return _call_multipart(
+        "POST",
+        f"/collections/{collection_id}/items",
+        token=token,
+        files=files,
+    ) or []
+
+
+def toggle_collection_item(token: str, collection_id: str, item_id: str, is_active: bool) -> dict:
+    return _call(
+        "PATCH",
+        f"/collections/{collection_id}/items/{item_id}",
+        token=token,
+        json={"is_active": is_active},
+    )
+
+
+def delete_collection_item(token: str, collection_id: str, item_id: str) -> None:
+    _call("DELETE", f"/collections/{collection_id}/items/{item_id}", token=token)
+
+
+def add_url_item(token: str, collection_id: str, url: str) -> dict:
+    return _call(
+        "POST",
+        f"/collections/{collection_id}/items/url",
+        token=token,
+        json={"url": url},
+    )
+
+
+def search_web(token: str, engine: str, query: str, num_results: int = 10, search_depth: str = "basic") -> list:
+    result = _call(
+        "POST",
+        "/search/web",
+        token=token,
+        json={
+            "engine": engine,
+            "query": query,
+            "num_results": num_results,
+            "search_depth": search_depth,
+        },
+    )
+    return (result or {}).get("results", [])
+
+
+def add_search_result_items(token: str, collection_id: str, items: list) -> dict:
+    """items: list of {"url": ..., "title": ..., "content": ...} dicts."""
+    return _call(
+        "POST",
+        f"/collections/{collection_id}/items/from-search",
+        token=token,
+        json={"items": items},
+    )
 
 
 def admin_list_users(token: str, pending_only: bool = False) -> dict:

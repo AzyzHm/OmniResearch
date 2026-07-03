@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import List
 from pydantic_settings import BaseSettings
 
-from backend.config.env import supabase_url, supabase_service_key, jwt_secret, gemini_api_key, gemini_model
+from backend.config.env import supabase_url, supabase_service_key, jwt_secret, gemini_api_key, gemini_model, jina_api_key, tavily_api_key, exa_api_key
 
 
 class Settings(BaseSettings):
@@ -17,11 +17,20 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = gemini_api_key
     gemini_model: str = gemini_model
- 
+
     chroma_persist_dir: str = "vector_database"
 
     ui_history_limit: int = 50
     llm_context_limit: int = 10
+
+    embedding_model: str = "embeddinggemma"
+    chunk_size: int = 1000
+    chunk_overlap: int = 150
+
+    jina_api_key: str = jina_api_key
+    tavily_api_key: str = tavily_api_key
+    exa_api_key: str = exa_api_key
+
 
 
     @property
