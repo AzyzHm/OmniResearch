@@ -15,6 +15,19 @@ st.markdown("""
 <style>
     [data-testid="stSidebarNav"], #MainMenu, footer, header { display:none !important; }
 
+    /* Reduce Streamlit's large default top/bottom padding — this is what
+       made pages like login/signup scroll even though their content fits. */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    /* Hide the "Press Enter to apply" hint that floats inside text inputs
+       while typing — purely cosmetic, not needed in this app's flows. */
+    div[data-testid="InputInstructions"] {
+        display: none !important;
+    }
+
     /* Inputs */
     input[type="text"], input[type="password"] {
         background: #12152A !important;

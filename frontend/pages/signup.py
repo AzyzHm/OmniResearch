@@ -18,7 +18,7 @@ def _password_strength(pw: str) -> tuple[int, str, str]:
 def render():
     st.markdown(
         """
-        <div style='text-align:center; padding: 2rem 0 1rem;'>
+        <div style='text-align:center; padding: 1rem 0 .5rem;'>
             <h1 style='font-size:2.4rem; margin-bottom:0;'>
                 🔬 OmniResearch
             </h1>
@@ -75,35 +75,37 @@ def render():
 
         st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
-        if st.button("Create Account →", use_container_width=True, type="primary"):
-            errors = []
-            if not username:
-                errors.append("Username is required.")
-            if not password:
-                errors.append("Password is required.")
-            elif len(password) < 8:
-                errors.append("Password must be at least 8 characters.")
-            if password != confirm:
-                errors.append("Passwords do not match.")
+        b_l, b_mid, b_r = st.columns([1, 1.4, 1])
+        with b_mid:
+            if st.button("Create Account →", use_container_width=True, type="primary"):
+                errors = []
+                if not username:
+                    errors.append("Username is required.")
+                if not password:
+                    errors.append("Password is required.")
+                elif len(password) < 8:
+                    errors.append("Password must be at least 8 characters.")
+                if password != confirm:
+                    errors.append("Passwords do not match.")
 
-            if errors:
-                for e in errors:
-                    st.error(e)
-                return
-
-            with st.spinner("Creating your account…"):
-                try:
-                    result = register(username, password)
-                except RuntimeError as e:
-                    st.error(str(e))
+                if errors:
+                    for e in errors:
+                        st.error(e)
                     return
 
-            st.success("✅ " + result["message"])
-            st.info("You will be able to sign in once an administrator approves your account.")
+                with st.spinner("Creating your account…"):
+                    try:
+                        result = register(username, password)
+                    except RuntimeError as e:
+                        st.error(str(e))
+                        return
 
-            import time; time.sleep(2)
-            st.session_state.page = "login"
-            st.rerun()
+                st.success("✅ " + result["message"])
+                st.info("You will be able to sign in once an administrator approves your account.")
+
+                import time; time.sleep(2)
+                st.session_state.page = "login"
+                st.rerun()
 
         st.markdown(
             "<hr style='border-color:#2A2D3E; margin:1.4rem 0;'>",
@@ -114,6 +116,8 @@ def render():
             "Already have an account?</p>",
             unsafe_allow_html=True,
         )
-        if st.button("Back to Sign In", use_container_width=True):
-            st.session_state.page = "login"
-            st.rerun()
+        n_l, n_mid, n_r = st.columns([1, 1.4, 1])
+        with n_mid:
+            if st.button("Back to Sign In", use_container_width=True):
+                st.session_state.page = "login"
+                st.rerun()
