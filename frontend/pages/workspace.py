@@ -1,5 +1,6 @@
 import streamlit as st
 
+from frontend.components.search_modal import render_search_modal
 from frontend.utils import api_client as api
 from frontend.utils.session import (
     append_message,
@@ -30,6 +31,7 @@ _STATUS_BADGE = {
     "processing": ("#F5A623", "Processing…"),
     "error":      ("#E74C3C", "Error"),
 }
+
 
 SECTION_HEIGHT = 480
 CHAT_SECTION_HEIGHT = 440
@@ -65,7 +67,7 @@ def _chats_panel(token: str, project_id: str):
         unsafe_allow_html=True,
     )
 
-    if st.button("＋ New Chat", use_container_width=True, key="new_chat_btn"):
+    if st.button("▶ Start a Chat", use_container_width=True, key="new_chat_btn"):
         try:
             chat = api.create_chat(token, project_id)
             select_chat(chat["id"], chat["name"])
@@ -201,146 +203,6 @@ def _chat_area():
                     st.markdown(msg["content"])
 
     return messages_box
-
-
-@st.dialog("🔍 Search the Web", width="large")
-def _search_modal(token: str, collection_id: str):
-    state_key    = f"search_results_{collection_id}"
-    selected_key = f"search_selected_{collection_id}"
-    existing_key = f"search_existing_{collection_id}"
-
-    if state_key not in st.session_state:
-        st.session_state[state_key] = []       # accumulated {url, title, content} dicts
-    if selected_key not in st.session_state:
-        st.session_state[selected_key] = set()  # urls checked for adding
-    if existing_key not in st.session_state:
-        try:
-            items = api.list_collection_items(token, collection_id)
-            st.session_state[existing_key] = {
-                i["name"] for i in items if i["source_type"] == "url"
-            }
-        except RuntimeError:
-            st.session_state[existing_key] = set()
-
-    with st.form(f"search_form_{collection_id}"):
-        c1, c2, c3, c4 = st.columns([1, 2.4, 1, 1.2])
-        with c1:
-            engine = st.selectbox("Engine", ["tavily", "exa"], key=f"engine_{collection_id}")
-        with c2:
-            query = st.text_input("Search query", key=f"query_{collection_id}")
-        with c3:
-            num_results = st.slider("Results", 1, 20, 10, key=f"numres_{collection_id}")
-        with c4:
-            if engine == "tavily":
-                search_depth = st.selectbox(
-                    "Depth",
-                    ["basic", "advanced", "fast", "ultra-fast"],
-                    key=f"depth_{collection_id}",
-                )
-            else:
-                search_depth = "basic"
-                st.caption("Depth: N/A for Exa")
-
-        run_search = st.form_submit_button("Search", type="primary", use_container_width=True)
-
-    if run_search:
-        if not query.strip():
-            st.warning("Enter a search query first.")
-        else:
-            with st.spinner("Searching…"):
-                try:
-                    results = api.search_web(token, engine, query.strip(), num_results, search_depth)
-                    seen = {r["url"] for r in st.session_state[state_key]}
-                    for r in results:
-                        if r.get("url") and r["url"] not in seen:
-                            st.session_state[state_key].append(r)
-                            seen.add(r["url"])
-                except RuntimeError as e:
-                    st.error(str(e))
-
-    results  = st.session_state[state_key]
-    existing = st.session_state[existing_key]
-
-    if results:
-        st.caption(f"{len(results)} result(s) so far — check the ones to add:")
-
-        with st.container(height=320):
-            for r in results:
-                url     = r["url"]
-                title   = r.get("title") or url
-                content = (r.get("content") or "").strip()
-                already = url in existing
-                has_content = bool(content)
-
-                cb1, cb2 = st.columns([0.35, 5])
-                with cb1:
-                    checked = st.checkbox(
-                        "",
-                        key=f"select_{collection_id}_{url}",
-                        value=(url in st.session_state[selected_key]),
-                        disabled=already or not has_content,
-                        label_visibility="collapsed",
-                    )
-                    if checked and not already and has_content:
-                        st.session_state[selected_key].add(url)
-                    elif not checked and url in st.session_state[selected_key]:
-                        st.session_state[selected_key].discard(url)
-
-                with cb2:
-                    if already:
-                        note = "<span style='color:#2ECC71;'>✅ already in this collection</span>"
-                    elif not has_content:
-                        note = "<span style='color:#F5A623;'>⚠️ no content returned</span>"
-                    else:
-                        preview = content[:130] + ("…" if len(content) > 130 else "")
-                        note = f"<span style='color:#6B6E8A;'>{preview}</span>"
-
-                    st.markdown(
-                        f"<div style='line-height:1.3; margin-bottom:.45rem;'>"
-                        f"<span style='font-size:.82rem; font-weight:600;'>{title}</span> "
-                        f"<span style='font-size:.68rem; color:#9B97C9;'>— {url}</span><br>"
-                        f"<span style='font-size:.72rem;'>{note}</span>"
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
-    else:
-        st.caption("No searches yet. Run one above.")
-
-    n_selected = len(st.session_state[selected_key])
-    b1, b2 = st.columns(2)
-    with b1:
-        if st.button(
-            f"Add {n_selected} Selected", type="primary",
-            use_container_width=True, disabled=n_selected == 0,
-        ):
-            to_add = [r for r in results if r["url"] in st.session_state[selected_key]]
-            with st.spinner("Adding selected results…"):
-                try:
-                    response = api.add_search_result_items(token, collection_id, to_add)
-                    skipped = response.get("skipped", [])
-                    st.session_state.pop(state_key, None)
-                    st.session_state.pop(selected_key, None)
-                    st.session_state.pop(existing_key, None)
-                    st.session_state.show_search_modal = None
-                    added_count = len(response.get("added", []))
-                    if skipped:
-                        st.toast(
-                            f"Added {added_count} result(s). "
-                            f"Skipped {len(skipped)} already in this collection.",
-                            icon="⚠️",
-                        )
-                    else:
-                        st.toast("Selected results added!", icon="✅")
-                    st.rerun()
-                except RuntimeError as e:
-                    st.error(str(e))
-    with b2:
-        if st.button("Close", use_container_width=True):
-            st.session_state.pop(state_key, None)
-            st.session_state.pop(selected_key, None)
-            st.session_state.pop(existing_key, None)
-            st.session_state.show_search_modal = None
-            st.rerun()
 
 
 def _collection_items(token: str, collection_id: str, col_type: str):
@@ -499,7 +361,7 @@ def _collection_items(token: str, collection_id: str, col_type: str):
                 st.rerun()
 
         if st.session_state.get("show_search_modal") == collection_id:
-            _search_modal(token, collection_id)
+            render_search_modal(token, collection_id)
 
 
 def _collections_panel(token: str, project_id: str):
