@@ -9,6 +9,10 @@ supabase_service_key = os.getenv("SUPABASE_SERVICE_KEY") or ""
 gemini_api_key = os.getenv("GEMINI_API_KEY") or ""
 gemini_model = os.getenv("GEMINI_MODEL") or "gemini-2.5-flash"
 
+mistral_api_key = os.getenv("MISTRAL_API_KEY") or ""
+mistral_model = os.getenv("MISTRAL_MODEL") or "mistral-small-2506"
+force_mistral = os.getenv("FORCE_MISTRAL") or "false"
+
 jina_api_key = os.getenv("JINA_API_KEY") or ""
 tavily_api_key = os.getenv("TAVILY_API_KEY") or ""
 exa_api_key = os.getenv("EXA_API_KEY") or ""
