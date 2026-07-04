@@ -31,6 +31,9 @@ _STATUS_BADGE = {
     "error":      ("#E74C3C", "Error"),
 }
 
+SECTION_HEIGHT = 480
+CHAT_SECTION_HEIGHT = 440
+
 
 def _top_bar():
     c_back, c_title, c_logout = st.columns([1, 6, 1])
@@ -49,7 +52,10 @@ def _top_bar():
     with c_logout:
         if st.button("Sign Out", use_container_width=True):
             logout()
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin:.6rem 0 .8rem;'>",
+        unsafe_allow_html=True,
+    )
 
 
 def _chats_panel(token: str, project_id: str):
@@ -69,104 +75,109 @@ def _chats_panel(token: str, project_id: str):
 
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
-    try:
-        chats = api.list_chats(token, project_id)
-    except RuntimeError as e:
-        st.error(str(e))
-        return
+    with st.container(height=SECTION_HEIGHT):
+        try:
+            chats = api.list_chats(token, project_id)
+        except RuntimeError as e:
+            st.error(str(e))
+            return
 
-    if not chats:
-        st.caption("No chats yet.")
-        return
+        if not chats:
+            st.caption("No chats yet.")
+            return
 
-    active_id = st.session_state.get("active_chat_id")
+        active_id = st.session_state.get("active_chat_id")
 
-    for chat in chats:
-        cid   = chat["id"]
-        cname = chat["name"]
-        is_active = cid == active_id
+        for chat in chats:
+            cid   = chat["id"]
+            cname = chat["name"]
+            is_active = cid == active_id
 
-        btn_label = f"{'▶ ' if is_active else ''}{cname}"
-        if st.button(btn_label, key=f"chat_btn_{cid}", use_container_width=True):
-            select_chat(cid, cname)
-            st.rerun()
+            btn_label = f"{'▶ ' if is_active else ''}{cname}"
+            if st.button(btn_label, key=f"chat_btn_{cid}", use_container_width=True):
+                select_chat(cid, cname)
+                st.rerun()
 
-        if is_active:
-            rc1, rc2 = st.columns(2)
-            with rc1:
-                if st.button("Rename", key=f"rename_chat_{cid}", use_container_width=True,
-                             help="Rename chat"):
-                    st.session_state[f"renaming_chat_{cid}"] = True
-                    st.rerun()
-            with rc2:
-                if st.button("Delete", key=f"del_chat_{cid}", use_container_width=True,
-                             help="Delete chat"):
-                    st.session_state[f"confirm_del_chat_{cid}"] = True
-                    st.rerun()
-
-            if st.session_state.get(f"renaming_chat_{cid}"):
-                with st.form(f"rename_chat_form_{cid}", clear_on_submit=True):
-                    new_name = st.text_input("New name", value=cname)
-                    cs, cc = st.columns(2)
-                    with cs:
-                        save = st.form_submit_button("Save", type="primary",
-                                                     use_container_width=True)
-                    with cc:
-                        cancel = st.form_submit_button("Cancel", use_container_width=True)
-                if save and new_name.strip(): # type: ignore
-                    try:
-                        api.rename_chat(token, cid, new_name.strip()) # type: ignore
-                        select_chat(cid, new_name.strip()) # type: ignore
-                        del st.session_state[f"renaming_chat_{cid}"]
+            if is_active:
+                rc1, rc2 = st.columns(2)
+                with rc1:
+                    if st.button("Rename", key=f"rename_chat_{cid}", use_container_width=True,
+                                 help="Rename chat"):
+                        st.session_state[f"renaming_chat_{cid}"] = True
                         st.rerun()
-                    except RuntimeError as e:
-                        st.error(str(e))
-                if cancel:
-                    del st.session_state[f"renaming_chat_{cid}"]
-                    st.rerun()
+                with rc2:
+                    if st.button("Delete", key=f"del_chat_{cid}", use_container_width=True,
+                                 help="Delete chat"):
+                        st.session_state[f"confirm_del_chat_{cid}"] = True
+                        st.rerun()
 
-            if st.session_state.get(f"confirm_del_chat_{cid}"):
-                st.warning(f"Delete **{cname}**?")
-                cy, cn = st.columns(2)
-                with cy:
-                    if st.button("Yes", key=f"yes_del_chat_{cid}",
-                                 type="primary", use_container_width=True):
+                if st.session_state.get(f"renaming_chat_{cid}"):
+                    with st.form(f"rename_chat_form_{cid}", clear_on_submit=True):
+                        new_name = st.text_input("New name", value=cname)
+                        cs, cc = st.columns(2)
+                        with cs:
+                            save = st.form_submit_button("Save", type="primary",
+                                                         use_container_width=True)
+                        with cc:
+                            cancel = st.form_submit_button("Cancel", use_container_width=True)
+                    if save and new_name.strip(): # type: ignore
                         try:
-                            api.delete_chat(token, cid)
-                            st.session_state.active_chat_id = None
-                            st.session_state.chat_histories.pop(cid, None)
-                            del st.session_state[f"confirm_del_chat_{cid}"]
+                            api.rename_chat(token, cid, new_name.strip()) # type: ignore
+                            select_chat(cid, new_name.strip()) # type: ignore
+                            del st.session_state[f"renaming_chat_{cid}"]
                             st.rerun()
                         except RuntimeError as e:
                             st.error(str(e))
-                with cn:
-                    if st.button("No", key=f"no_del_chat_{cid}", use_container_width=True):
-                        del st.session_state[f"confirm_del_chat_{cid}"]
+                    if cancel:
+                        del st.session_state[f"renaming_chat_{cid}"]
                         st.rerun()
 
-        st.markdown(
-            "<hr style='border-color:#2A2D3E; margin:.3rem 0;'>",
-            unsafe_allow_html=True,
-        )
+                if st.session_state.get(f"confirm_del_chat_{cid}"):
+                    st.warning(f"Delete **{cname}**?")
+                    cy, cn = st.columns(2)
+                    with cy:
+                        if st.button("Yes", key=f"yes_del_chat_{cid}",
+                                     type="primary", use_container_width=True):
+                            try:
+                                api.delete_chat(token, cid)
+                                st.session_state.active_chat_id = None
+                                st.session_state.chat_histories.pop(cid, None)
+                                del st.session_state[f"confirm_del_chat_{cid}"]
+                                st.rerun()
+                            except RuntimeError as e:
+                                st.error(str(e))
+                    with cn:
+                        if st.button("No", key=f"no_del_chat_{cid}", use_container_width=True):
+                            del st.session_state[f"confirm_del_chat_{cid}"]
+                            st.rerun()
+
+            st.markdown(
+                "<hr style='border-color:#2A2D3E; margin:.3rem 0;'>",
+                unsafe_allow_html=True,
+            )
 
 
 def _chat_area():
+    """Renders the message list. Returns the messages container object so
+    _handle_input can write the new user/assistant turns directly into it
+    in real time, instead of waiting for a full page rerun to show them."""
     chat_id   = st.session_state.get("active_chat_id")
     chat_name = st.session_state.get("active_chat_name", "")
 
     if not chat_id:
-        st.markdown(
-            """
-            <div style='text-align:center; padding:5rem 1rem; color:#6B6E8A;'>
-                <div style='font-size:3rem;'>💬</div>
-                <p style='font-size:1.05rem; margin-top:.5rem;'>
-                    Select a chat or create a new one to get started.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        return
+        with st.container(height=CHAT_SECTION_HEIGHT, border=False):
+            st.markdown(
+                """
+                <div style='text-align:center; padding:5rem 1rem; color:#6B6E8A;'>
+                    <div style='font-size:3rem;'>💬</div>
+                    <p style='font-size:1.05rem; margin-top:.5rem;'>
+                        Select a chat or create a new one to get started.
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        return None
 
     st.markdown(
         f"<p style='color:#9B97C9; font-size:.85rem; margin-bottom:.8rem;'>"
@@ -176,16 +187,20 @@ def _chat_area():
 
     history = load_chat_history(chat_id)
 
-    if not history:
-        st.markdown(
-            "<div style='text-align:center; padding:3rem 1rem; color:#6B6E8A;'>"
-            "<p>No messages yet. Type below to start the conversation.</p></div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        for msg in history:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+    messages_box = st.container(height=CHAT_SECTION_HEIGHT, border=False)
+    with messages_box:
+        if not history:
+            st.markdown(
+                "<div style='text-align:center; padding:3rem 1rem; color:#6B6E8A;'>"
+                "<p>No messages yet. Type below to start the conversation.</p></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            for msg in history:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+
+    return messages_box
 
 
 @st.dialog("🔍 Search the Web", width="large")
@@ -208,25 +223,23 @@ def _search_modal(token: str, collection_id: str):
             st.session_state[existing_key] = set()
 
     with st.form(f"search_form_{collection_id}"):
-        c1, c2 = st.columns([1, 2])
+        c1, c2, c3, c4 = st.columns([1, 2.4, 1, 1.2])
         with c1:
             engine = st.selectbox("Engine", ["tavily", "exa"], key=f"engine_{collection_id}")
         with c2:
             query = st.text_input("Search query", key=f"query_{collection_id}")
-
-        c3, c4 = st.columns(2)
         with c3:
-            num_results = st.slider("Number of results", 1, 20, 10, key=f"numres_{collection_id}")
+            num_results = st.slider("Results", 1, 20, 10, key=f"numres_{collection_id}")
         with c4:
             if engine == "tavily":
                 search_depth = st.selectbox(
-                    "Search depth",
+                    "Depth",
                     ["basic", "advanced", "fast", "ultra-fast"],
                     key=f"depth_{collection_id}",
                 )
             else:
                 search_depth = "basic"
-                st.caption("Search depth only applies to Tavily.")
+                st.caption("Depth: N/A for Exa")
 
         run_search = st.form_submit_button("Search", type="primary", use_container_width=True)
 
@@ -249,43 +262,47 @@ def _search_modal(token: str, collection_id: str):
     existing = st.session_state[existing_key]
 
     if results:
-        st.markdown(f"**{len(results)} result(s) so far.** Check the ones to add:")
-        for r in results:
-            url     = r["url"]
-            title   = r.get("title") or url
-            content = (r.get("content") or "").strip()
-            already = url in existing
-            has_content = bool(content)
+        st.caption(f"{len(results)} result(s) so far — check the ones to add:")
 
-            cb1, cb2 = st.columns([0.5, 5])
-            with cb1:
-                checked = st.checkbox(
-                    "",
-                    key=f"select_{collection_id}_{url}",
-                    value=(url in st.session_state[selected_key]),
-                    disabled=already or not has_content,
-                    label_visibility="collapsed",
-                )
-                if checked and not already and has_content:
-                    st.session_state[selected_key].add(url)
-                elif not checked and url in st.session_state[selected_key]:
-                    st.session_state[selected_key].discard(url)
+        with st.container(height=320):
+            for r in results:
+                url     = r["url"]
+                title   = r.get("title") or url
+                content = (r.get("content") or "").strip()
+                already = url in existing
+                has_content = bool(content)
 
-            with cb2:
-                st.markdown(f"**{title}**")
-                st.caption(url)
-                if already:
-                    st.caption("✅ Already in this collection")
-                elif not has_content:
-                    st.caption("⚠️ No content returned for this result")
-                else:
-                    preview = content[:180] + ("…" if len(content) > 180 else "")
-                    st.caption(preview)
+                cb1, cb2 = st.columns([0.35, 5])
+                with cb1:
+                    checked = st.checkbox(
+                        "",
+                        key=f"select_{collection_id}_{url}",
+                        value=(url in st.session_state[selected_key]),
+                        disabled=already or not has_content,
+                        label_visibility="collapsed",
+                    )
+                    if checked and not already and has_content:
+                        st.session_state[selected_key].add(url)
+                    elif not checked and url in st.session_state[selected_key]:
+                        st.session_state[selected_key].discard(url)
 
-            st.markdown(
-                "<hr style='margin:.3rem 0; border-color:#242637;'>",
-                unsafe_allow_html=True,
-            )
+                with cb2:
+                    if already:
+                        note = "<span style='color:#2ECC71;'>✅ already in this collection</span>"
+                    elif not has_content:
+                        note = "<span style='color:#F5A623;'>⚠️ no content returned</span>"
+                    else:
+                        preview = content[:130] + ("…" if len(content) > 130 else "")
+                        note = f"<span style='color:#6B6E8A;'>{preview}</span>"
+
+                    st.markdown(
+                        f"<div style='line-height:1.3; margin-bottom:.45rem;'>"
+                        f"<span style='font-size:.82rem; font-weight:600;'>{title}</span> "
+                        f"<span style='font-size:.68rem; color:#9B97C9;'>— {url}</span><br>"
+                        f"<span style='font-size:.72rem;'>{note}</span>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
     else:
         st.caption("No searches yet. Run one above.")
 
@@ -390,7 +407,7 @@ def _collection_items(token: str, collection_id: str, col_type: str):
                     st.caption(f"⚠️ {item['error_message']}")
 
             with ic3:
-                if st.button("❌", key=f"del_item_{item_id}", help=f"Remove {name}",
+                if st.button("", icon="❌", key=f"del_item_{item_id}", help=f"Remove {name}",
                              use_container_width=True):
                     try:
                         api.delete_collection_item(token, collection_id, item_id)
@@ -498,7 +515,7 @@ def _collections_panel(token: str, project_id: str):
         st.error(str(e))
         return
 
-    with st.container(height=620):
+    with st.container(height=SECTION_HEIGHT):
         if collections:
             for col in collections:
                 col_id   = col["id"]
@@ -517,7 +534,7 @@ def _collections_panel(token: str, project_id: str):
                         unsafe_allow_html=True,
                     )
                 with c_del:
-                    if st.button("❌", key=f"del_col_{col_id}", help=f"Delete {col_name}",
+                    if st.button("", icon="❌", key=f"del_col_{col_id}", help=f"Delete {col_name}",
                                  use_container_width=True):
                         st.session_state[f"confirm_del_col_{col_id}"] = True
                         st.rerun()
@@ -582,10 +599,20 @@ _NODE_LABELS = {
 }
 
 
-def _handle_input(token: str):
+def _handle_input(token: str, messages_box):
     """
-    st.chat_input() renders at the very bottom of the page (outside columns).
-    Only shown when a chat is active.
+    Called inside the center column, right after the fixed-height messages
+    container — placing st.chat_input() inside a column makes it render
+    inline instead of pinned to the full page width, so it naturally lands
+    just below the messages box: narrow (matching the column width) and,
+    since both live inside the same outer bordered card (see render()),
+    reads as attached to the bottom of that section.
+
+    messages_box is the container _chat_area() rendered history into. The
+    new user turn and the live node-progress / final answer are written
+    directly into that same container as they happen, so the query appears
+    the instant it's sent and the progress shows up where the reply will
+    land — no waiting for a rerun to see any of it.
     """
     chat_id = st.session_state.get("active_chat_id")
     if not chat_id:
@@ -598,30 +625,41 @@ def _handle_input(token: str):
     load_chat_history(chat_id)
     append_message(chat_id, "user", prompt)
 
-    with st.status("Thinking…", expanded=False) as status_box:
-        try:
-            reply = None
-            for event in api.send_message_stream(token, chat_id, prompt):
-                etype = event.get("type")
-                if etype == "node":
-                    label = _NODE_LABELS.get(event["node"], f"Running {event['node']}…")
-                    status_box.update(label=label)
-                elif etype == "done":
-                    reply = event.get("answer") or "⚠️ The model did not return a response."
-                    status_box.update(label="Done", state="complete")
-                elif etype == "error":
-                    raise RuntimeError(event.get("detail", "Unknown error."))
+    reply_slot = None
+    if messages_box is not None:
+        with messages_box:
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            with st.chat_message("assistant"):
+                reply_slot = st.empty()
+                reply_slot.markdown("_Thinking…_")
 
-            if reply is None:
-                raise RuntimeError("No response was received from the server.")
-            append_message(chat_id, "assistant", reply)
+    try:
+        reply = None
+        for event in api.send_message_stream(token, chat_id, prompt):
+            etype = event.get("type")
+            if etype == "node":
+                label = _NODE_LABELS.get(event["node"], f"Running {event['node']}…")
+                if reply_slot is not None:
+                    reply_slot.markdown(f"_{label}_")
+            elif etype == "done":
+                reply = event.get("answer") or "⚠️ The model did not return a response."
+                if reply_slot is not None:
+                    reply_slot.markdown(reply)
+            elif etype == "error":
+                raise RuntimeError(event.get("detail", "Unknown error."))
 
-        except RuntimeError as e:
-            status_box.update(label="Error", state="error")
-            history = st.session_state.chat_histories.get(chat_id, [])
-            if history and history[-1]["role"] == "user":
-                history.pop()
-            st.error(f"⚠️ {e}")
+        if reply is None:
+            raise RuntimeError("No response was received from the server.")
+        append_message(chat_id, "assistant", reply)
+
+    except RuntimeError as e:
+        if reply_slot is not None:
+            reply_slot.markdown(f"⚠️ {e}")
+        history = st.session_state.chat_histories.get(chat_id, [])
+        if history and history[-1]["role"] == "user":
+            history.pop()
+        st.error(f"⚠️ {e}")
 
     st.rerun()
 
@@ -644,9 +682,9 @@ def render():
         _chats_panel(token, project_id)
 
     with center:
-        _chat_area()
+        with st.container(border=True):
+            messages_box = _chat_area()
+            _handle_input(token, messages_box)
 
     with right:
         _collections_panel(token, project_id)
-
-    _handle_input(token)
