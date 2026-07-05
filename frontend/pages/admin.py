@@ -6,7 +6,9 @@ from frontend.utils.api_client import (
     admin_approve_user,
     admin_change_role,
     admin_delete_user,
+    admin_get_llm_usage,
     admin_get_logs,
+    admin_get_search_usage,
     admin_get_stats,
     admin_list_users,
 )
@@ -34,6 +36,18 @@ def _badge(text: str, color: str):
     )
 
 
+def _plotly_dark_layout(fig):
+    fig.update_layout(
+        plot_bgcolor="#0F1117",
+        paper_bgcolor="#1A1D2E",
+        font_color="#E8E8F0",
+        xaxis=dict(gridcolor="#2A2D3E"),
+        yaxis=dict(gridcolor="#2A2D3E"),
+        margin=dict(l=10, r=10, t=10, b=10),
+    )
+    return fig
+
+
 def render():
     token = st.session_state.get("token", "")
 
@@ -57,8 +71,8 @@ def render():
             st.rerun()
 
     st.markdown("---")
-    tab_overview, tab_users, tab_logs = st.tabs(
-        ["📊 Overview", "👥 User Management", "📋 Login Logs"]
+    tab_overview, tab_users, tab_logs, tab_usage = st.tabs(
+        ["📊 Overview", "👥 User Management", "📋 Login Logs", "📈 Usage"]
     )
 
     with tab_overview:
@@ -262,12 +276,121 @@ def render():
                     color_discrete_sequence=["#6C63FF"],
                     labels={"date": "Date", "logins": "Login Count"},
                 )
-                fig.update_layout(
-                    plot_bgcolor="#0F1117",
-                    paper_bgcolor="#1A1D2E",
-                    font_color="#E8E8F0",
-                    xaxis=dict(gridcolor="#2A2D3E"),
-                    yaxis=dict(gridcolor="#2A2D3E"),
-                    margin=dict(l=10, r=10, t=10, b=10),
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(_plotly_dark_layout(fig), use_container_width=True)
+
+    with tab_usage:
+        st.markdown("#### LLM Token Usage")
+        st.caption("Monitoring only for now — no limits are enforced yet.")
+
+        col_refresh_llm, _ = st.columns([1, 4])
+        with col_refresh_llm:
+            if st.button("🔄 Refresh", use_container_width=True, key="refresh_llm_usage"):
+                st.rerun()
+
+        try:
+            llm_data = admin_get_llm_usage(token)
+        except RuntimeError as e:
+            st.error(f"Failed to load LLM usage: {e}")
+            llm_data = {"users": []}
+
+        llm_rows = llm_data.get("users", [])
+
+        if not llm_rows:
+            st.info("No LLM usage recorded yet.")
+        else:
+            total_tokens  = sum(r["total_tokens"] for r in llm_rows)
+            total_calls   = sum(r["total_calls"] for r in llm_rows)
+            mistral_calls = sum(r["mistral_calls"] for r in llm_rows)
+
+            c1, c2, c3 = st.columns(3)
+            with c1: _metric_card("Total Tokens (all users)", f"{total_tokens:,}", color="#6C63FF")
+            with c2: _metric_card("Total LLM Calls", total_calls, color="#3498DB")
+            with c3: _metric_card(
+                "Mistral Fallback Calls", mistral_calls,
+                "Gemini quota was hit" if mistral_calls > 0 else "",
+                color="#F39C12",
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            llm_df = pd.DataFrame(llm_rows)
+            display_df = llm_df[[
+                "username", "total_calls", "total_tokens",
+                "gemini_calls", "gemini_tokens",
+                "mistral_calls", "mistral_tokens",
+            ]].copy()
+            display_df.columns = [
+                "Username", "Total Calls", "Total Tokens",
+                "Gemini Calls", "Gemini Tokens",
+                "Mistral Calls", "Mistral Tokens",
+            ]
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+            fig = px.bar(
+                llm_df.sort_values("total_tokens", ascending=True),
+                x="total_tokens",
+                y="username",
+                orientation="h",
+                color_discrete_sequence=["#6C63FF"],
+                labels={"total_tokens": "Total Tokens", "username": "User"},
+            )
+            st.plotly_chart(_plotly_dark_layout(fig), use_container_width=True)
+
+        st.markdown("<hr style='border-color:#2A2D3E; margin:1.2rem 0;'>", unsafe_allow_html=True)
+
+        st.markdown("#### Search Engine Usage")
+        st.caption(
+            "Tracked in credits, not raw call counts — Tavily's \"advanced\" search "
+            "depth costs 2 credits per call (roughly double a normal request); "
+            "everything else (Tavily basic/fast/ultra-fast, all Exa calls) is 1 credit."
+        )
+
+        col_refresh_search, _ = st.columns([1, 4])
+        with col_refresh_search:
+            if st.button("🔄 Refresh", use_container_width=True, key="refresh_search_usage"):
+                st.rerun()
+
+        try:
+            search_data = admin_get_search_usage(token)
+        except RuntimeError as e:
+            st.error(f"Failed to load search usage: {e}")
+            search_data = {"users": []}
+
+        search_rows = search_data.get("users", [])
+
+        if not search_rows:
+            st.info("No search usage recorded yet.")
+        else:
+            total_credits = sum(r["total_credits"] for r in search_rows)
+            tavily_credits = sum(r["tavily_credits"] for r in search_rows)
+            exa_credits = sum(r["exa_credits"] for r in search_rows)
+
+            c1, c2, c3 = st.columns(3)
+            with c1: _metric_card("Total Credits", total_credits, color="#6C63FF")
+            with c2: _metric_card("Tavily Credits", tavily_credits, color="#3498DB")
+            with c3: _metric_card("Exa Credits", exa_credits, color="#2ECC71")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            search_df = pd.DataFrame(search_rows)
+            display_df = search_df[[
+                "username", "total_credits", "total_calls",
+                "tavily_credits", "tavily_calls",
+                "exa_credits", "exa_calls",
+            ]].copy()
+            display_df.columns = [
+                "Username", "Total Credits", "Total Calls",
+                "Tavily Credits", "Tavily Calls",
+                "Exa Credits", "Exa Calls",
+            ]
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+            fig = px.bar(
+                search_df.sort_values("total_credits", ascending=True),
+                x="total_credits",
+                y="username",
+                orientation="h",
+                color_discrete_sequence=["#3498DB"],
+                labels={"total_credits": "Search Credits", "username": "User"},
+            )
+            st.plotly_chart(_plotly_dark_layout(fig), use_container_width=True)

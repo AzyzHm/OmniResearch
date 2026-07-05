@@ -8,6 +8,7 @@ def generate_node(state: RAGState) -> dict:
         history=state.get("history", []),
         query=state["query"],
         context_chunks=state.get("context_chunks", []),
+        user_id=state["user_id"],
     )
     print("[RAG] generate_node: done")
     return {"answer": answer}

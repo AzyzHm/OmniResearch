@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.config.auth import get_current_user
 from backend.models.search import WebSearchRequest, WebSearchResponse
+from backend.services.usage_tracker import record_search_usage
 from backend.services.web_search import search_web
 
 router = APIRouter(tags=["Search"])
@@ -24,5 +25,12 @@ async def search_web_route(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Search error: {exc}",
         )
+
+    record_search_usage(
+        user_id=current_user["sub"],
+        engine=body.engine,
+        num_results=body.num_results,
+        search_depth=body.search_depth,
+    )
 
     return {"results": results}

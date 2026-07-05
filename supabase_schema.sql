@@ -100,3 +100,40 @@ CREATE TABLE IF NOT EXISTS public.collection_items (
 
 CREATE INDEX IF NOT EXISTS idx_collection_items_collection
     ON public.collection_items(collection_id);
+
+CREATE TABLE IF NOT EXISTS public.llm_usage (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id           UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    provider          TEXT NOT NULL CHECK (provider IN ('gemini', 'mistral')),
+    model             TEXT NOT NULL,
+    prompt_tokens     INTEGER NOT NULL DEFAULT 0,
+    completion_tokens INTEGER NOT NULL DEFAULT 0,
+    total_tokens      INTEGER NOT NULL DEFAULT 0,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_llm_usage_user ON public.llm_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_llm_usage_created ON public.llm_usage(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.search_usage (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id      UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    engine       TEXT NOT NULL CHECK (engine IN ('tavily', 'exa')),
+    num_results  INTEGER NOT NULL DEFAULT 0,
+    search_depth TEXT,
+    credits      INTEGER NOT NULL DEFAULT 1,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_usage_user ON public.search_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_search_usage_created ON public.search_usage(created_at DESC);
+
+ALTER TABLE public.users            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.login_logs       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projects         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chats            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.collections      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.collection_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.llm_usage        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.search_usage     ENABLE ROW LEVEL SECURITY;
