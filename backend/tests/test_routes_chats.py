@@ -1,12 +1,4 @@
-from datetime import datetime, timezone
-from backend.tests.conftest import project_row, chat_row
-
-NOW = datetime.now(timezone.utc).isoformat()
-
-
-def message_row(msg_id="msg-1", chat_id="chat-1", role="user", content="Hello"):
-    """Factory for a messages table row."""
-    return {"id": msg_id, "chat_id": chat_id, "role": role, "content": content, "created_at": NOW}
+from backend.tests.conftest import project_row, chat_row, message_row
 
 
 class TestListChats:
@@ -48,7 +40,6 @@ class TestCreateChat:
         assert resp.json()["name"] == "My Chat"
 
     def test_default_name_when_omitted(self, app, user_headers):
-        """Sending no name should result in a chat named 'New Chat'."""
         client, db = app
         db.add_result(data=[project_row()])
         db.add_result(data=[chat_row(name="New Chat")])
@@ -120,12 +111,11 @@ class TestDeleteChat:
 
 
 class TestGetMessages:
-    """Tests for GET /chats/{chat_id}/messages — the new persistent history endpoint."""
+    """GET /chats/{chat_id}/messages — the persistent history endpoint."""
 
     def test_returns_messages_oldest_first(self, app, user_headers):
-        """Messages should come back in chronological order (oldest → newest)."""
         client, db = app
-        db.add_result(data=[chat_row()])
+        db.add_result(data=[chat_row()])  # ownership check
         db.add_result(data=[
             message_row("msg-2", role="assistant", content="Hi there!"),
             message_row("msg-1", role="user", content="Hello"),
@@ -134,8 +124,8 @@ class TestGetMessages:
         assert resp.status_code == 200
         messages = resp.json()
         assert len(messages) == 2
-        assert messages[0]["role"] == "user"
-        assert messages[1]["role"] == "assistant"
+        assert messages[0]["role"] == "user"        # msg-1 was older -> first after reversal
+        assert messages[1]["role"] == "assistant"    # msg-2 was newer -> last
 
     def test_returns_empty_list_for_new_chat(self, app, user_headers):
         client, db = app
@@ -146,18 +136,14 @@ class TestGetMessages:
         assert resp.json() == []
 
     def test_message_fields_are_correct(self, app, user_headers):
-        """Each message object must contain id, chat_id, role, content, created_at."""
         client, db = app
         db.add_result(data=[chat_row()])
         db.add_result(data=[message_row("msg-1", content="Test message")])
         resp = client.get("/chats/chat-1/messages", headers=user_headers)
         assert resp.status_code == 200
         msg = resp.json()[0]
-        assert "id" in msg
-        assert "chat_id" in msg
-        assert "role" in msg
-        assert "content" in msg
-        assert "created_at" in msg
+        for field in ("id", "chat_id", "role", "content", "created_at"):
+            assert field in msg
 
     def test_chat_not_found(self, app, user_headers):
         client, db = app
@@ -181,90 +167,69 @@ class TestGetMessages:
 
 class TestSendMessage:
     """
-    send_message now makes 4 DB calls in order:
-      1. _own_chat  — ownership check (chats table)
-      2. insert     — persist user message (messages table)
-      3. select     — fetch last N messages as LLM context (messages table)
-      4. insert     — persist assistant reply (messages table)
+    send_message's actual DB call order is:
+      1. _own_chat        — ownership check (chats table)
+      2. select messages  — fetch history *before* the new message exists
+      3. insert           — persist the user message
+      4. [RAG graph runs — mocked via db.rag_graph, no DB call]
+      5. insert           — persist the assistant reply
     """
 
-    def _queue_send(self, db, context_messages=None):
-        """Queue the 4 DB results needed by a successful send_message call."""
-        db.add_result(data=[chat_row()])
-        db.add_result(data=[{}])
-        db.add_result(data=context_messages or [])
-        db.add_result(data=[{}])
+    def _queue_send(self, db, history=None):
+        db.add_result(data=[chat_row()])           # 1. ownership
+        db.add_result(data=history or [])           # 2. history fetch
+        db.add_result(data=[{}])                     # 3. insert user msg
+        db.add_result(data=[{}])                     # 5. insert assistant reply
 
     def test_success_returns_ai_reply(self, app, user_headers):
         client, db = app
         self._queue_send(db)
-        resp = client.post(
-            "/chats/chat-1/message",
-            json={"message": "Hello"},
-            headers=user_headers,
-        )
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 200
         assert resp.json()["response"] == "Mocked AI reply"
 
-    def test_persists_user_message_before_calling_ai(self, app, user_headers):
-        """The route inserts the user message (DB call 2) before fetching context."""
+    def test_custom_graph_answer_is_returned(self, app, user_headers):
+        """The route should return whatever the RAG graph produces, not a hardcoded string."""
         client, db = app
-        self._queue_send(db, context_messages=[
-            {"role": "user", "content": "Hello"},
-        ])
-        resp = client.post(
-            "/chats/chat-1/message",
-            json={"message": "Hello"},
-            headers=user_headers,
-        )
+        db.rag_graph.answer = "The sky is blue because of Rayleigh scattering."
+        self._queue_send(db)
+        resp = client.post("/chats/chat-1/message", json={"message": "Why is the sky blue?"}, headers=user_headers)
         assert resp.status_code == 200
+        assert resp.json()["response"] == "The sky is blue because of Rayleigh scattering."
 
-    def test_sends_stored_context_to_gemini(self, app, user_headers):
-        """Context passed to Gemini comes from the DB, not from the request body."""
+    def test_graph_receives_correct_state(self, app, user_headers):
+        """project_id, chat_id, user_id, and query must be threaded into the graph state."""
         client, db = app
-        self._queue_send(db, context_messages=[
-            {"role": "user", "content": "What is Python?"},
-            {"role": "assistant", "content": "A programming language."},
-            {"role": "user", "content": "Give me an example"},
-        ])
-        resp = client.post(
-            "/chats/chat-1/message",
-            json={"message": "Give me an example"},
-            headers=user_headers,
-        )
+        self._queue_send(db, history=[{"role": "user", "content": "earlier msg"}])
+        resp = client.post("/chats/chat-1/message", json={"message": "Follow up"}, headers=user_headers)
         assert resp.status_code == 200
-        assert resp.json()["response"] == "Mocked AI reply"
+        state = db.rag_graph.last_invoke_state
+        assert state["project_id"] == "proj-1"
+        assert state["chat_id"] == "chat-1"
+        assert state["user_id"] == "user-123"
+        assert state["query"] == "Follow up"
+        assert state["history"] == [{"role": "user", "content": "earlier msg"}]
 
     def test_empty_message_rejected(self, app, user_headers):
-        """Whitespace-only messages are rejected by Pydantic before any DB call."""
         client, _ = app
-        resp = client.post(
-            "/chats/chat-1/message",
-            json={"message": "   "},
-            headers=user_headers,
-        )
+        resp = client.post("/chats/chat-1/message", json={"message": "   "}, headers=user_headers)
         assert resp.status_code == 422
 
     def test_no_history_field_in_request(self, app, user_headers):
-        """The request model no longer accepts a 'history' field — it must be ignored or rejected."""
+        """The request model has no 'history' field — history is DB-driven now."""
         client, db = app
         self._queue_send(db)
         resp = client.post(
             "/chats/chat-1/message",
-            json={"message": "Hello", "history": [{"role": "user", "content": "old msg"}]},
+            json={"message": "Hello", "history": [{"role": "user", "content": "ignored"}]},
             headers=user_headers,
         )
-
         assert resp.status_code in (200, 422)
 
     def test_chat_not_found(self, app, user_headers):
         client, db = app
         db.add_result(data=[])
-        resp = client.post(
-            "/chats/missing/message",
-            json={"message": "Hello"},
-            headers=user_headers,
-        )
+        resp = client.post("/chats/missing/message", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 404
 
     def test_wrong_owner_rejected(self, app, user_headers):
@@ -272,38 +237,67 @@ class TestSendMessage:
         row = chat_row()
         row["projects"] = {"user_id": "someone-else"}
         db.add_result(data=[row])
-        resp = client.post(
-            "/chats/chat-1/message",
-            json={"message": "Hello"},
-            headers=user_headers,
-        )
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 404
 
-    def test_gemini_failure_returns_502(self, app, user_headers):
-        """If Gemini raises, the route should return 502 Bad Gateway."""
-        import backend.routes.chat as r_chat
-        original = r_chat.get_gemini_response
-
-        def boom(*_a, **_kw):
-            raise RuntimeError("Gemini is down")
-
-        r_chat.get_gemini_response = boom
-        try:
-            client, db = app
-            db.add_result(data=[chat_row()])
-            db.add_result(data=[{}])
-            db.add_result(data=[])
-            resp = client.post(
-                "/chats/chat-1/message",
-                json={"message": "Hello"},
-                headers=user_headers,
-            )
-            assert resp.status_code == 502
-            assert "Gemini error" in resp.json()["detail"]
-        finally:
-            r_chat.get_gemini_response = original
+    def test_rag_graph_failure_returns_502(self, app, user_headers):
+        """If the RAG graph raises, the route should return 502 with 'RAG error' in the detail."""
+        client, db = app
+        db.add_result(data=[chat_row()])   # ownership
+        db.add_result(data=[])              # history fetch
+        db.add_result(data=[{}])            # insert user msg
+        db.rag_graph.raise_exc = RuntimeError("graph exploded")
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 502
+        assert "RAG error" in resp.json()["detail"]
 
     def test_unauthenticated(self, app):
         client, _ = app
         resp = client.post("/chats/chat-1/message", json={"message": "Hi"})
+        assert resp.status_code in (401, 403)
+
+
+class TestSendMessageStream:
+    """POST /chats/{chat_id}/message/stream — Server-Sent Events variant."""
+
+    def _queue_stream(self, db, history=None):
+        db.add_result(data=[chat_row()])           # ownership
+        db.add_result(data=history or [])           # history fetch
+        db.add_result(data=[{}])                     # insert user msg
+        db.add_result(data=[{}])                     # insert assistant reply (after stream completes)
+
+    def test_stream_returns_200_and_sse_content_type(self, app, user_headers):
+        client, db = app
+        self._queue_stream(db)
+        resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers["content-type"]
+
+    def test_stream_emits_node_and_done_events(self, app, user_headers):
+        client, db = app
+        self._queue_stream(db)
+        resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
+        body = resp.text
+        assert '"type": "node"' in body
+        assert '"type": "done"' in body
+        assert "Mocked AI reply" in body
+
+    def test_stream_emits_error_event_on_graph_failure(self, app, user_headers):
+        client, db = app
+        self._queue_stream(db)
+        db.rag_graph.raise_exc = RuntimeError("stream exploded")
+        resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200  # SSE always returns 200; error is in the event body
+        assert '"type": "error"' in resp.text
+        assert "stream exploded" in resp.text
+
+    def test_stream_chat_not_found(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[])
+        resp = client.post("/chats/missing/message/stream", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 404
+
+    def test_stream_unauthenticated(self, app):
+        client, _ = app
+        resp = client.post("/chats/chat-1/message/stream", json={"message": "Hi"})
         assert resp.status_code in (401, 403)
