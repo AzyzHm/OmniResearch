@@ -55,6 +55,8 @@ def _own_chat(chat_id: str, user_id: str) -> dict:
     return row
 
 
+# ── Chat CRUD ────────────────────────────────────────────────────────────────
+
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])
 async def list_chats(
     project_id: str,
@@ -121,6 +123,8 @@ async def delete_chat(
     db.table("chats").delete().eq("id", chat_id).execute()
 
 
+# ── Messages ─────────────────────────────────────────────────────────────────
+
 @router.get("/chats/{chat_id}/messages", response_model=list[MessageOut])
 async def get_messages(
     chat_id: str,
@@ -131,6 +135,7 @@ async def get_messages(
     db = get_supabase()
     settings = get_settings()
 
+    # Fetch newest-first (for the LIMIT), then reverse so UI gets oldest-first
     result = (
         db.table("messages")
         .select("id, chat_id, role, content, created_at")
@@ -159,6 +164,7 @@ async def send_message(
     db = get_supabase()
     settings = get_settings()
 
+    # 1. Fetch history *before* the new message exists in the table
     hist = (
         db.table("messages")
         .select("role, content")
@@ -169,15 +175,18 @@ async def send_message(
     )
     history = cast(list[dict[str, Any]], list(reversed(hist.data)))
 
+    # 2. Save user message
     db.table("messages").insert(
         {"chat_id": chat_id, "role": "user", "content": body.message}
     ).execute()
 
+    # 3. Run the agentic RAG graph
     try:
         graph = get_rag_graph()
         result = graph.invoke({
             "project_id": chat["project_id"],
             "chat_id": chat_id,
+            "user_id": current_user["sub"],
             "query": body.message,
             "history": history,
             "retrieval_attempts": 0,
@@ -193,10 +202,12 @@ async def send_message(
             detail=f"RAG error: {exc}",
         )
 
+    # 4. Save assistant reply
     db.table("messages").insert(
         {"chat_id": chat_id, "role": "assistant", "content": reply}
     ).execute()
 
+    # 5. Return reply
     return ChatMessageResponse(response=reply)
 
 
@@ -238,6 +249,7 @@ async def send_message_stream(
     initial_state = {
         "project_id": chat["project_id"],
         "chat_id": chat_id,
+        "user_id": current_user["sub"],
         "query": body.message,
         "history": history,
         "retrieval_attempts": 0,

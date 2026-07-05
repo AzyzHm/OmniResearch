@@ -346,3 +346,11 @@ def admin_get_logs(token: str, limit: int = 100, offset: int = 0, username: str 
 
 def admin_get_stats(token: str) -> dict:
     return _call("GET", "/admin/stats", token=token)
+
+
+def admin_get_llm_usage(token: str) -> dict:
+    return _call("GET", "/admin/usage/llm", token=token)
+
+
+def admin_get_search_usage(token: str) -> dict:
+    return _call("GET", "/admin/usage/search", token=token)

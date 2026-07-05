@@ -1,14 +1,15 @@
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import requests
 from google import genai
 
 from backend.config.settings import get_settings
+from backend.services.usage_tracker import record_llm_usage
 
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 
 
-def _call_gemini(messages: list[dict[str, Any]], temperature: float) -> str:
+def _call_gemini(messages: list[dict[str, Any]], temperature: float) -> tuple[str, dict]:
     settings = get_settings()
     client = genai.Client(api_key=settings.gemini_api_key)
 
@@ -27,10 +28,20 @@ def _call_gemini(messages: list[dict[str, Any]], temperature: float) -> str:
             temperature=temperature,
         ),
     )
-    return response.text or "⚠️ The model did not return a response."
+
+    usage = response.usage_metadata
+    usage_dict = {
+        "model": settings.gemini_model,
+        "prompt_tokens": (getattr(usage, "prompt_token_count", 0) or 0) if usage else 0,
+        "completion_tokens": (getattr(usage, "candidates_token_count", 0) or 0) if usage else 0,
+        "total_tokens": (getattr(usage, "total_token_count", 0) or 0) if usage else 0,
+    }
+
+    text = response.text or "⚠️ The model did not return a response."
+    return text, usage_dict
 
 
-def _call_mistral(messages: list[dict[str, Any]], temperature: float) -> str:
+def _call_mistral(messages: list[dict[str, Any]], temperature: float) -> tuple[str, dict]:
     """
     Direct HTTP call via `requests` instead of the `mistralai` SDK, to avoid
     dependency conflicts. Mistral's chat completions API is OpenAI-compatible
@@ -59,10 +70,23 @@ def _call_mistral(messages: list[dict[str, Any]], temperature: float) -> str:
 
     data = response.json()
     content = data["choices"][0]["message"]["content"]
-    return content or "⚠️ The model did not return a response."
+
+    usage = data.get("usage") or {}
+    usage_dict = {
+        "model": settings.mistral_model,
+        "prompt_tokens": usage.get("prompt_tokens", 0) or 0,
+        "completion_tokens": usage.get("completion_tokens", 0) or 0,
+        "total_tokens": usage.get("total_tokens", 0) or 0,
+    }
+
+    return content or "⚠️ The model did not return a response.", usage_dict
 
 
-def get_gemini_response(messages: list[dict[str, Any]], temperature: float = 0.7) -> str:
+def get_gemini_response(
+    messages: list[dict[str, Any]],
+    temperature: float = 0.7,
+    user_id: Optional[str] = None,
+) -> str:
     """
     Call Gemini with a flat message list and return the response text.
 
@@ -79,19 +103,29 @@ def get_gemini_response(messages: list[dict[str, Any]], temperature: float = 0.7
     Set FORCE_MISTRAL=true in .env to skip Gemini entirely and always use
     Mistral — useful for testing the fallback path without waiting for a
     real quota error or touching your working Gemini key.
+
+    user_id, if provided, is used to attribute token usage to that user for
+    the admin usage-monitoring view. Usage recording is best-effort and
+    never breaks the response if it fails.
     """
     settings = get_settings()
 
     if settings.force_mistral:
         print("[LLM] FORCE_MISTRAL is set — skipping Gemini, calling Mistral directly")
-        return _call_mistral(messages, temperature)
+        text, usage = _call_mistral(messages, temperature)
+        record_llm_usage(user_id, "mistral", **usage)
+        return text
 
     try:
-        return _call_gemini(messages, temperature)
+        text, usage = _call_gemini(messages, temperature)
+        record_llm_usage(user_id, "gemini", **usage)
+        return text
     except Exception as gemini_exc:
         print(f"[LLM] Gemini failed, falling back to Mistral: {gemini_exc}")
         try:
-            return _call_mistral(messages, temperature)
+            text, usage = _call_mistral(messages, temperature)
+            record_llm_usage(user_id, "mistral", **usage)
+            return text
         except Exception as mistral_exc:
             print(f"[LLM] Mistral fallback also failed: {mistral_exc}")
             raise RuntimeError(
