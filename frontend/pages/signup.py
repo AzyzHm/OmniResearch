@@ -1,6 +1,6 @@
 import re
 import streamlit as st
-from frontend.utils.api_client import register
+from frontend.services.auth import register
 
 
 def _password_strength(pw: str) -> tuple[int, str, str]:

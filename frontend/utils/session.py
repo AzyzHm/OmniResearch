@@ -76,7 +76,8 @@ def load_chat_history(chat_id: str) -> list[dict]:
     """
     histories: dict = st.session_state.chat_histories
     if chat_id not in histories:
-        from frontend.utils import api_client as api  # local import avoids circular deps
+        
+        from frontend import services as api
         token: str = st.session_state.token or ""
         try:
             raw = api.get_messages(token, chat_id)

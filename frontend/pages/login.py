@@ -1,5 +1,5 @@
 import streamlit as st
-from frontend.utils.api_client import login
+from frontend.services.auth import login
 
 
 def render():

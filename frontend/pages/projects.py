@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
-from frontend.utils import api_client as api
+from frontend import services as api
 from frontend.utils.session import logout, open_project
 
-_TYPE_ICON = {"documents": "📄", "urls": "🔗", "text": "📝"}
 def _load_projects() -> list:
     try:
         return api.list_projects(st.session_state.token) or []
