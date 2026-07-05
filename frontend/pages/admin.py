@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from frontend.utils.api_client import (
+from frontend.services.admin import (
     admin_approve_user,
     admin_change_role,
     admin_delete_user,

@@ -1,6 +1,6 @@
 import streamlit as st
 
-from frontend.utils import api_client as api
+from frontend import services as api
 
 _RESULTS_BOX_HEIGHT = 320
 
@@ -57,8 +57,8 @@ def _render_result_row(collection_id: str, r: dict, existing: set, selected_item
 
 @st.dialog("🔍 Search the Web", width="large")
 def render_search_modal(token: str, collection_id: str):
-    latest_key   = f"search_latest_{collection_id}"
-    selected_key = f"search_selected_items_{collection_id}"
+    latest_key   = f"search_latest_{collection_id}"       # results of the most recent search only
+    selected_key = f"search_selected_items_{collection_id}"  # {url: result_dict}, persists across searches
     existing_key = f"search_existing_{collection_id}"
 
     st.session_state.setdefault(latest_key, [])

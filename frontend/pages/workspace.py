@@ -1,7 +1,7 @@
 import streamlit as st
 
 from frontend.components.search_modal import render_search_modal
-from frontend.utils import api_client as api
+from frontend import services as api
 from frontend.utils.session import (
     append_message,
     load_chat_history,
@@ -31,7 +31,6 @@ _STATUS_BADGE = {
     "processing": ("#F5A623", "Processing…"),
     "error":      ("#E74C3C", "Error"),
 }
-
 
 SECTION_HEIGHT = 480
 CHAT_SECTION_HEIGHT = 440
