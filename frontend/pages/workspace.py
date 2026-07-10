@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 from frontend.components.search_modal import render_search_modal
 from frontend import services as api
@@ -217,6 +218,9 @@ def _collection_items(token: str, collection_id: str, col_type: str):
         st.error(str(e))
         items = []
 
+    if any(i["status"] == "processing" for i in items):
+        st_autorefresh(interval=2500, key=f"autorefresh_{collection_id}")
+
     def _checkbox_key(item_id: str) -> str:
         return f"item_toggle_{collection_id}_{item_id}"
 
@@ -327,10 +331,10 @@ def _collection_items(token: str, collection_id: str, col_type: str):
             if not uploaded:
                 st.warning("Choose at least one file first.")
             else:
-                with st.spinner(f"Processing {len(uploaded)} file(s)…"):
+                with st.spinner(f"Adding {len(uploaded)} file(s)…"):
                     try:
                         api.upload_collection_items(token, collection_id, uploaded)
-                        st.toast("Files added!", icon="✅")
+                        st.toast("Files added — processing in the background.", icon="⏳")
                         st.rerun()
                     except RuntimeError as e:
                         st.error(str(e))
@@ -346,10 +350,10 @@ def _collection_items(token: str, collection_id: str, col_type: str):
                 if not url.strip():
                     st.warning("Enter a URL first.")
                 else:
-                    with st.spinner("Fetching and embedding…"):
+                    with st.spinner("Adding URL…"):
                         try:
                             api.add_url_item(token, collection_id, url.strip())
-                            st.toast("URL added!", icon="✅")
+                            st.toast("URL added — processing in the background.", icon="⏳")
                             st.rerun()
                         except RuntimeError as e:
                             st.error(str(e))

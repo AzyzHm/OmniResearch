@@ -85,7 +85,7 @@ def _deselect_all(collection_id: str, latest_results: list, selected_items: dict
 
 @st.dialog("🔍 Search the Web", width="large")
 def render_search_modal(token: str, collection_id: str):
-    latest_key   = f"search_latest_{collection_id}"       
+    latest_key   = f"search_latest_{collection_id}"
     selected_key = f"search_selected_items_{collection_id}"
     existing_key = f"search_existing_{collection_id}"
 
@@ -191,12 +191,15 @@ def render_search_modal(token: str, collection_id: str):
                     added_count = len(response.get("added", []))
                     if skipped:
                         st.toast(
-                            f"Added {added_count} result(s). "
+                            f"Added {added_count} result(s), processing in the background. "
                             f"Skipped {len(skipped)} already in this collection.",
-                            icon="⚠️",
+                            icon="⏳",
                         )
                     else:
-                        st.toast("Selected results added!", icon="✅")
+                        st.toast(
+                            f"Added {added_count} result(s) — processing in the background.",
+                            icon="⏳",
+                        )
                     st.rerun()
                 except RuntimeError as e:
                     st.error(str(e))
