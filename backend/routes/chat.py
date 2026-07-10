@@ -55,8 +55,6 @@ def _own_chat(chat_id: str, user_id: str) -> dict:
     return row
 
 
-# ── Chat CRUD ────────────────────────────────────────────────────────────────
-
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])
 async def list_chats(
     project_id: str,
@@ -122,9 +120,6 @@ async def delete_chat(
     db = get_supabase()
     db.table("chats").delete().eq("id", chat_id).execute()
 
-
-# ── Messages ─────────────────────────────────────────────────────────────────
-
 @router.get("/chats/{chat_id}/messages", response_model=list[MessageOut])
 async def get_messages(
     chat_id: str,
@@ -135,7 +130,6 @@ async def get_messages(
     db = get_supabase()
     settings = get_settings()
 
-    # Fetch newest-first (for the LIMIT), then reverse so UI gets oldest-first
     result = (
         db.table("messages")
         .select("id, chat_id, role, content, created_at")
@@ -164,7 +158,6 @@ async def send_message(
     db = get_supabase()
     settings = get_settings()
 
-    # 1. Fetch history *before* the new message exists in the table
     hist = (
         db.table("messages")
         .select("role, content")
@@ -175,12 +168,10 @@ async def send_message(
     )
     history = cast(list[dict[str, Any]], list(reversed(hist.data)))
 
-    # 2. Save user message
     db.table("messages").insert(
         {"chat_id": chat_id, "role": "user", "content": body.message}
     ).execute()
 
-    # 3. Run the agentic RAG graph
     try:
         graph = get_rag_graph()
         result = graph.invoke({
@@ -197,17 +188,16 @@ async def send_message(
         })
         reply = result.get("answer") or "⚠️ The model did not return a response."
     except Exception as exc:
+        print(f"[RAG] /message error: {exc}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"RAG error: {exc}",
+            detail=str(exc),
         )
 
-    # 4. Save assistant reply
     db.table("messages").insert(
         {"chat_id": chat_id, "role": "assistant", "content": reply}
     ).execute()
 
-    # 5. Return reply
     return ChatMessageResponse(response=reply)
 
 
@@ -265,7 +255,7 @@ async def send_message_stream(
         try:
             for update in graph.stream(initial_state, stream_mode="updates"): # type: ignore
                 node_name = next(iter(update))
-                node_output = update[node_name]
+                node_output = update[node_name] or {}
                 print(f"[RAG] stream: {node_name} finished")
                 yield f"data: {json.dumps({'type': 'node', 'node': node_name})}\n\n"
                 if "answer" in node_output:

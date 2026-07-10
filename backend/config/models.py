@@ -128,7 +128,10 @@ def get_gemini_response(
             return text
         except Exception as mistral_exc:
             print(f"[LLM] Mistral fallback also failed: {mistral_exc}")
+            print(
+                f"[LLM] Both providers exhausted — Gemini error: {gemini_exc} | "
+                f"Mistral error: {mistral_exc}"
+            )
             raise RuntimeError(
-                f"Both Gemini and Mistral failed. "
-                f"Gemini error: {gemini_exc}. Mistral error: {mistral_exc}"
+                "The base model quota has been reached. Please try again later."
             ) from mistral_exc
