@@ -15,15 +15,11 @@ st.markdown("""
 <style>
     [data-testid="stSidebarNav"], #MainMenu, footer, header { display:none !important; }
 
-    /* Reduce Streamlit's large default top/bottom padding — this is what
-       made pages like login/signup scroll even though their content fits. */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
     }
 
-    /* Hide the "Press Enter to apply" hint that floats inside text inputs
-       while typing — purely cosmetic, not needed in this app's flows. */
     div[data-testid="InputInstructions"] {
         display: none !important;
     }
@@ -85,6 +81,19 @@ st.markdown("""
 
     /* Dataframe */
     [data-testid="stDataFrame"] { border-radius: 8px; overflow: hidden; }
+
+    div[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
+        background-color: #6C63FF !important;
+        border-color: #6C63FF !important;
+    }
+    div[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"]:focus-visible {
+        box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, .35) !important;
+    }
+    div[data-testid="stSlider"] [data-baseweb="slider"] > div > div {
+        background: #6C63FF !important;
+    }
+    div[data-testid="stThumbValue"] { color: #6C63FF !important; }
+    div[data-testid="stTickBarMin"], div[data-testid="stTickBarMax"] { color: #9B97C9 !important; }
 
     hr { border-color: #2A2D3E !important; }
 

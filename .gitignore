@@ -1,7 +1,8 @@
 .env
 .venv
+rerankers/*
 
-playground
+playground/*
 
 project_description.md
 vector_database/*
