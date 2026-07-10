@@ -55,10 +55,38 @@ def _render_result_row(collection_id: str, r: dict, existing: set, selected_item
         )
 
 
+def _select_all(collection_id: str, latest_results: list, existing: set, selected_items: dict):
+    """on_click callback: select every eligible result from the latest search
+    (not already in the collection, and with content returned).
+
+    NOTE: this must run as an on_click callback, not inside `if st.button(...):`
+    followed by a manual st.rerun() — that pattern is a known Streamlit bug
+    (streamlit/streamlit#13009) that can cause a @st.dialog function to be
+    invoked twice in the same pass, which raises StreamlitDuplicateElementKey
+    for every widget inside it. Callbacks run as a prefix to the button's own
+    automatic rerun, so no manual st.rerun() is needed or safe to add here.
+    """
+    for r in latest_results:
+        url = r["url"]
+        content = (r.get("content") or "").strip()
+        if url not in existing and content:
+            selected_items[url] = r
+            st.session_state[f"select_{collection_id}_{url}"] = True
+
+
+def _deselect_all(collection_id: str, latest_results: list, selected_items: dict):
+    """on_click callback: deselect every result from the latest search. See
+    the note on _select_all — must stay a callback, not an if/st.rerun() block."""
+    for r in latest_results:
+        url = r["url"]
+        selected_items.pop(url, None)
+        st.session_state[f"select_{collection_id}_{url}"] = False
+
+
 @st.dialog("🔍 Search the Web", width="large")
 def render_search_modal(token: str, collection_id: str):
-    latest_key   = f"search_latest_{collection_id}"       # results of the most recent search only
-    selected_key = f"search_selected_items_{collection_id}"  # {url: result_dict}, persists across searches
+    latest_key   = f"search_latest_{collection_id}"       
+    selected_key = f"search_selected_items_{collection_id}"
     existing_key = f"search_existing_{collection_id}"
 
     st.session_state.setdefault(latest_key, [])
@@ -66,14 +94,14 @@ def render_search_modal(token: str, collection_id: str):
     if existing_key not in st.session_state:
         st.session_state[existing_key] = _existing_urls(token, collection_id)
 
-    c1, c2, c3, c4 = st.columns([1, 2.4, 1, 1.2])
+    query = st.text_input("Search query", key=f"query_{collection_id}")
+
+    c1, c2, c3, c4 = st.columns([1.1, 2, 1, 1.3])
     with c1:
         engine = st.selectbox("Engine", ["tavily", "exa"], key=f"engine_{collection_id}")
     with c2:
-        query = st.text_input("Search query", key=f"query_{collection_id}")
-    with c3:
         num_results = st.slider("Results", 1, 20, 10, key=f"numres_{collection_id}")
-    with c4:
+    with c3:
         if engine == "tavily":
             search_depth = st.selectbox(
                 "Depth",
@@ -83,9 +111,8 @@ def render_search_modal(token: str, collection_id: str):
         else:
             search_depth = "basic"
             st.caption("Depth: N/A for Exa")
-
-    sb1, sb2, sb3 = st.columns([2, 1.2, 2])
-    with sb2:
+    with c4:
+        st.markdown("<div style='height:1.6rem;'></div>", unsafe_allow_html=True)
         run_search = st.button("Search", type="primary", use_container_width=True,
                                 key=f"run_search_{collection_id}")
 
@@ -114,7 +141,22 @@ def render_search_modal(token: str, collection_id: str):
     if latest_results or carried_over:
         with st.container(height=_RESULTS_BOX_HEIGHT):
             if latest_results:
-                st.caption(f"{len(latest_results)} result(s) — check the ones to add:")
+                hcap, hsel, hdes = st.columns([3, 1, 1])
+                with hcap:
+                    st.caption(f"{len(latest_results)} result(s) — check the ones to add:")
+                with hsel:
+                    st.button(
+                        "Select all", key=f"select_all_{collection_id}", use_container_width=True,
+                        on_click=_select_all,
+                        args=(collection_id, latest_results, existing, selected_items),
+                    )
+                with hdes:
+                    st.button(
+                        "Deselect all", key=f"deselect_all_{collection_id}", use_container_width=True,
+                        on_click=_deselect_all,
+                        args=(collection_id, latest_results, selected_items),
+                    )
+
                 for r in latest_results:
                     _render_result_row(collection_id, r, existing, selected_items)
 
