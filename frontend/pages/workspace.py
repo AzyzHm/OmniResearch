@@ -518,7 +518,7 @@ def _handle_input(token: str, messages_box):
             raise RuntimeError("No response was received from the server.")
         append_message(chat_id, "assistant", reply)
 
-    except RuntimeError as e:
+    except Exception as e:
         if reply_slot is not None:
             reply_slot.markdown(f"⚠️ {e}")
         history = st.session_state.chat_histories.get(chat_id, [])
