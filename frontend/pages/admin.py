@@ -11,6 +11,7 @@ from frontend.services.admin import (
     admin_get_search_usage,
     admin_get_stats,
     admin_list_users,
+    admin_update_token_limit,
 )
 
 
@@ -219,6 +220,28 @@ def render():
                                         del st.session_state[f"confirm_del_{user['id']}"]
                                         st.rerun()
 
+                    lim_col1, lim_col2, lim_col3 = st.columns([2, 2, 1])
+                    with lim_col1:
+                        st.caption("Daily token limit")
+                    with lim_col2:
+                        new_limit = st.number_input(
+                            "Daily token limit",
+                            min_value=0,
+                            max_value=100_000_000,
+                            step=5000,
+                            value=int(user.get("daily_token_limit", 80_000)),
+                            key=f"limit_input_{user['id']}",
+                            label_visibility="collapsed",
+                        )
+                    with lim_col3:
+                        if st.button("Save", key=f"save_limit_{user['id']}", use_container_width=True):
+                            try:
+                                r = admin_update_token_limit(token, user["id"], int(new_limit))
+                                st.success(r["message"])
+                                st.rerun()
+                            except RuntimeError as e:
+                                st.error(str(e))
+
                 st.markdown(
                     "<hr style='border-color:#2A2D3E; margin:.5rem 0;'>",
                     unsafe_allow_html=True,
@@ -280,7 +303,11 @@ def render():
 
     with tab_usage:
         st.markdown("#### LLM Token Usage")
-        st.caption("Monitoring only for now — no limits are enforced yet.")
+        st.caption(
+            "Each user has a daily token quota (default 80,000, resets at UTC midnight) "
+            "editable per-user in the User Management tab above. This view shows all-time "
+            "totals, not remaining quota."
+        )
 
         col_refresh_llm, _ = st.columns([1, 4])
         with col_refresh_llm:

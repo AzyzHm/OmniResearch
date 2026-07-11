@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.config.auth import require_admin
 from backend.database.db import get_supabase
-from backend.models import (LoginLogListResponse, LoginLogOut, MessageResponse, UserListResponse,UserOut,)
+from backend.models import (LoginLogListResponse, LoginLogOut, MessageResponse, UserListResponse,UserOut, TokenLimitUpdate,)
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 
@@ -17,7 +17,7 @@ async def list_users(
     pending_only: bool = Query(False, description="Return only unapproved accounts"),
 ):
     db = get_supabase()
-    query = db.table("users").select("id, username, role, is_approved, created_at").order("created_at", desc=True)
+    query = db.table("users").select("id, username, role, is_approved, created_at, daily_token_limit").order("created_at", desc=True)
     if pending_only:
         query = query.eq("is_approved", False)
     result = query.execute()
@@ -70,6 +70,29 @@ async def change_role(
     username = result.data[0]["username"]
     db.table("users").update({"role": new_role}).eq("id", user_id).execute()
     return MessageResponse(message=f"Role of '{username}' updated to '{new_role}'.")
+
+
+@router.put(
+    "/users/{user_id}/token-limit",
+    response_model=MessageResponse,
+    summary="Change a user's daily LLM token quota",
+)
+async def change_token_limit(
+    user_id: str,
+    body: TokenLimitUpdate,
+    _: dict = Depends(require_admin),
+):
+    db = get_supabase()
+
+    result: Any = db.table("users").select("id, username").eq("id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    username = result.data[0]["username"]
+    db.table("users").update({"daily_token_limit": body.daily_token_limit}).eq("id", user_id).execute()
+    return MessageResponse(
+        message=f"Daily token limit for '{username}' updated to {body.daily_token_limit:,}."
+    )
 
 
 @router.delete(
