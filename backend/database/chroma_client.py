@@ -2,6 +2,7 @@ from functools import lru_cache
 from chromadb import PersistentClient
 from chromadb.config import Settings as ChromaSettings
 from backend.config.settings import get_settings
+from backend.services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
 
 
 @lru_cache(maxsize=1)
@@ -51,14 +52,9 @@ def add_item_chunks(
     embeddings: list[list[float]],
     source_name: str,
 ) -> None:
-    """
-    Add one collection_items row's chunks to its parent Chroma collection.
-
-    Each chunk is stored with both its raw text (documents) and its vector
-    (embeddings), and tagged with item_id/chunk_index metadata so it can be
-    filtered or deleted per-item later (toggle include/exclude, delete file).
-    """
     collection = get_chroma_collection(collection_id)
+    sparse_vectors = bm25_sparse_vectors(chunks)
+
     collection.add(
         ids=[f"{item_id}_{i}" for i in range(len(chunks))],
         documents=chunks,
@@ -69,6 +65,7 @@ def add_item_chunks(
                 "collection_id": collection_id,
                 "source_name": source_name,
                 "chunk_index": i,
+                **sparse_vector_to_metadata(sparse_vectors[i]),
             }
             for i in range(len(chunks))
         ],
