@@ -10,10 +10,13 @@ def retrieve_node(state: RAGState) -> dict:
     print(f"[RAG] retrieve_node: attempt {attempts + 1}")
 
     if attempts == 0:
+        mode = state.get("retrieval_mode", "semantic")
+        print(f"[RAG] retrieve_node: mode = {mode}")
         pool = retrieve_pool(
             project_id=state["project_id"],
             query=state.get("refined_query") or state["query"],
             pool_size=POOL_SIZE,
+            mode=mode,# type: ignore
         )
         print(f"[RAG] retrieve_node: pool size = {len(pool)}")
         return {

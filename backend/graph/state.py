@@ -7,6 +7,7 @@ class _RAGStateRequired(TypedDict):
     user_id: str             
     query: str
     history: list[dict[str, Any]]
+    retrieval_mode: str
 
 
 class RAGState(_RAGStateRequired, total=False):

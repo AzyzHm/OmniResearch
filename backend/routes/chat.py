@@ -120,6 +120,7 @@ async def delete_chat(
     db = get_supabase()
     db.table("chats").delete().eq("id", chat_id).execute()
 
+
 @router.get("/chats/{chat_id}/messages", response_model=list[MessageOut])
 async def get_messages(
     chat_id: str,
@@ -180,6 +181,7 @@ async def send_message(
             "user_id": current_user["sub"],
             "query": body.message,
             "history": history,
+            "retrieval_mode": body.retrieval_mode,
             "retrieval_attempts": 0,
             "needs_retrieval": False,
             "validation_passed": False,
@@ -242,6 +244,7 @@ async def send_message_stream(
         "user_id": current_user["sub"],
         "query": body.message,
         "history": history,
+        "retrieval_mode": body.retrieval_mode,
         "retrieval_attempts": 0,
         "needs_retrieval": False,
         "validation_passed": False,

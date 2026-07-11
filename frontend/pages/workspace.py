@@ -33,6 +33,17 @@ _STATUS_BADGE = {
     "error":      ("#E74C3C", "Error"),
 }
 
+_RETRIEVAL_MODE_OPTIONS = {
+    "Semantic": "semantic",
+    "Keyword":  "keyword",
+    "Hybrid":   "hybrid",
+}
+_RETRIEVAL_MODE_HELP = (
+    "**Semantic** — meaning-based similarity search (the default).\n\n"
+    "**Keyword** — BM25 lexical search; best for exact terms, names, or identifiers.\n\n"
+    "**Hybrid** — combines both via Reciprocal Rank Fusion."
+)
+
 SECTION_HEIGHT = 480
 CHAT_SECTION_HEIGHT = 440
 
@@ -483,7 +494,20 @@ def _handle_input(token: str, messages_box):
     if not chat_id:
         return
 
-    prompt = st.chat_input("Ask anything…")
+    input_col, mode_col = st.columns([4, 1.15], gap="small")
+    with input_col:
+        prompt = st.chat_input("Ask anything…")
+    with mode_col:
+        mode_label = st.selectbox(
+            "Retrieval mode",
+            options=list(_RETRIEVAL_MODE_OPTIONS.keys()),
+            index=0,
+            key="retrieval_mode_choice",
+            label_visibility="collapsed",
+            help=_RETRIEVAL_MODE_HELP,
+        )
+    retrieval_mode = _RETRIEVAL_MODE_OPTIONS.get(mode_label, "semantic")
+
     if not prompt:
         return
 
@@ -501,7 +525,7 @@ def _handle_input(token: str, messages_box):
 
     try:
         reply = None
-        for event in api.send_message_stream(token, chat_id, prompt):
+        for event in api.send_message_stream(token, chat_id, prompt, retrieval_mode):
             etype = event.get("type")
             if etype == "node":
                 label = _NODE_LABELS.get(event["node"], f"Running {event['node']}…")

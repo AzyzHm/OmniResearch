@@ -27,17 +27,17 @@ def get_messages(token: str, chat_id: str) -> list:
     return _call("GET", f"/chats/{chat_id}/messages", token=token) or []
 
 
-def send_message(token: str, chat_id: str, message: str) -> dict:
+def send_message(token: str, chat_id: str, message: str, retrieval_mode: str = "semantic") -> dict:
     """Send a message; backend fetches context and calls Gemini. (Non-streaming fallback.)"""
     return _call(
         "POST",
         f"/chats/{chat_id}/message",
         token=token,
-        json={"message": message},
+        json={"message": message, "retrieval_mode": retrieval_mode},
     )
 
 
-def send_message_stream(token: str, chat_id: str, message: str):
+def send_message_stream(token: str, chat_id: str, message: str, retrieval_mode: str = "semantic"):
     """
     Yields events from the streaming RAG endpoint as each graph node finishes:
       {"type": "node", "node": "router"}
@@ -60,7 +60,7 @@ def send_message_stream(token: str, chat_id: str, message: str):
         resp = _session.post(
             f"{API_BASE}/chats/{chat_id}/message/stream",
             headers=headers,
-            json={"message": message},
+            json={"message": message, "retrieval_mode": retrieval_mode},
             stream=True,
             timeout=_TIMEOUT,
         )

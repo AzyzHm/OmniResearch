@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
  
 from pydantic import BaseModel, field_validator
  
@@ -41,6 +42,7 @@ class MessageOut(BaseModel):
  
 class ChatMessageRequest(BaseModel):
     message: str
+    retrieval_mode: Literal["semantic", "keyword", "hybrid"] = "semantic"
  
     @field_validator("message")
     @classmethod
