@@ -13,6 +13,15 @@ def admin_change_role(token: str, user_id: str, new_role: str) -> dict:
     return _call("PUT", f"/admin/users/{user_id}/role", token=token, params={"new_role": new_role})
 
 
+def admin_update_token_limit(token: str, user_id: str, daily_token_limit: int) -> dict:
+    return _call(
+        "PUT",
+        f"/admin/users/{user_id}/token-limit",
+        token=token,
+        json={"daily_token_limit": daily_token_limit},
+    )
+
+
 def admin_delete_user(token: str, user_id: str) -> dict:
     return _call("DELETE", f"/admin/users/{user_id}", token=token)
 

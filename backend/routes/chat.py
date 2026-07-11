@@ -8,6 +8,7 @@ from backend.config.auth import get_current_user
 from backend.config.settings import get_settings
 from backend.database.db import get_supabase
 from backend.graph.graph import get_rag_graph
+from backend.services.quota import DailyQuotaExceeded, enforce_daily_quota
 from backend.models.chat import (
     ChatCreate,
     ChatMessageRequest,
@@ -159,6 +160,20 @@ async def send_message(
     db = get_supabase()
     settings = get_settings()
 
+    try:
+        enforce_daily_quota(current_user["sub"])
+    except DailyQuotaExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "quota_exceeded",
+                "message": str(exc),
+                "used": exc.used,
+                "limit": exc.limit,
+                "reset_at": exc.reset_at.isoformat(),
+            },
+        )
+
     hist = (
         db.table("messages")
         .select("role, content")
@@ -223,6 +238,23 @@ async def send_message_stream(
     chat = _own_chat(chat_id, current_user["sub"])
     db = get_supabase()
     settings = get_settings()
+
+    try:
+        enforce_daily_quota(current_user["sub"])
+    except DailyQuotaExceeded as exc:
+        payload = {
+            "type": "error",
+            "code": "quota_exceeded",
+            "detail": str(exc),
+            "used": exc.used,
+            "limit": exc.limit,
+            "reset_at": exc.reset_at.isoformat(),
+        }
+
+        def quota_error_stream():
+            yield f"data: {json.dumps(payload)}\n\n"
+
+        return StreamingResponse(quota_error_stream(), media_type="text/event-stream")
 
     hist = (
         db.table("messages")

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
@@ -32,6 +34,7 @@ _STATUS_BADGE = {
     "processing": ("#F5A623", "Processing…"),
     "error":      ("#E74C3C", "Error"),
 }
+
 
 _RETRIEVAL_MODE_OPTIONS = {
     "Semantic": "semantic",
@@ -475,6 +478,92 @@ _NODE_LABELS = {
 }
 
 
+class ChatError(RuntimeError):
+    """Raised for SSE 'error' events from the chat stream. Carries the
+    backend's structured fields (when present) alongside the plain-text
+    detail, so specific error types (e.g. quota_exceeded) can be rendered
+    with a dedicated UI instead of generic error text."""
+
+    def __init__(self, detail: str, code: str | None = None, **extra):
+        super().__init__(detail)
+        self.code = code
+        self.extra = extra
+
+
+def _quota_exceeded_card(e: "ChatError") -> str:
+    """A dedicated, readable card for the daily-quota-exceeded error —
+    distinct from generic error text so it's unmistakable what happened
+    and when the user can chat again."""
+    used = e.extra.get("used")
+    limit = e.extra.get("limit")
+    reset_at = e.extra.get("reset_at")
+
+    reset_line = ""
+    if reset_at:
+        try:
+            reset_dt = datetime.fromisoformat(reset_at)
+            now = datetime.now(timezone.utc)
+            remaining = reset_dt - now
+            total_minutes = max(int(remaining.total_seconds() // 60), 0)
+            hours, minutes = divmod(total_minutes, 60)
+            reset_line = (
+                f"<div style='margin-top:8px; font-size:.82rem; color:#B9B6D9;'>"
+                f"Resets at <b style='color:#E8E8F0;'>{reset_dt.strftime('%Y-%m-%d %H:%M')} UTC</b>"
+                f" &nbsp;•&nbsp; in <b style='color:#E8E8F0;'>{hours}h {minutes}m</b>"
+                f"</div>"
+            )
+        except (ValueError, TypeError):
+            pass
+
+    usage_line = ""
+    if used is not None and limit is not None and limit > 0:
+        pct = min(int(used / limit * 100), 100)
+        usage_line = (
+            f"<div style='margin-top:10px;'>"
+            f"<div style='background:#2A2D3E; border-radius:6px; height:8px; overflow:hidden;'>"
+            f"<div style='background:#F5A623; width:{pct}%; height:100%;'></div>"
+            f"</div>"
+            f"<div style='margin-top:4px; font-size:.78rem; color:#9B97C9;'>"
+            f"{used:,} / {limit:,} tokens used today</div>"
+            f"</div>"
+        )
+
+    return (
+        "<div style='background:#2A1F1A; border:1px solid #F5A623; border-radius:10px; "
+        "padding:14px 16px;'>"
+        "<div style='display:flex; align-items:center; gap:8px;'>"
+        "<span style='font-size:1.2rem;'>⏳</span>"
+        "<span style='font-weight:700; color:#F5A623; font-size:.95rem;'>"
+        "Daily token quota reached</span>"
+        "</div>"
+        "<div style='margin-top:6px; font-size:.85rem; color:#E8E8F0; line-height:1.5;'>"
+        "You've used all of your daily tokens for today. You can send messages again "
+        "once your quota resets."
+        "</div>"
+        f"{usage_line}"
+        f"{reset_line}"
+        "</div>"
+    )
+
+
+def _generic_error_card(message: str) -> str:
+    """Fallback styled card for any non-quota chat error (network issues,
+    both LLM providers down, etc.) — same visual language, different color,
+    so it doesn't get mistaken for a quota message."""
+    return (
+        "<div style='background:#2A1A1A; border:1px solid #E74C3C; border-radius:10px; "
+        "padding:14px 16px;'>"
+        "<div style='display:flex; align-items:center; gap:8px;'>"
+        "<span style='font-size:1.2rem;'>⚠️</span>"
+        "<span style='font-weight:700; color:#E74C3C; font-size:.95rem;'>"
+        "Something went wrong</span>"
+        "</div>"
+        f"<div style='margin-top:6px; font-size:.85rem; color:#E8E8F0; line-height:1.5;'>"
+        f"{message}</div>"
+        "</div>"
+    )
+
+
 def _handle_input(token: str, messages_box):
     """
     Called inside the center column, right after the fixed-height messages
@@ -536,21 +625,34 @@ def _handle_input(token: str, messages_box):
                 if reply_slot is not None:
                     reply_slot.markdown(reply)
             elif etype == "error":
-                raise RuntimeError(event.get("detail", "Unknown error."))
+                raise ChatError(
+                    event.get("detail", "Unknown error."),
+                    code=event.get("code"),
+                    used=event.get("used"),
+                    limit=event.get("limit"),
+                    reset_at=event.get("reset_at"),
+                )
 
         if reply is None:
             raise RuntimeError("No response was received from the server.")
         append_message(chat_id, "assistant", reply)
+        st.rerun()
 
-    except Exception as e:
+    except ChatError as e:
+        card_html = _quota_exceeded_card(e) if e.code == "quota_exceeded" else _generic_error_card(str(e))
         if reply_slot is not None:
-            reply_slot.markdown(f"⚠️ {e}")
+            reply_slot.markdown(card_html, unsafe_allow_html=True)
         history = st.session_state.chat_histories.get(chat_id, [])
         if history and history[-1]["role"] == "user":
             history.pop()
-        st.error(f"⚠️ {e}")
 
-    st.rerun()
+    except Exception as e:
+        card_html = _generic_error_card(str(e))
+        if reply_slot is not None:
+            reply_slot.markdown(card_html, unsafe_allow_html=True)
+        history = st.session_state.chat_histories.get(chat_id, [])
+        if history and history[-1]["role"] == "user":
+            history.pop()
 
 
 def render():
