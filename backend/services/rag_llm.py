@@ -51,10 +51,27 @@ def refine_query(history: list[dict[str, Any]], query: str, user_id: Optional[st
 
 def validate_context(
     query: str, context_chunks: list[dict[str, Any]], user_id: Optional[str] = None
-) -> bool:
+) -> tuple[bool, Optional[str]]:
+    """
+    Returns (passed, missing_query). When insufficient, missing_query is a
+    short, self-contained follow-up query describing what's still missing —
+    fed back into retrieval/reranking for another round. Falls back to the
+    original query if the model doesn't follow the expected response format.
+    """
     prompt = VALIDATION_PROMPT.format(query=query, context_text=_format_context(context_chunks))
-    answer = _ask(prompt, user_id=user_id).upper()
-    return answer.startswith("SUFFICIENT")
+    answer = _ask(prompt, user_id=user_id).strip()
+    upper = answer.upper()
+
+    if upper.startswith("SUFFICIENT"):
+        return True, None
+
+    if upper.startswith("INSUFFICIENT"):
+
+        _, _, missing = answer.partition(":")
+        missing = missing.strip()
+        return False, (missing or query)
+
+    return False, query
 
 
 def generate_answer(

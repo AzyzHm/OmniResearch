@@ -37,7 +37,9 @@ User's question:
 Retrieved context:
 {context_text}
 
-Respond with exactly one word — SUFFICIENT or INSUFFICIENT — and nothing else."""
+Respond in exactly one of these two forms, and nothing else:
+- The single word SUFFICIENT, if the context fully answers the question.
+- INSUFFICIENT: <query>, if it does not — where <query> is a short, specific, self-contained search query describing exactly what information is still missing. It must not reference "the context" or use pronouns; phrase it as something that could be searched for on its own."""
 
 
 GENERATION_PROMPT = """Answer the user's question using the retrieved context below when it is relevant, along with the ongoing conversation. If the context does not fully cover the question, answer as best you can with what is available and be upfront about what is missing — do not say you "don't have access" without first using whatever relevant context is provided.
