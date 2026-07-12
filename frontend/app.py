@@ -100,6 +100,13 @@ st.markdown("""
     /* Dataframe */
     [data-testid="stDataFrame"] { border-radius: 8px; overflow: hidden; }
 
+    /* Hide Streamlit's auto-generated anchor-link icon on headings
+       (st.title/header/subheader and markdown #/##/###). It only updates
+       the URL's #fragment for deep-linking — nothing in this app scrolls to
+       or otherwise uses that fragment, so it's pure dead-weight UI here. */
+    [data-testid="stHeaderActionElements"] { display: none !important; }
+    h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { display: none !important; }
+
     div[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
         background-color: #6C63FF !important;
         border-color: #6C63FF !important;
