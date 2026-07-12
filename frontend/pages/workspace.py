@@ -35,6 +35,8 @@ _STATUS_BADGE = {
     "error":      ("#E74C3C", "Error"),
 }
 
+# Retrieval mode picker shown next to the chat input. Values are what the
+# backend expects (backend/models/chat.py -> RAGState.retrieval_mode).
 _RETRIEVAL_MODE_OPTIONS = {
     "Semantic": "semantic",
     "Keyword":  "keyword",
@@ -173,9 +175,12 @@ def _chats_panel(token: str, project_id: str):
 
 
 def _chat_area():
-    """Renders the message list. Returns the messages container object so
-    _handle_input can write the new user/assistant turns directly into it
-    in real time, instead of waiting for a full page rerun to show them."""
+    """Renders the message list. Returns (messages_box, empty_placeholder) —
+    messages_box so _handle_input can write new turns directly into it in
+    real time, and empty_placeholder (an st.empty() slot, or None if the
+    chat already has history) so _handle_input can clear the "No messages
+    yet" notice before writing the first real messages into the same
+    container, instead of it staying stacked above them."""
     chat_id   = st.session_state.get("active_chat_id")
     chat_name = st.session_state.get("active_chat_name", "")
 
@@ -192,7 +197,7 @@ def _chat_area():
                 """,
                 unsafe_allow_html=True,
             )
-        return None
+        return None, None
 
     st.markdown(
         f"<p style='color:#9B97C9; font-size:.85rem; margin-bottom:.8rem;'>"
@@ -203,9 +208,11 @@ def _chat_area():
     history = load_chat_history(chat_id)
 
     messages_box = st.container(height=CHAT_SECTION_HEIGHT, border=False)
+    empty_placeholder = None
     with messages_box:
         if not history:
-            st.markdown(
+            empty_placeholder = st.empty()
+            empty_placeholder.markdown(
                 "<div style='text-align:center; padding:3rem 1rem; color:#6B6E8A;'>"
                 "<p>No messages yet. Type below to start the conversation.</p></div>",
                 unsafe_allow_html=True,
@@ -215,7 +222,7 @@ def _chat_area():
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
-    return messages_box
+    return messages_box, empty_placeholder
 
 
 def _collection_items(token: str, collection_id: str, col_type: str):
@@ -231,6 +238,11 @@ def _collection_items(token: str, collection_id: str, col_type: str):
         st.error(str(e))
         items = []
 
+    # Extraction/embedding now runs as a background task on the backend, so a
+    # freshly-added item can sit at status="processing" for a few seconds
+    # after this panel renders. Poll quietly while that's the case so the
+    # badge flips to "Ready"/"Error" on its own — no manual refresh needed,
+    # and it stops polling automatically once nothing is pending.
     if any(i["status"] == "processing" for i in items):
         st_autorefresh(interval=2500, key=f"autorefresh_{collection_id}")
 
@@ -564,7 +576,7 @@ def _generic_error_card(message: str) -> str:
     )
 
 
-def _handle_input(token: str, messages_box):
+def _handle_input(token: str, messages_box, empty_placeholder=None):
     """
     Called inside the center column, right after the fixed-height messages
     container — placing st.chat_input() inside a column makes it render
@@ -578,6 +590,10 @@ def _handle_input(token: str, messages_box):
     directly into that same container as they happen, so the query appears
     the instant it's sent and the progress shows up where the reply will
     land — no waiting for a rerun to see any of it.
+
+    empty_placeholder is the "No messages yet" notice's st.empty() slot
+    (only set when the chat had no history yet) — cleared right before the
+    first real messages are written, so it doesn't stay stacked above them.
     """
     chat_id = st.session_state.get("active_chat_id")
     if not chat_id:
@@ -606,6 +622,8 @@ def _handle_input(token: str, messages_box):
     reply_slot = None
     if messages_box is not None:
         with messages_box:
+            if empty_placeholder is not None:
+                empty_placeholder.empty()
             with st.chat_message("user"):
                 st.markdown(prompt)
             with st.chat_message("assistant"):
@@ -674,8 +692,8 @@ def render():
 
     with center:
         with st.container(border=True):
-            messages_box = _chat_area()
-            _handle_input(token, messages_box)
+            messages_box, empty_placeholder = _chat_area()
+            _handle_input(token, messages_box, empty_placeholder)
 
     with right:
         _collections_panel(token, project_id)

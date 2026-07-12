@@ -75,12 +75,37 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
+    /* Retrieval-mode dropdown next to the chat input — match its height and
+       vertically center both in their shared row, since stChatInput and a
+       stSelectbox don't share the same natural height by default. */
+    div[data-testid="stHorizontalBlock"]:has([data-testid="stChatInput"]) {
+        align-items: center !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has([data-testid="stChatInput"]) [data-testid="stSelectbox"] > div > div {
+        min-height: 52px !important;
+        display: flex !important;
+        align-items: center !important;
+        background: #1A1D2E !important;
+        border: 1px solid #3A3D5E !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stChatInput"] {
+        min-height: 52px !important;
+    }
+
     /* Tabs */
     button[data-baseweb="tab"] { font-weight: 600; font-size: .95rem; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #6C63FF !important; }
 
     /* Dataframe */
     [data-testid="stDataFrame"] { border-radius: 8px; overflow: hidden; }
+
+    /* Hide Streamlit's auto-generated anchor-link icon on headings
+       (st.title/header/subheader and markdown #/##/###). It only updates
+       the URL's #fragment for deep-linking — nothing in this app scrolls to
+       or otherwise uses that fragment, so it's pure dead-weight UI here. */
+    [data-testid="stHeaderActionElements"] { display: none !important; }
+    h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { display: none !important; }
 
     div[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
         background-color: #6C63FF !important;
@@ -127,7 +152,7 @@ def _route():
         from frontend.pages.workspace import render; render()
 
     elif page == "admin":
-        if st.session_state.get("role") != "admin":
+        if st.session_state.get("role") not in ("admin", "superadmin"):
             st.error("⛔ Access denied – admin only.")
             st.session_state.page = "login"
             st.rerun()

@@ -1,7 +1,7 @@
 from typing import Any, cast
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.config.auth import require_admin
+from backend.config.auth import require_admin, require_superadmin
 from backend.database.db import get_supabase
 from backend.models import (LoginLogListResponse, LoginLogOut, MessageResponse, UserListResponse,UserOut, TokenLimitUpdate,)
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/admin", tags=["Administration"])
     summary="List all registered users",
 )
 async def list_users(
-    _: dict = Depends(require_admin),
+    current_admin: dict = Depends(require_admin),
     pending_only: bool = Query(False, description="Return only unapproved accounts"),
 ):
     db = get_supabase()
@@ -21,7 +21,20 @@ async def list_users(
     if pending_only:
         query = query.eq("is_approved", False)
     result = query.execute()
-    users = [UserOut(**u) for u in cast(list[Any], result.data)]
+    all_users = cast(list[dict[str, Any]], result.data)
+
+    requester_role = current_admin.get("role")
+    requester_id = current_admin["sub"]
+
+    if requester_role == "superadmin":
+        # Sees everyone (regular users and admins) except themselves.
+        visible = [u for u in all_users if u["id"] != requester_id]
+    else:
+        # Regular admins only ever see regular user accounts — never
+        # themselves, other admins, or the super admin.
+        visible = [u for u in all_users if u["role"] == "user"]
+
+    users = [UserOut(**u) for u in visible]
     return UserListResponse(users=users, total=len(users))
 
 
@@ -48,12 +61,12 @@ async def approve_user(user_id: str, _: dict = Depends(require_admin)):
 @router.put(
     "/users/{user_id}/role",
     response_model=MessageResponse,
-    summary="Change a user's role (admin ↔ user)",
+    summary="Change a user's role (admin ↔ user) — super admin only",
 )
 async def change_role(
     user_id: str,
     new_role: str = Query(..., pattern="^(admin|user)$"),
-    current_admin: dict = Depends(require_admin),
+    current_admin: dict = Depends(require_superadmin),
 ):
     db = get_supabase()
 
@@ -63,19 +76,25 @@ async def change_role(
             detail="You cannot change your own role.",
         )
 
-    result : Any = db.table("users").select("id, username").eq("id", user_id).execute()
+    result: Any = db.table("users").select("id, username, role").eq("id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    username = result.data[0]["username"]
+    target = result.data[0]
+    if target["role"] == "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The super admin's role cannot be changed.",
+        )
+
     db.table("users").update({"role": new_role}).eq("id", user_id).execute()
-    return MessageResponse(message=f"Role of '{username}' updated to '{new_role}'.")
+    return MessageResponse(message=f"Role of '{target['username']}' updated to '{new_role}'.")
 
 
 @router.put(
     "/users/{user_id}/token-limit",
     response_model=MessageResponse,
-    summary="Change a user's daily LLM token quota",
+    summary="Change a user's daily LLM token quota (regular users only)",
 )
 async def change_token_limit(
     user_id: str,
@@ -84,14 +103,20 @@ async def change_token_limit(
 ):
     db = get_supabase()
 
-    result: Any = db.table("users").select("id, username").eq("id", user_id).execute()
+    result: Any = db.table("users").select("id, username, role").eq("id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    username = result.data[0]["username"]
+    target = result.data[0]
+    if target["role"] != "user":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Daily token limits only apply to regular user accounts.",
+        )
+
     db.table("users").update({"daily_token_limit": body.daily_token_limit}).eq("id", user_id).execute()
     return MessageResponse(
-        message=f"Daily token limit for '{username}' updated to {body.daily_token_limit:,}."
+        message=f"Daily token limit for '{target['username']}' updated to {body.daily_token_limit:,}."
     )
 
 
@@ -109,13 +134,24 @@ async def delete_user(user_id: str, current_admin: dict = Depends(require_admin)
             detail="You cannot delete your own account.",
         )
 
-    result : Any = db.table("users").select("id, username").eq("id", user_id).execute()
+    result : Any = db.table("users").select("id, username, role").eq("id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    username = result.data[0]["username"]
+    target = result.data[0]
+    if target["role"] == "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The super admin account cannot be deleted.",
+        )
+    if current_admin.get("role") == "admin" and target["role"] != "user":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admins can only delete regular user accounts.",
+        )
+
     db.table("users").delete().eq("id", user_id).execute()
-    return MessageResponse(message=f"User '{username}' has been deleted.")
+    return MessageResponse(message=f"User '{target['username']}' has been deleted.")
 
 @router.get(
     "/logs",
@@ -123,15 +159,26 @@ async def delete_user(user_id: str, current_admin: dict = Depends(require_admin)
     summary="Retrieve login activity logs",
 )
 async def get_logs(
-    _: dict = Depends(require_admin),
+    current_admin: dict = Depends(require_admin),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     username: str = Query(None, description="Filter by username"),
 ):
     db = get_supabase()
+    requester_role = current_admin.get("role")
+    requester_id = current_admin["sub"]
+
+    scope_roles = ["user", "admin"] if requester_role == "superadmin" else ["user"]
+    users_result: Any = db.table("users").select("id").in_("role", scope_roles).execute()
+    scoped_ids = [u["id"] for u in cast(list[dict[str, Any]], users_result.data) if u["id"] != requester_id]
+
+    if not scoped_ids:
+        return LoginLogListResponse(logs=[], total=0)
+
     query = (
         db.table("login_logs")
         .select("id, user_id, username, login_time, ip_address")
+        .in_("user_id", scoped_ids)
         .order("login_time", desc=True)
         .range(offset, offset + limit - 1)
     )
@@ -141,7 +188,7 @@ async def get_logs(
     result = query.execute()
     logs  = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
 
-    count_query = db.table("login_logs").select("id", count="exact") # type: ignore
+    count_query = db.table("login_logs").select("id", count="exact").in_("user_id", scoped_ids) # type: ignore
     if username:
         count_query = count_query.ilike("username", f"%{username}%")
     count_result = count_query.execute()
@@ -154,30 +201,51 @@ async def get_logs(
     "/stats",
     summary="Aggregate admin statistics",
 )
-async def get_stats(_: dict = Depends(require_admin)):
+async def get_stats(current_admin: dict = Depends(require_admin)):
     db = get_supabase()
+    requester_role = current_admin.get("role")
+    requester_id = current_admin["sub"]
 
-    total_users   = db.table("users").select("id", count="exact").execute().count or 0 # type: ignore
-    pending_users = db.table("users").select("id", count="exact").eq("is_approved", False).execute().count or 0 # type: ignore
-    admin_users   = db.table("users").select("id", count="exact").eq("role", "admin").execute().count or 0 # type: ignore
-    total_logins  = db.table("login_logs").select("id", count="exact").execute().count or 0 # type: ignore
- 
-    recent = (
-        db.table("login_logs")
-        .select("username, login_time, ip_address")
-        .order("login_time", desc=True)
-        .limit(7)
-        .execute()
-    )
+    # A super admin's overview also covers admins (but never themselves); a
+    # regular admin's overview only ever covers regular users.
+    scope_roles = ["user", "admin"] if requester_role == "superadmin" else ["user"]
 
-    return {
+    users_result: Any = db.table("users").select("id, role, is_approved").in_("role", scope_roles).execute()
+    scoped_users = [u for u in cast(list[dict[str, Any]], users_result.data) if u["id"] != requester_id]
+    scoped_user_ids = [u["id"] for u in scoped_users]
+
+    total_users   = len([u for u in scoped_users if u["role"] == "user"])
+    admin_users   = len([u for u in scoped_users if u["role"] == "admin"])
+    pending_users = len([u for u in scoped_users if u["role"] == "user" and not u["is_approved"]])
+
+    total_logins = 0
+    recent_data: list[dict[str, Any]] = []
+    if scoped_user_ids:
+        logins_result: Any = (
+            db.table("login_logs").select("id", count="exact") # type: ignore
+            .in_("user_id", scoped_user_ids).execute()
+        )
+        total_logins = logins_result.count or 0
+
+        recent: Any = (
+            db.table("login_logs")
+            .select("username, login_time, ip_address")
+            .in_("user_id", scoped_user_ids)
+            .order("login_time", desc=True)
+            .limit(7)
+            .execute()
+        )
+        recent_data = recent.data or []
+
+    stats: dict[str, Any] = {
         "total_users": total_users,
         "pending_users": pending_users,
-        "admin_users": admin_users,
-        "approved_users": total_users - pending_users - admin_users,
         "total_logins": total_logins,
-        "recent_logins": recent.data,
+        "recent_logins": recent_data,
     }
+    if requester_role == "superadmin":
+        stats["admin_users"] = admin_users
+    return stats
 
 
 @router.get(
