@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 150
 
+    reranker_model_name: str = "BAAI/bge-reranker-base"
+    retrieval_pool_size: int = 50
+    rerank_top_k: int = 5
+
     jina_api_key: str = jina_api_key
     tavily_api_key: str = tavily_api_key
     exa_api_key: str = exa_api_key

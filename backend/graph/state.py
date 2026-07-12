@@ -12,6 +12,7 @@ class _RAGStateRequired(TypedDict):
 
 class RAGState(_RAGStateRequired, total=False):
     refined_query: str
+    missing_query: str
 
     needs_retrieval: bool
 

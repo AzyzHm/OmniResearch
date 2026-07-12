@@ -35,7 +35,6 @@ _STATUS_BADGE = {
     "error":      ("#E74C3C", "Error"),
 }
 
-
 _RETRIEVAL_MODE_OPTIONS = {
     "Semantic": "semantic",
     "Keyword":  "keyword",
@@ -473,6 +472,7 @@ _NODE_LABELS = {
     "router":       "🧭 Deciding if I need to search your sources…",
     "refine_query": "✏️ Refining your question…",
     "retrieve":     "🔎 Searching your sources…",
+    "rerank":       "📊 Ranking the most relevant chunks…",
     "validate":     "🧐 Checking if I found enough…",
     "generate":     "✍️ Writing the answer…",
 }
