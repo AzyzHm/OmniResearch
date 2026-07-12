@@ -83,13 +83,21 @@ def render():
             st.error(f"Failed to load stats: {e}")
             return
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: _metric_card("Total Users",    stats["total_users"],    color="#6C63FF")
-        with c2: _metric_card("Approved Users", stats["approved_users"], color="#2ECC71")
-        with c3: _metric_card("Pending Approval", stats["pending_users"],
-                              "⚠ Needs action" if stats["pending_users"] > 0 else "",
-                              color="#F39C12")
-        with c4: _metric_card("Total Logins",   stats["total_logins"],   color="#3498DB")
+        if "admin_users" in stats:  # superadmin view
+            c1, c2, c3, c4 = st.columns(4)
+            with c1: _metric_card("Total Users",  stats["total_users"],  color="#6C63FF")
+            with c2: _metric_card("Total Admins", stats["admin_users"],  color="#F5A623")
+            with c3: _metric_card("Pending Approval", stats["pending_users"],
+                                  "⚠ Needs action" if stats["pending_users"] > 0 else "",
+                                  color="#F39C12")
+            with c4: _metric_card("Total Logins", stats["total_logins"], color="#3498DB")
+        else:  # regular admin view
+            c1, c2, c3 = st.columns(3)
+            with c1: _metric_card("Total Users", stats["total_users"], color="#6C63FF")
+            with c2: _metric_card("Pending Approval", stats["pending_users"],
+                                  "⚠ Needs action" if stats["pending_users"] > 0 else "",
+                                  color="#F39C12")
+            with c3: _metric_card("Total Logins", stats["total_logins"], color="#3498DB")
 
         st.markdown("<br>", unsafe_allow_html=True)
 

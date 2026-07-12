@@ -159,15 +159,26 @@ async def delete_user(user_id: str, current_admin: dict = Depends(require_admin)
     summary="Retrieve login activity logs",
 )
 async def get_logs(
-    _: dict = Depends(require_admin),
+    current_admin: dict = Depends(require_admin),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     username: str = Query(None, description="Filter by username"),
 ):
     db = get_supabase()
+    requester_role = current_admin.get("role")
+    requester_id = current_admin["sub"]
+
+    scope_roles = ["user", "admin"] if requester_role == "superadmin" else ["user"]
+    users_result: Any = db.table("users").select("id").in_("role", scope_roles).execute()
+    scoped_ids = [u["id"] for u in cast(list[dict[str, Any]], users_result.data) if u["id"] != requester_id]
+
+    if not scoped_ids:
+        return LoginLogListResponse(logs=[], total=0)
+
     query = (
         db.table("login_logs")
         .select("id, user_id, username, login_time, ip_address")
+        .in_("user_id", scoped_ids)
         .order("login_time", desc=True)
         .range(offset, offset + limit - 1)
     )
@@ -177,7 +188,7 @@ async def get_logs(
     result = query.execute()
     logs  = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
 
-    count_query = db.table("login_logs").select("id", count="exact") # type: ignore
+    count_query = db.table("login_logs").select("id", count="exact").in_("user_id", scoped_ids) # type: ignore
     if username:
         count_query = count_query.ilike("username", f"%{username}%")
     count_result = count_query.execute()
@@ -190,31 +201,51 @@ async def get_logs(
     "/stats",
     summary="Aggregate admin statistics",
 )
-async def get_stats(_: dict = Depends(require_admin)):
+async def get_stats(current_admin: dict = Depends(require_admin)):
     db = get_supabase()
+    requester_role = current_admin.get("role")
+    requester_id = current_admin["sub"]
 
-    total_users   = db.table("users").select("id", count="exact").execute().count or 0 # type: ignore
-    pending_users = db.table("users").select("id", count="exact").eq("is_approved", False).execute().count or 0 # type: ignore
-    admin_users   = db.table("users").select("id", count="exact").eq("role", "admin").execute().count or 0 # type: ignore
-    superadmin_users = db.table("users").select("id", count="exact").eq("role", "superadmin").execute().count or 0 # type: ignore
-    total_logins  = db.table("login_logs").select("id", count="exact").execute().count or 0 # type: ignore
- 
-    recent = (
-        db.table("login_logs")
-        .select("username, login_time, ip_address")
-        .order("login_time", desc=True)
-        .limit(7)
-        .execute()
-    )
+    # A super admin's overview also covers admins (but never themselves); a
+    # regular admin's overview only ever covers regular users.
+    scope_roles = ["user", "admin"] if requester_role == "superadmin" else ["user"]
 
-    return {
+    users_result: Any = db.table("users").select("id, role, is_approved").in_("role", scope_roles).execute()
+    scoped_users = [u for u in cast(list[dict[str, Any]], users_result.data) if u["id"] != requester_id]
+    scoped_user_ids = [u["id"] for u in scoped_users]
+
+    total_users   = len([u for u in scoped_users if u["role"] == "user"])
+    admin_users   = len([u for u in scoped_users if u["role"] == "admin"])
+    pending_users = len([u for u in scoped_users if u["role"] == "user" and not u["is_approved"]])
+
+    total_logins = 0
+    recent_data: list[dict[str, Any]] = []
+    if scoped_user_ids:
+        logins_result: Any = (
+            db.table("login_logs").select("id", count="exact") # type: ignore
+            .in_("user_id", scoped_user_ids).execute()
+        )
+        total_logins = logins_result.count or 0
+
+        recent: Any = (
+            db.table("login_logs")
+            .select("username, login_time, ip_address")
+            .in_("user_id", scoped_user_ids)
+            .order("login_time", desc=True)
+            .limit(7)
+            .execute()
+        )
+        recent_data = recent.data or []
+
+    stats: dict[str, Any] = {
         "total_users": total_users,
         "pending_users": pending_users,
-        "admin_users": admin_users,
-        "approved_users": total_users - pending_users - admin_users - superadmin_users,
         "total_logins": total_logins,
-        "recent_logins": recent.data,
+        "recent_logins": recent_data,
     }
+    if requester_role == "superadmin":
+        stats["admin_users"] = admin_users
+    return stats
 
 
 @router.get(
