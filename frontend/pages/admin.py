@@ -126,12 +126,15 @@ def render():
 
             for user in users:
                 is_self = user["id"] == st.session_state.get("user_id")
+                viewer_role = st.session_state.get("role")
+                is_superadmin_viewer = viewer_role == "superadmin"
 
                 with st.container():
                     col_info, col_status, col_actions = st.columns([3, 2, 3])
 
                     with col_info:
-                        role_color  = "#6C63FF" if user["role"] == "admin" else "#3498DB"
+                        role_colors = {"admin": "#6C63FF", "superadmin": "#F5A623"}
+                        role_color  = role_colors.get(user["role"], "#3498DB")
                         badge_role  = _badge(user["role"].upper(), role_color)
                         badge_self  = _badge("YOU", "#9B97C9") if is_self else ""
                         st.markdown(
@@ -155,47 +158,58 @@ def render():
 
                     with col_actions:
                         if not is_self:
-                            btn_col1, btn_col2, btn_col3 = st.columns(3)
+                            # Promote/demote is super-admin-only, and never
+                            # offered for the super admin's own row (it
+                            # won't appear in the list anyway, but this is a
+                            # defensive guard in case that ever changes).
+                            can_change_role = is_superadmin_viewer and user["role"] != "superadmin"
 
-                            with btn_col1:
-                                if not user["is_approved"]:
-                                    if st.button(
-                                        "Approve",
-                                        key=f"approve_{user['id']}",
-                                        help="Approve account",
-                                        use_container_width=True,
-                                    ):
-                                        try:
-                                            r = admin_approve_user(token, user["id"])
-                                            st.success(r["message"])
-                                            st.rerun()
-                                        except RuntimeError as e:
-                                            st.error(str(e))
+                            actions = ["approve"] if not user["is_approved"] else []
+                            if can_change_role:
+                                actions.append("role")
+                            actions.append("delete")
 
-                            with btn_col2:
-                                new_role = "admin" if user["role"] == "user" else "user"
-                                lbl = "Promote" if new_role == "admin" else "Demote"
-                                if st.button(
-                                    lbl,
-                                    key=f"role_{user['id']}",
-                                    help=f"Change role to {new_role}",
-                                    use_container_width=True,
-                                ):
-                                    try:
-                                        r = admin_change_role(token, user["id"], new_role)
-                                        st.success(r["message"])
-                                        st.rerun()
-                                    except RuntimeError as e:
-                                        st.error(str(e))
+                            btn_cols = st.columns(len(actions))
+                            for col, action in zip(btn_cols, actions):
+                                with col:
+                                    if action == "approve":
+                                        if st.button(
+                                            "Approve",
+                                            key=f"approve_{user['id']}",
+                                            help="Approve account",
+                                            use_container_width=True,
+                                        ):
+                                            try:
+                                                r = admin_approve_user(token, user["id"])
+                                                st.success(r["message"])
+                                                st.rerun()
+                                            except RuntimeError as e:
+                                                st.error(str(e))
 
-                            with btn_col3:
-                                if st.button(
-                                    "Delete",
-                                    key=f"del_{user['id']}",
-                                    help="Delete user",
-                                    use_container_width=True,
-                                ):
-                                    st.session_state[f"confirm_del_{user['id']}"] = True
+                                    elif action == "role":
+                                        new_role = "admin" if user["role"] == "user" else "user"
+                                        lbl = "Promote" if new_role == "admin" else "Demote"
+                                        if st.button(
+                                            lbl,
+                                            key=f"role_{user['id']}",
+                                            help=f"Change role to {new_role}",
+                                            use_container_width=True,
+                                        ):
+                                            try:
+                                                r = admin_change_role(token, user["id"], new_role)
+                                                st.success(r["message"])
+                                                st.rerun()
+                                            except RuntimeError as e:
+                                                st.error(str(e))
+
+                                    elif action == "delete":
+                                        if st.button(
+                                            "Delete",
+                                            key=f"del_{user['id']}",
+                                            help="Delete user",
+                                            use_container_width=True,
+                                        ):
+                                            st.session_state[f"confirm_del_{user['id']}"] = True
 
                             if st.session_state.get(f"confirm_del_{user['id']}"):
                                 st.warning(
@@ -220,27 +234,33 @@ def render():
                                         del st.session_state[f"confirm_del_{user['id']}"]
                                         st.rerun()
 
-                    lim_col1, lim_col2, lim_col3 = st.columns([2, 2, 1])
-                    with lim_col1:
-                        st.caption("Daily token limit")
-                    with lim_col2:
-                        new_limit = st.number_input(
-                            "Daily token limit",
-                            min_value=0,
-                            max_value=100_000_000,
-                            step=5000,
-                            value=int(user.get("daily_token_limit", 80_000)),
-                            key=f"limit_input_{user['id']}",
-                            label_visibility="collapsed",
-                        )
-                    with lim_col3:
-                        if st.button("Save", key=f"save_limit_{user['id']}", use_container_width=True):
-                            try:
-                                r = admin_update_token_limit(token, user["id"], int(new_limit))
-                                st.success(r["message"])
-                                st.rerun()
-                            except RuntimeError as e:
-                                st.error(str(e))
+                    # Quota only ever applies to regular user accounts — a
+                    # plain admin only ever sees "user" rows anyway, but a
+                    # super admin also sees admin rows, which don't get a
+                    # quota editor at all (admins don't need a token quota
+                    # unless/until they're demoted back to a regular user).
+                    if user["role"] == "user":
+                        lim_col1, lim_col2, lim_col3 = st.columns([2, 2, 1])
+                        with lim_col1:
+                            st.caption("Daily token limit")
+                        with lim_col2:
+                            new_limit = st.number_input(
+                                "Daily token limit",
+                                min_value=0,
+                                max_value=100_000_000,
+                                step=5000,
+                                value=int(user.get("daily_token_limit", 80_000)),
+                                key=f"limit_input_{user['id']}",
+                                label_visibility="collapsed",
+                            )
+                        with lim_col3:
+                            if st.button("Save", key=f"save_limit_{user['id']}", use_container_width=True):
+                                try:
+                                    r = admin_update_token_limit(token, user["id"], int(new_limit))
+                                    st.success(r["message"])
+                                    st.rerun()
+                                except RuntimeError as e:
+                                    st.error(str(e))
 
                 st.markdown(
                     "<hr style='border-color:#2A2D3E; margin:.5rem 0;'>",

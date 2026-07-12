@@ -64,11 +64,24 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(_bearer
 
 
 def require_admin(credentials: HTTPAuthorizationCredentials = Depends(_bearer),) -> dict:
-    """Return token payload only if the user has the admin role."""
+    """Return token payload if the user has the admin or superadmin role."""
     payload = _decode_token(credentials.credentials)
-    if payload.get("role") != "admin":
+    if payload.get("role") not in ("admin", "superadmin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required.",
+        )
+    return payload
+
+
+def require_superadmin(credentials: HTTPAuthorizationCredentials = Depends(_bearer),) -> dict:
+    """Return token payload only if the user has the superadmin role.
+    Used for role changes (promote/demote) — regular admins cannot grant or
+    revoke admin access, only the super admin can."""
+    payload = _decode_token(credentials.credentials)
+    if payload.get("role") != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required.",
         )
     return payload

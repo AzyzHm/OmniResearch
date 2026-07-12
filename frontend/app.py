@@ -145,7 +145,7 @@ def _route():
         from frontend.pages.workspace import render; render()
 
     elif page == "admin":
-        if st.session_state.get("role") != "admin":
+        if st.session_state.get("role") not in ("admin", "superadmin"):
             st.error("⛔ Access denied – admin only.")
             st.session_state.page = "login"
             st.rerun()

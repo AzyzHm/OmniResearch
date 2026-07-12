@@ -46,7 +46,7 @@ def render():
                     st.session_state.user_id    = token_data["user_id"]
                     st.session_state.username   = token_data["username"]
                     st.session_state.role       = token_data["role"]
-                    st.session_state.page       = "admin" if token_data["role"] == "admin" else "projects"
+                    st.session_state.page       = "admin" if token_data["role"] in ("admin", "superadmin") else "projects"
                     st.rerun()
 
         st.markdown(

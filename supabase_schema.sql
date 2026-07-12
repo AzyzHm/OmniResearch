@@ -140,3 +140,8 @@ ALTER TABLE public.search_usage     ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS daily_token_limit INTEGER NOT NULL DEFAULT 80000;
+
+ALTER TABLE users DROP CONSTRAINT users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'admin', 'superadmin'));
+
+UPDATE users SET role = 'superadmin' WHERE username = '';# Add you admin username here
