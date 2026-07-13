@@ -95,14 +95,13 @@ def get_gemini_response(
     The Supabase role values ("user" / "assistant") are converted to the
     Gemini SDK role values ("user" / "model") before sending.
 
-    Falls back to Mistral (direct HTTP request, not the mistralai SDK) if
-    Gemini fails for any reason — most commonly the free-tier quota limit.
+    Falls back to Mistral if Gemini fails for any reason (most commonly the free-tier quota limit)
     If Mistral also fails, the error is raised rather than swallowed, so it
     reaches the frontend instead of failing silently.
 
     Set FORCE_MISTRAL=true in .env to skip Gemini entirely and always use
-    Mistral — useful for testing the fallback path without waiting for a
-    real quota error or touching your working Gemini key.
+    Mistral (useful for testing the fallback path without waiting for a
+    real quota error or touching your working Gemini key.)
 
     user_id, if provided, is used to attribute token usage to that user for
     the admin usage-monitoring view. Usage recording is best-effort and

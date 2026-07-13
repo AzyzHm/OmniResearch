@@ -77,5 +77,5 @@ def delete_item_chunks(collection_id: str, item_id: str) -> None:
     try:
         collection = get_chroma_collection(collection_id)
         collection.delete(where={"item_id": item_id})
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"[chroma] Failed to delete chunks for item {item_id} in collection {collection_id}: {exc}")

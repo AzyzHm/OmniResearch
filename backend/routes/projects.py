@@ -56,7 +56,7 @@ async def rename_project(
     body: ProjectUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    _own_project(project_id, current_user["sub"])   # ownership check
+    _own_project(project_id, current_user["sub"])
     db = get_supabase()
     result = (
         db.table("projects")

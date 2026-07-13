@@ -4,72 +4,17 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Up
 
 from backend.config.auth import get_current_user
 from backend.config.settings import get_settings
-from backend.database.chroma_client import (
-    add_item_chunks,
-    create_chroma_collection,
-    delete_chroma_collection,
-    delete_item_chunks,
-)
+from backend.database.chroma_client import add_item_chunks
 from backend.database.db import get_supabase
-from backend.models.collection import (
-    COLLECTION_TYPE_TO_EXT,
-    COLLECTION_TYPE_TO_SOURCE,
-    BulkItemsUpdateRequest,
-    CollectionCreate,
-    CollectionItemOut,
-    CollectionItemUpdate,
-    CollectionOut,
-)
+from backend.models.collection import COLLECTION_TYPE_TO_EXT, COLLECTION_TYPE_TO_SOURCE, CollectionItemOut
 from backend.models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
+from backend.routes.collections._shared import _existing_urls, _own_collection
 from backend.services.embeddings import embed_texts
 from backend.services.extraction import extract_pdf, extract_txt
 from backend.services.text_processing import chunk_text
 from backend.services.web_fetch import fetch_url_markdown
 
-router = APIRouter(tags=["Collections"])
-
-def _verify_project_owner(project_id: str, user_id: str) -> None:
-    db = get_supabase()
-    result = (
-        db.table("projects")
-        .select("id")
-        .eq("id", project_id)
-        .eq("user_id", user_id)
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found.")
-
-
-def _own_collection(collection_id: str, user_id: str) -> dict:
-    """Fetch a collection and verify ownership through its project."""
-    db = get_supabase()
-    result = (
-        db.table("collections")
-        .select("*, projects(user_id)")
-        .eq("id", collection_id)
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found.")
-    row: Any = result.data[0]
-    project: Any = row.get("projects") or {}
-    if project.get("user_id") != user_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found.")
-    return row
-
-
-def _existing_urls(collection_id: str) -> set[str]:
-    """URLs already stored as items in this collection (used to reject duplicates)."""
-    db = get_supabase()
-    result = (
-        db.table("collection_items")
-        .select("name")
-        .eq("collection_id", collection_id)
-        .eq("source_type", "url")
-        .execute()
-    )
-    return {row["name"] for row in result.data} # type: ignore
+router = APIRouter()
 
 
 def _process_upload_item(
@@ -153,82 +98,6 @@ def _process_search_result_item(collection_id: str, item_id: str, url: str, cont
             "status": "error",
             "error_message": str(exc),
         }).eq("id", item_id).execute()
-
-
-
-@router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])
-async def list_collections(
-    project_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    _verify_project_owner(project_id, current_user["sub"])
-    db = get_supabase()
-    result = (
-        db.table("collections")
-        .select("id, project_id, name, type, created_at")
-        .eq("project_id", project_id)
-        .order("created_at", desc=False)
-        .execute()
-    )
-    return result.data
-
-@router.post(
-    "/projects/{project_id}/collections",
-    response_model=CollectionOut,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_collection(
-    project_id: str,
-    body: CollectionCreate,
-    current_user: dict = Depends(get_current_user),
-):
-    _verify_project_owner(project_id, current_user["sub"])
-    db = get_supabase()
-
-    result = db.table("collections").insert(
-        {"project_id": project_id, "name": body.name, "type": body.type}
-    ).execute()
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Failed to create collection.")
-
-    row: Any = result.data[0]
-
-    create_chroma_collection(
-        collection_id=row["id"],
-        metadata={"name": body.name, "type": body.type, "project_id": project_id},
-    )
-
-    return row
-
-
-@router.delete("/collections/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_collection(
-    collection_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    _own_collection(collection_id, current_user["sub"])
-    db = get_supabase()
-
-    delete_chroma_collection(collection_id)
-
-    db.table("collections").delete().eq("id", collection_id).execute()
-
-
-@router.get("/collections/{collection_id}/items", response_model=list[CollectionItemOut])
-async def list_items(
-    collection_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    _own_collection(collection_id, current_user["sub"])
-    db = get_supabase()
-    result = (
-        db.table("collection_items")
-        .select("*")
-        .eq("collection_id", collection_id)
-        .order("created_at", desc=False)
-        .execute()
-    )
-    return result.data
 
 
 @router.post("/collections/{collection_id}/items", response_model=list[CollectionItemOut])
@@ -384,69 +253,3 @@ async def add_search_result_items(
         added.append(item_row)
 
     return {"added": added, "skipped": skipped}
-
-
-@router.patch("/collections/{collection_id}/items/bulk", response_model=list[CollectionItemOut])
-async def bulk_update_items(
-    collection_id: str,
-    body: BulkItemsUpdateRequest,
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    Apply many is_active changes in a single request. Used by the collections
-    panel's "Save Changes" button, so toggling several checkboxes only ever
-    triggers one API call instead of one per click.
-    """
-    _own_collection(collection_id, current_user["sub"])
-    db = get_supabase()
-
-    results: list[dict] = []
-    for update in body.updates:
-        result = (
-            db.table("collection_items")
-            .update({"is_active": update.is_active})
-            .eq("id", update.item_id)
-            .eq("collection_id", collection_id)
-            .execute()
-        )
-        if result.data:
-            results.append(result.data[0]) # type: ignore
-
-    return results
-
-
-@router.patch("/collections/{collection_id}/items/{item_id}", response_model=CollectionItemOut)
-async def update_item(
-    collection_id: str,
-    item_id: str,
-    body: CollectionItemUpdate,
-    current_user: dict = Depends(get_current_user),
-):
-    """Toggle whether an item is included as LLM context (is_active)."""
-    _own_collection(collection_id, current_user["sub"])
-    db = get_supabase()
-    result = (
-        db.table("collection_items")
-        .update({"is_active": body.is_active})
-        .eq("id", item_id)
-        .eq("collection_id", collection_id)
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found.")
-    return result.data[0]
-
-
-@router.delete(
-    "/collections/{collection_id}/items/{item_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def delete_item(
-    collection_id: str,
-    item_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    _own_collection(collection_id, current_user["sub"])
-    delete_item_chunks(collection_id, item_id)
-    db = get_supabase()
-    db.table("collection_items").delete().eq("id", item_id).eq("collection_id", collection_id).execute()

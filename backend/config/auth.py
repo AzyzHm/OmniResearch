@@ -63,25 +63,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(_bearer
     return _decode_token(credentials.credentials)
 
 
-def require_admin(credentials: HTTPAuthorizationCredentials = Depends(_bearer),) -> dict:
-    """Return token payload if the user has the admin or superadmin role."""
-    payload = _decode_token(credentials.credentials)
-    if payload.get("role") not in ("admin", "superadmin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required.",
-        )
-    return payload
+def _require_role(*allowed_roles: str, message: str):
+    """Factory for role-gated dependencies. require_admin and
+    require_superadmin below are just two instances of this"""
+    def dependency(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> dict:
+        payload = _decode_token(credentials.credentials)
+        if payload.get("role") not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=message)
+        return payload
+    return dependency
 
 
-def require_superadmin(credentials: HTTPAuthorizationCredentials = Depends(_bearer),) -> dict:
-    """Return token payload only if the user has the superadmin role.
-    Used for role changes (promote/demote) — regular admins cannot grant or
-    revoke admin access, only the super admin can."""
-    payload = _decode_token(credentials.credentials)
-    if payload.get("role") != "superadmin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Super admin access required.",
-        )
-    return payload
+require_admin = _require_role("admin", "superadmin", message="Admin access required.")
+require_superadmin = _require_role("superadmin", message="Super admin access required.")

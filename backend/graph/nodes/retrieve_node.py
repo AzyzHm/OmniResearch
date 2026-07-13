@@ -10,10 +10,7 @@ def retrieve_node(state: RAGState) -> dict:
     Fetches a wide candidate pool (default 50 chunks) for the current
     round's query — the initial refined query on the first pass, or the
     validator's "what's missing" follow-up query on a retry — and hands it
-    to rerank_node to pick the best few. Unlike the old batch-slicing
-    design, every attempt does a fresh retrieval against its own query
-    rather than pulling more chunks from a single cached pool, since a
-    follow-up query is deliberately different from the original one.
+    to rerank_node to pick the best few.
     """
     settings = get_settings()
     attempts = state.get("retrieval_attempts", 0)
