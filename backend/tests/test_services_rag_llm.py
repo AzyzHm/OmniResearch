@@ -85,17 +85,40 @@ class TestRefineQuery:
 
 
 class TestValidateContext:
-    def test_sufficient(self, monkeypatch):
+    def test_sufficient_returns_true_and_none(self, monkeypatch):
         _patch_gemini(monkeypatch, "SUFFICIENT")
-        assert rag_llm.validate_context("q", [{"content": "x"}]) is True
+        assert rag_llm.validate_context("q", [{"content": "x"}]) == (True, None)
 
-    def test_insufficient(self, monkeypatch):
+    def test_insufficient_falls_back_to_original_query_without_colon(self, monkeypatch):
         _patch_gemini(monkeypatch, "INSUFFICIENT")
-        assert rag_llm.validate_context("q", [{"content": "x"}]) is False
+        assert rag_llm.validate_context("original q", [{"content": "x"}]) == (False, "original q")
 
-    def test_case_insensitive(self, monkeypatch):
+    def test_insufficient_extracts_missing_query_after_colon(self, monkeypatch):
+        _patch_gemini(monkeypatch, "INSUFFICIENT: pricing details for the enterprise plan")
+        passed, missing = rag_llm.validate_context("q", [{"content": "x"}])
+        assert passed is False
+        assert missing == "pricing details for the enterprise plan"
+
+    def test_insufficient_blank_after_colon_falls_back_to_original_query(self, monkeypatch):
+        _patch_gemini(monkeypatch, "INSUFFICIENT:   ")
+        passed, missing = rag_llm.validate_context("original q", [{"content": "x"}])
+        assert passed is False
+        assert missing == "original q"
+
+    def test_case_insensitive_sufficient(self, monkeypatch):
         _patch_gemini(monkeypatch, "sufficient")
-        assert rag_llm.validate_context("q", []) is True
+        assert rag_llm.validate_context("q", []) == (True, None)
+
+    def test_case_insensitive_insufficient(self, monkeypatch):
+        _patch_gemini(monkeypatch, "insufficient: more detail needed")
+        passed, missing = rag_llm.validate_context("q", [])
+        assert passed is False
+        assert missing == "more detail needed"
+
+    def test_unexpected_model_output_falls_back_to_original_query(self, monkeypatch):
+        """If the model doesn't follow the SUFFICIENT/INSUFFICIENT format at all."""
+        _patch_gemini(monkeypatch, "I'm not sure what you mean.")
+        assert rag_llm.validate_context("original q", []) == (False, "original q")
 
 
 class TestGenerateAnswer:

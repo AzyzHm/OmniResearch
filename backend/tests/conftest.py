@@ -16,12 +16,15 @@ os.environ["TAVILY_API_KEY"] = "fake-tavily-key"
 os.environ["EXA_API_KEY"] = "fake-exa-key"
 
 for _mod in [
-    "chromadb", "chromadb.config",
+    "chromadb", "chromadb.config", "chromadb.base_types",
+    "chromadb.utils", "chromadb.utils.embedding_functions",
     "google", "google.genai",
     "supabase",
     "ollama",
     "exa_py",
     "tavily",
+    "torch", "torch.cuda", "torch.backends", "torch.backends.mps",
+    "sentence_transformers",
 ]:
     sys.modules.setdefault(_mod, MagicMock())
 
@@ -35,6 +38,9 @@ def make_token(user_id="user-123", username="testuser", role="user") -> str:
 
 def make_admin_token(user_id="admin-001", username="admin") -> str:
     return make_token(user_id=user_id, username=username, role="admin")
+
+def make_superadmin_token(user_id="superadmin-001", username="root") -> str:
+    return make_token(user_id=user_id, username=username, role="superadmin")
 
 
 class FakeResult:
@@ -109,7 +115,8 @@ def app():
     never touch a real model or vector store.
     """
     import backend.config.models as models_mod
-    import backend.routes.chat as r_chat
+    import backend.routes.chat.send as r_chat_send
+    import backend.services.quota as quota_mod
     import backend.services.usage_tracker as usage_mod
     from backend.config.settings import get_settings
 
@@ -120,11 +127,14 @@ def app():
     _gemini_stub = lambda *a, **kw: "Mocked AI reply"
     models_mod.get_gemini_response = _gemini_stub
 
-    _orig_get_rag_graph = getattr(r_chat, "get_rag_graph", None)
-    r_chat.get_rag_graph = lambda: fake_db.rag_graph
+    _orig_get_rag_graph = getattr(r_chat_send, "get_rag_graph", None)
+    r_chat_send.get_rag_graph = lambda: fake_db.rag_graph
 
     _orig_usage_supabase = getattr(usage_mod, "get_supabase", None)
     usage_mod.get_supabase = lambda: fake_db
+
+    _orig_quota_supabase = getattr(quota_mod, "get_supabase", None)
+    quota_mod.get_supabase = lambda: fake_db
 
     get_settings.cache_clear()
 
@@ -136,9 +146,11 @@ def app():
     if _orig_gemini_mod is not None:
         models_mod.get_gemini_response = _orig_gemini_mod
     if _orig_get_rag_graph is not None:
-        r_chat.get_rag_graph = _orig_get_rag_graph
+        r_chat_send.get_rag_graph = _orig_get_rag_graph
     if _orig_usage_supabase is not None:
         usage_mod.get_supabase = _orig_usage_supabase
+    if _orig_quota_supabase is not None:
+        quota_mod.get_supabase = _orig_quota_supabase
 
 
 @pytest.fixture()
@@ -148,6 +160,10 @@ def user_headers():
 @pytest.fixture()
 def admin_headers():
     return {"Authorization": f"Bearer {make_admin_token()}"}
+
+@pytest.fixture()
+def superadmin_headers():
+    return {"Authorization": f"Bearer {make_superadmin_token()}"}
 
 
 NOW = datetime.now(timezone.utc).isoformat()
@@ -170,9 +186,10 @@ def message_row(msg_id="msg-1", chat_id="chat-1", role="user", content="Hello"):
     return {"id": msg_id, "chat_id": chat_id, "role": role, "content": content,
             "created_at": NOW}
 
-def user_row(user_id="user-abc", username="alice", role="user", is_approved=True):
+def user_row(user_id="user-abc", username="alice", role="user", is_approved=True, daily_token_limit=80_000):
     return {"id": user_id, "username": username, "role": role,
-            "is_approved": is_approved, "created_at": NOW}
+            "is_approved": is_approved, "created_at": NOW,
+            "daily_token_limit": daily_token_limit}
 
 
 def _patch_all_get_supabase(fake_db):
@@ -180,14 +197,29 @@ def _patch_all_get_supabase(fake_db):
     Replace `get_supabase` in every route module that imported it directly.
     Returns a restore function.
     """
-    import backend.routes.auth as r_auth
-    import backend.routes.admin as r_admin
-    import backend.routes.projects as r_projects
-    import backend.routes.chat as r_chat
-    import backend.routes.collections as r_collections
     import backend.database.db as db_mod
+    import backend.routes.admin.logs as r_admin_logs
+    import backend.routes.admin.quota as r_admin_quota
+    import backend.routes.admin.stats as r_admin_stats
+    import backend.routes.admin.usage as r_admin_usage
+    import backend.routes.admin.users as r_admin_users
+    import backend.routes.auth as r_auth
+    import backend.routes.chat._shared as r_chat_shared
+    import backend.routes.chat.crud as r_chat_crud
+    import backend.routes.chat.messages as r_chat_messages
+    import backend.routes.chat.send as r_chat_send
+    import backend.routes.collections._shared as r_collections_shared
+    import backend.routes.collections.crud as r_collections_crud
+    import backend.routes.collections.ingest as r_collections_ingest
+    import backend.routes.collections.items as r_collections_items
+    import backend.routes.projects as r_projects
 
-    modules = [r_auth, r_admin, r_projects, r_chat, r_collections, db_mod]
+    modules = [
+        r_auth, r_projects, db_mod,
+        r_admin_users, r_admin_logs, r_admin_stats, r_admin_usage, r_admin_quota,
+        r_chat_shared, r_chat_crud, r_chat_messages, r_chat_send,
+        r_collections_shared, r_collections_crud, r_collections_ingest, r_collections_items,
+    ]
     originals = {m: m.get_supabase for m in modules}
 
     stub = lambda: fake_db

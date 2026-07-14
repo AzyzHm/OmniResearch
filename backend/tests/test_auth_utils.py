@@ -1,9 +1,19 @@
 import time
 from datetime import timedelta
+
+import pytest
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
-from backend.config.auth import hash_password, verify_password, create_access_token
+from backend.config.auth import (
+    create_access_token, hash_password, require_admin, require_superadmin, verify_password,
+)
 from backend.config.settings import get_settings
+
+
+def _creds(token: str) -> HTTPAuthorizationCredentials:
+    return HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
 
 class TestPasswordHashing:
@@ -63,3 +73,51 @@ class TestJWT:
         token = create_access_token(user_id="a1", username="admin", role="admin")
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         assert payload["role"] == "admin"
+
+
+class TestRequireAdmin:
+    """require_admin accepts both 'admin' and 'superadmin' roles."""
+
+    def test_admin_role_is_accepted(self):
+        token = create_access_token(user_id="a1", username="admin", role="admin")
+        payload = require_admin(_creds(token))
+        assert payload["role"] == "admin"
+
+    def test_superadmin_role_is_accepted(self):
+        token = create_access_token(user_id="s1", username="root", role="superadmin")
+        payload = require_admin(_creds(token))
+        assert payload["role"] == "superadmin"
+
+    def test_regular_user_role_is_rejected(self):
+        token = create_access_token(user_id="u1", username="alice", role="user")
+        with pytest.raises(HTTPException) as exc_info:
+            require_admin(_creds(token))
+        assert exc_info.value.status_code == 403
+        assert "Admin access required" in exc_info.value.detail
+
+    def test_invalid_token_raises_401(self):
+        with pytest.raises(HTTPException) as exc_info:
+            require_admin(_creds("not-a-valid-token"))
+        assert exc_info.value.status_code == 401
+
+
+class TestRequireSuperadmin:
+    """require_superadmin only accepts the 'superadmin' role — not plain 'admin'."""
+
+    def test_superadmin_role_is_accepted(self):
+        token = create_access_token(user_id="s1", username="root", role="superadmin")
+        payload = require_superadmin(_creds(token))
+        assert payload["role"] == "superadmin"
+
+    def test_admin_role_is_rejected(self):
+        token = create_access_token(user_id="a1", username="admin", role="admin")
+        with pytest.raises(HTTPException) as exc_info:
+            require_superadmin(_creds(token))
+        assert exc_info.value.status_code == 403
+        assert "Super admin access required" in exc_info.value.detail
+
+    def test_regular_user_role_is_rejected(self):
+        token = create_access_token(user_id="u1", username="alice", role="user")
+        with pytest.raises(HTTPException) as exc_info:
+            require_superadmin(_creds(token))
+        assert exc_info.value.status_code == 403
