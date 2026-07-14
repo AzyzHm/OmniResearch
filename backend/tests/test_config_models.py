@@ -69,8 +69,7 @@ class TestBothProvidersFail:
         )
         with pytest.raises(RuntimeError) as exc_info:
             models_mod.get_gemini_response([{"role": "user", "content": "hi"}])
-        assert "gemini down" in str(exc_info.value)
-        assert "mistral down" in str(exc_info.value)
+        assert "quota has been reached" in str(exc_info.value)
         assert not usage_calls  # no usage should be recorded on total failure
 
 

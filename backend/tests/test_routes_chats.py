@@ -165,21 +165,31 @@ class TestGetMessages:
         assert resp.status_code in (401, 403)
 
 
+def _queue_send(db, history=None, daily_token_limit=None, tokens_used_today=None):
+    db.add_result(data=[chat_row()])                                   # 1. ownership
+    db.add_result(data=[{"daily_token_limit": daily_token_limit}]       # 2. quota limit
+                   if daily_token_limit is not None else [])
+    db.add_result(data=tokens_used_today or [])                         # 3. quota used
+    db.add_result(data=history or [])                                  # 4. history fetch
+    db.add_result(data=[{}])                                            # 5. insert user msg
+    db.add_result(data=[{}])                                            # 7. insert assistant reply
+
+
 class TestSendMessage:
     """
     send_message's actual DB call order is:
-      1. _own_chat        — ownership check (chats table)
-      2. select messages  — fetch history *before* the new message exists
-      3. insert           — persist the user message
-      4. [RAG graph runs — mocked via db.rag_graph, no DB call]
-      5. insert           — persist the assistant reply
+      1. _own_chat            — ownership check (chats table)
+      2. get_daily_token_limit — quota check (users table)
+      3. get_tokens_used_today — quota check (llm_usage table)
+      4. select messages      — fetch history *before* the new message exists
+      5. insert               — persist the user message
+      6. [RAG graph runs — mocked via db.rag_graph, no DB call]
+      7. insert               — persist the assistant reply
     """
 
-    def _queue_send(self, db, history=None):
-        db.add_result(data=[chat_row()])           # 1. ownership
-        db.add_result(data=history or [])           # 2. history fetch
-        db.add_result(data=[{}])                     # 3. insert user msg
-        db.add_result(data=[{}])                     # 5. insert assistant reply
+    def _queue_send(self, db, history=None, daily_token_limit=None, tokens_used_today=None):
+        _queue_send(db, history=history, daily_token_limit=daily_token_limit,
+                    tokens_used_today=tokens_used_today)
 
     def test_success_returns_ai_reply(self, app, user_headers):
         client, db = app
@@ -241,15 +251,13 @@ class TestSendMessage:
         assert resp.status_code == 404
 
     def test_rag_graph_failure_returns_502(self, app, user_headers):
-        """If the RAG graph raises, the route should return 502 with 'RAG error' in the detail."""
+        """If the RAG graph raises, the route should return 502 with the raw error in the detail."""
         client, db = app
-        db.add_result(data=[chat_row()])   # ownership
-        db.add_result(data=[])              # history fetch
-        db.add_result(data=[{}])            # insert user msg
+        self._queue_send(db)
         db.rag_graph.raise_exc = RuntimeError("graph exploded")
         resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 502
-        assert "RAG error" in resp.json()["detail"]
+        assert resp.json()["detail"] == "graph exploded"
 
     def test_unauthenticated(self, app):
         client, _ = app
@@ -257,11 +265,56 @@ class TestSendMessage:
         assert resp.status_code in (401, 403)
 
 
+class TestQuotaEnforcement:
+    """
+    enforce_daily_quota() runs right after ownership is verified and before
+    any history fetch/graph invocation — an exhausted user should be blocked
+    immediately, with no message persisted and no graph call made.
+    """
+
+    def test_message_returns_429_when_quota_exceeded(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[chat_row()])                         # ownership
+        db.add_result(data=[{"daily_token_limit": 100}])          # quota limit = 100
+        db.add_result(data=[{"total_tokens": 150}])               # 150 used >= 100
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 429
+        detail = resp.json()["detail"]
+        assert detail["code"] == "quota_exceeded"
+        assert detail["used"] == 150
+        assert detail["limit"] == 100
+
+    def test_message_allowed_when_under_quota(self, app, user_headers):
+        client, db = app
+        _queue_send(db, daily_token_limit=100, tokens_used_today=[{"total_tokens": 50}])
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200
+
+    def test_message_stream_emits_error_event_when_quota_exceeded(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[chat_row()])                         # ownership
+        db.add_result(data=[{"daily_token_limit": 100}])          # quota limit = 100
+        db.add_result(data=[{"total_tokens": 100}])               # exactly at the limit
+        resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200  # SSE always 200; error is in the event body
+        assert '"type": "error"' in resp.text
+        assert '"code": "quota_exceeded"' in resp.text
+
+    def test_default_quota_used_when_no_limit_row(self, app, user_headers):
+        """A user row with no daily_token_limit column falls back to the default (80,000)."""
+        client, db = app
+        _queue_send(db, daily_token_limit=None, tokens_used_today=[{"total_tokens": 79_999}])
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200
+
+
 class TestSendMessageStream:
     """POST /chats/{chat_id}/message/stream — Server-Sent Events variant."""
 
     def _queue_stream(self, db, history=None):
         db.add_result(data=[chat_row()])           # ownership
+        db.add_result(data=[])                      # quota limit (default)
+        db.add_result(data=[])                      # quota used (0 tokens)
         db.add_result(data=history or [])           # history fetch
         db.add_result(data=[{}])                     # insert user msg
         db.add_result(data=[{}])                     # insert assistant reply (after stream completes)

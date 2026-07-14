@@ -38,3 +38,10 @@ class TestSettings:
         get_settings.cache_clear()
         s = get_settings()
         assert s.chroma_persist_dir == "vector_database"
+
+    def test_retrieval_and_reranker_defaults(self):
+        get_settings.cache_clear()
+        s = get_settings()
+        assert s.reranker_model_name == "BAAI/bge-reranker-base"
+        assert s.retrieval_pool_size == 50
+        assert s.rerank_top_k == 5

@@ -60,13 +60,30 @@ class TestGetMessages:
 
 
 class TestSendMessage:
-    def test_calls_correct_endpoint(self, mock_call):
+    def test_calls_correct_endpoint_with_default_retrieval_mode(self, mock_call):
         stub = mock_call(chats, return_value={"response": "Hi there!"})
         result = chats.send_message("tok", "c1", "Hello")
         stub.assert_called_once_with(
-            "POST", "/chats/c1/message", token="tok", json={"message": "Hello"}
+            "POST", "/chats/c1/message", token="tok",
+            json={"message": "Hello", "retrieval_mode": "semantic"},
         )
         assert result["response"] == "Hi there!"
+
+    def test_passes_through_explicit_retrieval_mode(self, mock_call):
+        stub = mock_call(chats, return_value={"response": "Hi there!"})
+        chats.send_message("tok", "c1", "Hello", retrieval_mode="hybrid")
+        stub.assert_called_once_with(
+            "POST", "/chats/c1/message", token="tok",
+            json={"message": "Hello", "retrieval_mode": "hybrid"},
+        )
+
+    def test_keyword_retrieval_mode(self, mock_call):
+        stub = mock_call(chats, return_value={"response": "Hi there!"})
+        chats.send_message("tok", "c1", "Hello", retrieval_mode="keyword")
+        stub.assert_called_once_with(
+            "POST", "/chats/c1/message", token="tok",
+            json={"message": "Hello", "retrieval_mode": "keyword"},
+        )
 
 
 def _sse_body(*events: str) -> list:
@@ -140,5 +157,14 @@ class TestSendMessageStream:
         _, kwargs = patched_session_post.call_args
         assert kwargs["headers"]["Authorization"] == "Bearer tok"
         assert kwargs["headers"]["Accept"] == "text/event-stream"
-        assert kwargs["json"] == {"message": "Hello there"}
+        assert kwargs["json"] == {"message": "Hello there", "retrieval_mode": "semantic"}
         assert kwargs["stream"] is True
+
+    def test_passes_through_explicit_retrieval_mode(self, patched_session_post):
+        resp = FakeResponse(status_code=200)
+        resp.iter_lines = lambda decode_unicode=True: iter([])
+        patched_session_post.return_value = resp
+
+        list(chats.send_message_stream("tok", "c1", "Hello there", retrieval_mode="hybrid"))
+        _, kwargs = patched_session_post.call_args
+        assert kwargs["json"] == {"message": "Hello there", "retrieval_mode": "hybrid"}

@@ -5,6 +5,7 @@ from backend.models.auth import RegisterRequest
 from backend.models.project import ProjectCreate, ProjectUpdate
 from backend.models.collection import CollectionCreate
 from backend.models.chat import ChatCreate, ChatUpdate, ChatMessageRequest
+from backend.models.user import UserOut, TokenLimitUpdate
 
 
 class TestRegisterRequest:
@@ -123,3 +124,54 @@ class TestChatModels:
         m = ChatMessageRequest(message="Follow-up")
         assert m.message == "Follow-up"
         assert not hasattr(m, "history")
+
+    def test_message_request_retrieval_mode_defaults_to_semantic(self):
+        m = ChatMessageRequest(message="Hello")
+        assert m.retrieval_mode == "semantic"
+
+    @pytest.mark.parametrize("mode", ["semantic", "keyword", "hybrid"])
+    def test_message_request_accepts_valid_retrieval_modes(self, mode):
+        m = ChatMessageRequest(message="Hello", retrieval_mode=mode)
+        assert m.retrieval_mode == mode
+
+    def test_message_request_rejects_invalid_retrieval_mode(self):
+        with pytest.raises(ValidationError):
+            ChatMessageRequest(message="Hello", retrieval_mode="bm25") # type: ignore
+
+
+class TestUserOut:
+    def test_daily_token_limit_defaults_when_omitted(self):
+        u = UserOut(
+            id="u1", username="alice", role="user", is_approved=True,
+            created_at="2025-01-01T00:00:00+00:00", # type: ignore
+        )
+        assert u.daily_token_limit == 80_000
+
+    def test_daily_token_limit_accepts_explicit_value(self):
+        u = UserOut(
+            id="u1", username="alice", role="user", is_approved=True,
+            created_at="2025-01-01T00:00:00+00:00", daily_token_limit=5000, # type: ignore
+        )
+        assert u.daily_token_limit == 5000
+
+
+class TestTokenLimitUpdate:
+    def test_valid_value_accepted(self):
+        t = TokenLimitUpdate(daily_token_limit=50_000)
+        assert t.daily_token_limit == 50_000
+
+    def test_zero_is_accepted(self):
+        t = TokenLimitUpdate(daily_token_limit=0)
+        assert t.daily_token_limit == 0
+
+    def test_negative_value_rejected(self):
+        with pytest.raises(ValidationError):
+            TokenLimitUpdate(daily_token_limit=-1)
+
+    def test_value_above_max_rejected(self):
+        with pytest.raises(ValidationError):
+            TokenLimitUpdate(daily_token_limit=100_000_001)
+
+    def test_value_at_max_boundary_accepted(self):
+        t = TokenLimitUpdate(daily_token_limit=100_000_000)
+        assert t.daily_token_limit == 100_000_000

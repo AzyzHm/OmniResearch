@@ -34,6 +34,24 @@ class TestAdminChangeRole:
         )
 
 
+class TestAdminUpdateTokenLimit:
+    def test_calls_correct_endpoint(self, mock_call):
+        stub = mock_call(admin, return_value={"message": "updated"})
+        admin.admin_update_token_limit("tok", "user-1", 50000)
+        stub.assert_called_once_with(
+            "PUT", "/admin/users/user-1/token-limit",
+            token="tok", json={"daily_token_limit": 50000},
+        )
+
+    def test_zero_token_limit_is_forwarded_as_is(self, mock_call):
+        stub = mock_call(admin, return_value={"message": "updated"})
+        admin.admin_update_token_limit("tok", "user-1", 0)
+        stub.assert_called_once_with(
+            "PUT", "/admin/users/user-1/token-limit",
+            token="tok", json={"daily_token_limit": 0},
+        )
+
+
 class TestAdminDeleteUser:
     def test_calls_correct_endpoint(self, mock_call):
         stub = mock_call(admin, return_value={"message": "deleted"})
