@@ -75,9 +75,6 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
-    /* Retrieval-mode dropdown next to the chat input — match its height and
-       vertically center both in their shared row, since stChatInput and a
-       stSelectbox don't share the same natural height by default. */
     div[data-testid="stHorizontalBlock"]:has([data-testid="stChatInput"]) {
         align-items: center !important;
     }
@@ -100,10 +97,6 @@ st.markdown("""
     /* Dataframe */
     [data-testid="stDataFrame"] { border-radius: 8px; overflow: hidden; }
 
-    /* Hide Streamlit's auto-generated anchor-link icon on headings
-       (st.title/header/subheader and markdown #/##/###). It only updates
-       the URL's #fragment for deep-linking — nothing in this app scrolls to
-       or otherwise uses that fragment, so it's pure dead-weight UI here. */
     [data-testid="stHeaderActionElements"] { display: none !important; }
     h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { display: none !important; }
 
@@ -122,7 +115,6 @@ st.markdown("""
 
     hr { border-color: #2A2D3E !important; }
 
-    /* Column gap for workspace */
     [data-testid="column"] { padding: 0 .5rem; }
 </style>
 """, unsafe_allow_html=True)
