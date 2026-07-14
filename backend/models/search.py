@@ -9,7 +9,7 @@ class WebSearchRequest(BaseModel):
     engine: Literal["tavily", "exa"]
     query: str
     num_results: int = 10
-    search_depth: Optional[str] = "basic"  # tavily only: basic | advanced | fast | ultra-fast
+    search_depth: Optional[str] = "basic"  # tavily only
 
     @field_validator("query")
     @classmethod
