@@ -7,6 +7,7 @@ from backend.config.auth import create_access_token, hash_password, verify_passw
 from backend.database.db import get_supabase
 from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse
 from backend.models.log import MessageResponse
+from backend.ratelimit import limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -17,7 +18,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user account (pending admin approval)",
 )
-async def register(payload: RegisterRequest):
+@limiter.limit("5/minute")
+async def register(payload: RegisterRequest, request: Request):
     db = get_supabase()
 
     existing = (
@@ -51,6 +53,7 @@ async def register(payload: RegisterRequest):
     response_model=TokenResponse,
     summary="Authenticate and receive a JWT access token",
 )
+@limiter.limit("10/minute")
 async def login(payload: LoginRequest, request: Request):
     db = get_supabase()
 

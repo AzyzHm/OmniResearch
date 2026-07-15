@@ -32,6 +32,22 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Rate limiting (issue #31): throttle /auth/login and /auth/register per client IP.
+from backend.ratelimit import limiter
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def _rate_limit_exceeded_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."},
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
