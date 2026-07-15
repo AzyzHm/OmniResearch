@@ -1,5 +1,47 @@
 Copyright (c) 2026 Mohammed Aziz Hammemi. All rights reserved.
 
-This software and associated documentation files (the "Software") may only be viewed for personal or educational purposes. 
+This repository and its contents (the "Software") are made publicly visible
+for evaluation and reference purposes only. This is not an open-source
+license.
 
-No permission is granted to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, or to permit persons to whom the Software is furnished to do so, strictly prohibiting any commercial or non-commercial reuse without prior written consent from the copyright holder.
+1. No Grant of Use
+   No permission is granted to any person to use, run, execute, deploy,
+   host, offer as a service, copy, reproduce, modify, adapt, merge,
+   publish, distribute, sublicense, or sell the Software, or any portion
+   of it, in source or compiled form, for any purpose — personal,
+   educational, non-commercial, or commercial — without the prior written
+   consent of the copyright holder. Merely being able to view this
+   repository does not grant any of the above rights.
+
+2. Ownership
+   The copyright holder retains sole and exclusive ownership of the
+   Software, including all past, present, and future versions, and all
+   derivative works, regardless of who authored a given change.
+
+3. Contributions
+   The copyright holder welcomes external contributions (bug fixes,
+   features, documentation, etc.) submitted via pull request or any other
+   channel agreed with the copyright holder. By submitting a contribution,
+   you:
+     a. grant the copyright holder a perpetual, worldwide, royalty-free,
+        irrevocable, and sublicensable license to use, reproduce, modify,
+        distribute, and otherwise exploit the contribution, as part of the
+        Software or otherwise, under any license terms the copyright
+        holder chooses; and
+     b. confirm that you have the right to submit the contribution and
+        that doing so does not infringe any third party's rights.
+   Submitting a contribution does not grant you, or anyone else, any
+   license or right to use the Software beyond what is expressly stated
+   in this license.
+
+4. No Warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR
+   ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+   CONTRACT, TORT, OR OTHERWISE, ARISING FROM OR IN CONNECTION WITH THE
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For licensing inquiries, permitted use, or to propose a contribution,
+contact the copyright holder directly.
