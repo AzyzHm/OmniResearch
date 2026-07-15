@@ -148,6 +148,7 @@ class TestValidationNode:
     def test_sufficient_context_passes(self, monkeypatch):
         monkeypatch.setattr(validation_mod, "validate_context", lambda query, chunks, user_id: (True, None))
         result = validation_mod.validation_node(_base_state(context_chunks=[{"content": "x"}])) # type: ignore
+        assert result == {"validation_passed": True, "missing_query": None}
 
     def test_insufficient_context_fails_with_missing_query(self, monkeypatch):
         monkeypatch.setattr(
