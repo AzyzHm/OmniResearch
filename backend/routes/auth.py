@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
+
+from backend.config.settings import get_settings
 
 from backend.config.auth import create_access_token, hash_password, verify_password
 from backend.database.db import get_supabase
@@ -51,7 +53,7 @@ async def register(payload: RegisterRequest):
     response_model=TokenResponse,
     summary="Authenticate and receive a JWT access token",
 )
-async def login(payload: LoginRequest, request: Request):
+async def login(payload: LoginRequest, request: Request, response: Response):
     db = get_supabase()
 
     result = (
@@ -96,9 +98,28 @@ async def login(payload: LoginRequest, request: Request):
         role=user["role"],
     )
 
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=get_settings().cookie_secure,
+        samesite="lax",
+        max_age=get_settings().jwt_expire_minutes * 60,
+        path="/",
+    )
+
     return TokenResponse(
         access_token=token,
         user_id=user["id"],
         username=user["username"],
         role=user["role"],
     )
+
+@router.post(
+    "/logout",
+    response_model=MessageResponse,
+    summary="Clear the access token cookie",
+)
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    return MessageResponse(message="Logged out successfully.")

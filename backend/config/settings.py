@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
-    cors_origins: str = "http://localhost:8501,http://127.0.0.1:8501"
+    cors_origins: str = "http://localhost:8501,http://127.0.0.1:8501,http://localhost:5173,http://127.0.0.1:5173"
+    cookie_secure: bool = False
 
     gemini_api_key: str = gemini_api_key
     gemini_model: str = gemini_model

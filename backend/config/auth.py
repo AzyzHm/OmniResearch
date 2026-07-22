@@ -3,7 +3,7 @@ from typing import Optional
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 
@@ -28,7 +28,7 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-_bearer = HTTPBearer()
+_bearer = HTTPBearer(auto_error=False)
 
 
 def create_access_token(user_id: str, username: str, role: str, expires_delta: Optional[timedelta] = None,) -> str:
@@ -58,16 +58,43 @@ def _decode_token(token: str) -> dict:
         )
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(_bearer),) -> dict:
+def _extract_token(
+    credentials: Optional[HTTPAuthorizationCredentials],
+    request: Request = None  # type: ignore[assignment]
+) -> str:
+    """Prefer the Authorization header if present, otherwise fall back to
+    the httpOnly access_token cookie set by /auth/login."""
+    if credentials is not None:
+        return credentials.credentials
+    if request is not None:
+        cookie_token = request.cookies.get("access_token")
+        if cookie_token:
+            return cookie_token
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    request: Request = None  # type: ignore[assignment]
+) -> dict:
     """Return token payload for any authenticated user."""
-    return _decode_token(credentials.credentials)
+    token = _extract_token(credentials, request)
+    return _decode_token(token)
 
 
 def _require_role(*allowed_roles: str, message: str):
     """Factory for role-gated dependencies. require_admin and
     require_superadmin below are just two instances of this"""
-    def dependency(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> dict:
-        payload = _decode_token(credentials.credentials)
+    def dependency(
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+        request: Request = None  # type: ignore[assignment]
+    ) -> dict:
+        token = _extract_token(credentials, request)
+        payload = _decode_token(token)
         if payload.get("role") not in allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=message)
         return payload
