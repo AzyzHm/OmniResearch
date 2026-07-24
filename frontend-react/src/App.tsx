@@ -5,6 +5,8 @@ import Landing from "@/pages/Landing"
 import Login from "@/pages/Login"
 import Signup from "@/pages/Signup"
 import Workspace from "@/pages/Workspace"
+import ProjectsList from "@/pages/ProjectsList"
+import ProjectDetail from "@/pages/ProjectDetail"
 import Terms from "@/pages/Terms"
 import Privacy from "@/pages/Privacy"
 import Cookies from "@/pages/Cookies"
@@ -24,7 +26,10 @@ function App() {
                 <Workspace />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<ProjectsList />} />
+            <Route path="projects/:projectId" element={<ProjectDetail />} />
+          </Route>
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/cookies" element={<Cookies />} />

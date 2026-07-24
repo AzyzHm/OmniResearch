@@ -21,11 +21,15 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      // FormData bodies must NOT have an explicit Content-Type set here —
+      // the browser needs to generate its own multipart boundary string.
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...options.headers,
     },
   })
@@ -49,4 +53,18 @@ export const apiClient = {
       method: "POST",
       body: data !== undefined ? JSON.stringify(data) : undefined,
     }),
+  put: <T>(path: string, data?: unknown) =>
+    request<T>(path, {
+      method: "PUT",
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    }),
+  patch: <T>(path: string, data?: unknown) =>
+    request<T>(path, {
+      method: "PATCH",
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    }),
+  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  /** Multipart form upload — pass a FormData body, e.g. for file uploads. */
+  upload: <T>(path: string, formData: FormData) =>
+    request<T>(path, { method: "POST", body: formData }),
 }
