@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login } from "@/api/auth"
 import { ApiError } from "@/lib/apiClient"
+import { useAuth } from "@/context/AuthContext"
 
 function Login() {
   const navigate = useNavigate()
+  const { refetchUser } = useAuth()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +28,7 @@ function Login() {
     setIsSubmitting(true)
     try {
       await login({ username: username.trim(), password })
+      await refetchUser()
       navigate("/app")
     } catch (err) {
       if (err instanceof ApiError) {

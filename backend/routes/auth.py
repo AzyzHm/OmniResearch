@@ -1,14 +1,16 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
 
 from backend.config.settings import get_settings
 
-from backend.config.auth import create_access_token, hash_password, verify_password
+from backend.config.auth import create_access_token, hash_password, verify_password, get_current_user
 from backend.database.db import get_supabase
-from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse
+from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse
 from backend.models.log import MessageResponse
+
+from fastapi.security import HTTPAuthorizationCredentials
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -123,3 +125,15 @@ async def login(payload: LoginRequest, request: Request, response: Response):
 async def logout(response: Response):
     response.delete_cookie(key="access_token", path="/")
     return MessageResponse(message="Logged out successfully.")
+
+@router.get(
+    "/me",
+    response_model=CurrentUserResponse,
+    summary="Return the currently authenticated user",
+)
+async def me(payload: dict = Depends(get_current_user)):
+    return CurrentUserResponse(
+        user_id=payload["sub"],
+        username=payload["username"],
+        role=payload["role"],
+    )

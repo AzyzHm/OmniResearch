@@ -33,3 +33,13 @@ export function login(payload: LoginPayload) {
 export function logout() {
   return apiClient.post<MessageResponse>("/auth/logout")
 }
+
+export interface CurrentUser {
+  user_id: string
+  username: string
+  role: string
+}
+
+export function getCurrentUser() {
+  return apiClient.get<CurrentUser>("/auth/me")
+}
