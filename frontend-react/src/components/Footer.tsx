@@ -48,7 +48,7 @@ function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-border text-xs text-muted-foreground">
-          © 2026 OmniResearch. Built by Azyz Hamdi.
+          © 2026 OmniResearch. Built by AzyzHm.
         </div>
       </div>
     </footer>
