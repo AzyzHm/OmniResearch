@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { Outlet, useNavigate } from "react-router-dom"
-import { LogOut, Sparkles } from "lucide-react"
+import { Link, Outlet, useNavigate } from "react-router-dom"
+import { LogOut, Settings, Sparkles } from "lucide-react"
 
 import { logout } from "@/api/auth"
 import { useAuth } from "@/context/AuthContext"
@@ -10,14 +10,13 @@ function Workspace() {
   const navigate = useNavigate()
   const { user, clearUser } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin"
 
   async function handleLogout() {
     setLoggingOut(true)
     try {
       await logout()
     } catch {
-      // Even if the request fails, clear local state and send the user
-      // back to the landing page rather than leaving them stuck.
     } finally {
       clearUser()
       navigate("/")
@@ -33,6 +32,15 @@ function Workspace() {
         </div>
 
         <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
+            >
+              <Settings className="size-3.5" />
+              Admin
+            </Link>
+          )}
           {user && (
             <span className="font-mono text-xs text-muted-foreground">
               {user.username}
