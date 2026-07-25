@@ -27,9 +27,6 @@ function ProjectsList() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
-  // Bumped only when the dialog is opened (not on close), so the form's
-  // internal state resets via remount on open without cutting off the
-  // dialog's own closing animation.
   const [createInstance, setCreateInstance] = useState(0)
 
   const [renameTarget, setRenameTarget] = useState<Project | null>(null)
@@ -68,14 +65,25 @@ function ProjectsList() {
     },
   })
 
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
   const deleteMutation = useMutation({
     mutationFn: deleteProject,
-    onMutate: (id: string) => setDeletingId(id),
+    onMutate: async (id: string) => {
+      setDeletingId(id)
+      setDeleteError(null)
+      await queryClient.cancelQueries({ queryKey: PROJECTS_QUERY_KEY })
+    },
     onSuccess: (_data, id) => {
       queryClient.setQueryData<Project[]>(PROJECTS_QUERY_KEY, (old) =>
         old ? old.filter((p) => p.id !== id) : old
       )
       queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY })
+    },
+    onError: (err) => {
+      setDeleteError(
+        err instanceof ApiError ? err.message : "Couldn't delete the project."
+      )
     },
     onSettled: () => setDeletingId(null),
   })
@@ -127,6 +135,8 @@ function ProjectsList() {
           Couldn't load your projects. Try refreshing the page.
         </p>
       )}
+
+      {deleteError && <p className="mb-4 text-sm text-destructive">{deleteError}</p>}
 
       {!isLoading && !isError && projects && projects.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">

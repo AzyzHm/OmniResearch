@@ -26,21 +26,32 @@ async function request<T>(
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     credentials: "include",
+    cache: "no-store",
     headers: {
-      // FormData bodies must NOT have an explicit Content-Type set here —
-      // the browser needs to generate its own multipart boundary string.
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...options.headers,
     },
   })
 
-  const isJson = response.headers
-    .get("content-type")
-    ?.includes("application/json")
-  const body = isJson ? await response.json() : undefined
+  const hasNoBody = response.status === 204 || response.status === 304
+  const isJson =
+    !hasNoBody &&
+    response.headers.get("content-type")?.includes("application/json")
+
+  let body: unknown
+  if (isJson) {
+    try {
+      body = await response.json()
+    } catch {
+      body = undefined
+    }
+  }
 
   if (!response.ok) {
-    throw new ApiError(response.status, body?.detail)
+    throw new ApiError(
+      response.status,
+      (body as { detail?: unknown } | undefined)?.detail
+    )
   }
 
   return body as T
@@ -64,7 +75,6 @@ export const apiClient = {
       body: data !== undefined ? JSON.stringify(data) : undefined,
     }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
-  /** Multipart form upload — pass a FormData body, e.g. for file uploads. */
   upload: <T>(path: string, formData: FormData) =>
     request<T>(path, { method: "POST", body: formData }),
 }

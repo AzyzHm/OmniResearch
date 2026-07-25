@@ -43,6 +43,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
   const [urlError, setUrlError] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
   const [pendingChanges, setPendingChanges] = useState<Record<string, boolean>>({})
 
   const uploadMutation = useMutation({
@@ -77,16 +78,30 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
     },
   })
 
+  const [deleteItemError, setDeleteItemError] = useState<string | null>(null)
+
   const deleteMutation = useMutation({
     mutationFn: (itemId: string) => deleteCollectionItem(collection.id, itemId),
-    onMutate: (itemId) => setDeletingId(itemId),
+    onMutate: async (itemId) => {
+      setDeletingId(itemId)
+      setDeleteItemError(null)
+      await queryClient.cancelQueries({ queryKey })
+    },
     onSuccess: (_data, itemId) => {
       queryClient.setQueryData<CollectionItem[]>(queryKey, (old) =>
         old ? old.filter((i) => i.id !== itemId) : old
       )
       queryClient.invalidateQueries({ queryKey })
     },
-    onSettled: () => setDeletingId(null),
+    onError: (err) => {
+      setDeleteItemError(
+        err instanceof ApiError ? err.message : "Couldn't delete the item."
+      )
+    },
+    onSettled: () => {
+      setDeletingId(null)
+      setConfirmingDeleteId(null)
+    },
   })
 
   function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -122,12 +137,36 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
     if (updates.length > 0) bulkMutation.mutate(updates)
   }
 
+  const readyItems = items?.filter((i) => i.status === "ready") ?? []
+
+  function selectAll() {
+    setPendingChanges((prev) => {
+      const next = { ...prev }
+      readyItems.forEach((item) => {
+        if (item.is_active) delete next[item.id]
+        else next[item.id] = true
+      })
+      return next
+    })
+  }
+
+  function deselectAll() {
+    setPendingChanges((prev) => {
+      const next = { ...prev }
+      readyItems.forEach((item) => {
+        if (!item.is_active) delete next[item.id]
+        else next[item.id] = false
+      })
+      return next
+    })
+  }
+
   const dirty = Object.keys(pendingChanges).length > 0
   const accept = EXT_BY_TYPE[collection.type]
 
   return (
     <div className="flex-1 px-6 py-6">
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-4 flex items-start justify-between">
         <div>
           <h2 className="font-display text-lg font-medium text-ink">
             {collection.name}
@@ -143,6 +182,17 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
           </Button>
         )}
       </div>
+
+      {readyItems.length > 0 && (
+        <div className="mb-4 flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={selectAll}>
+            Select all
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={deselectAll}>
+            Deselect all
+          </Button>
+        </div>
+      )}
 
       <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-border p-4">
         {collection.type === "urls" ? (
@@ -193,6 +243,9 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
 
       {urlError && <p className="mb-4 text-sm text-destructive">{urlError}</p>}
       {uploadError && <p className="mb-4 text-sm text-destructive">{uploadError}</p>}
+      {deleteItemError && (
+        <p className="mb-4 text-sm text-destructive">{deleteItemError}</p>
+      )}
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading items...</p>}
 
@@ -208,6 +261,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
             <tbody>
               {items.map((item) => {
                 const checked = pendingChanges[item.id] ?? item.is_active
+                const confirming = confirmingDeleteId === item.id
                 return (
                   <tr
                     key={item.id}
@@ -217,9 +271,10 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                       <input
                         type="checkbox"
                         checked={checked}
+                        disabled={item.status !== "ready"}
                         onChange={(e) => toggleItem(item, e.target.checked)}
                         aria-label={`Include ${item.name} in retrieval`}
-                        className="size-4 rounded border-input accent-teal"
+                        className="size-4 rounded border-input accent-teal disabled:opacity-40"
                       />
                     </td>
                     <td className="min-w-0 px-3 py-2.5">
@@ -236,17 +291,39 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                       {item.status === "ready" ? `${item.chunk_count} chunks` : ""}
                     </td>
-                    <td className="w-10 px-3 py-2.5 text-right">
-                      <Button
-                        type="button"
-                        size="icon-xs"
-                        variant="ghost"
-                        disabled={deletingId === item.id}
-                        onClick={() => deleteMutation.mutate(item.id)}
-                        aria-label={`Delete ${item.name}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                    <td className="px-3 py-2.5 text-right">
+                      {confirming ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="destructive"
+                            disabled={deletingId === item.id}
+                            onClick={() => deleteMutation.mutate(item.id)}
+                          >
+                            {deletingId === item.id ? "Deleting..." : "Confirm"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="ghost"
+                            disabled={deletingId === item.id}
+                            onClick={() => setConfirmingDeleteId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="ghost"
+                          onClick={() => setConfirmingDeleteId(item.id)}
+                          aria-label={`Delete ${item.name}`}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 )

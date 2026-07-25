@@ -59,13 +59,24 @@ function CollectionsSidebar({
     },
   })
 
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
   const deleteMutation = useMutation({
     mutationFn: deleteCollection,
+    onMutate: async () => {
+      setDeleteError(null)
+      await queryClient.cancelQueries({ queryKey })
+    },
     onSuccess: (_data, collectionId) => {
       queryClient.setQueryData<Collection[]>(queryKey, (old) =>
         old ? old.filter((c) => c.id !== collectionId) : old
       )
       queryClient.invalidateQueries({ queryKey })
+    },
+    onError: (err) => {
+      setDeleteError(
+        err instanceof ApiError ? err.message : "Couldn't delete the collection."
+      )
     },
     onSettled: () => setConfirmingDeleteId(null),
   })
@@ -95,6 +106,10 @@ function CollectionsSidebar({
         <p className="px-1 text-sm text-muted-foreground">
           No collections yet.
         </p>
+      )}
+
+      {deleteError && (
+        <p className="px-1 text-sm text-destructive">{deleteError}</p>
       )}
 
       <div className="flex flex-col gap-1">
