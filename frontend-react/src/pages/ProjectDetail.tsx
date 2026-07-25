@@ -1,22 +1,23 @@
 import { useState } from "react"
 import { useParams, Link } from "react-router-dom"
-import { ArrowLeft, FolderKanban } from "lucide-react"
+import { ArrowLeft, Library } from "lucide-react"
 
-import type { Collection } from "@/api/collections"
-import CollectionsSidebar from "@/components/workspace/CollectionsSidebar"
-import CollectionItemsPanel from "@/components/workspace/CollectionItemsPanel"
+import type { Chat } from "@/api/chats"
+import { Button } from "@/components/ui/button"
+import ChatsSidebar from "@/components/workspace/ChatsSidebar"
+import ChatArea from "@/components/workspace/ChatArea"
+import SourcesDrawer from "@/components/workspace/SourcesDrawer"
 
 function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>()
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(
-    null
-  )
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
+  const [sourcesOpen, setSourcesOpen] = useState(false)
 
   if (!projectId) return null
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] flex-col">
-      <div className="border-b border-border px-6 py-4">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <Link
           to="/app"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
@@ -24,32 +25,43 @@ function ProjectDetail() {
           <ArrowLeft className="size-3.5" />
           Back to projects
         </Link>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setSourcesOpen(true)}
+        >
+          <Library className="size-3.5" data-icon="inline-start" />
+          Sources
+        </Button>
       </div>
 
-      <div className="flex flex-1">
-        <CollectionsSidebar
+      <div className="flex flex-1 overflow-hidden">
+        <ChatsSidebar
           projectId={projectId}
-          selectedCollectionId={selectedCollection?.id ?? null}
-          onSelect={setSelectedCollection}
+          selectedChatId={selectedChat?.id ?? null}
+          onSelect={setSelectedChat}
         />
 
-        {selectedCollection ? (
-          <CollectionItemsPanel collection={selectedCollection} />
+        {selectedChat ? (
+          <ChatArea
+            key={selectedChat.id}
+            chatId={selectedChat.id}
+            chatName={selectedChat.name}
+          />
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-teal/10 text-teal">
-              <FolderKanban className="size-5" />
-            </div>
-            <div>
-              <p className="font-medium text-ink">Select a collection</p>
-              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Choose a collection on the left, or create a new one to start
-                adding sources.
-              </p>
-            </div>
+          <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+            Start a chat to begin exploring this project.
           </div>
         )}
       </div>
+
+      <SourcesDrawer
+        projectId={projectId}
+        open={sourcesOpen}
+        onClose={() => setSourcesOpen(false)}
+      />
     </div>
   )
 }

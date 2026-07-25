@@ -82,7 +82,7 @@ function CollectionsSidebar({
   })
 
   return (
-    <div className="flex w-64 shrink-0 flex-col gap-2 border-r border-border p-4">
+    <div className="flex max-h-56 shrink-0 flex-col gap-2 border-b border-border p-3">
       <div className="mb-1 flex items-center justify-between">
         <h2 className="font-mono text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Collections
@@ -112,7 +112,7 @@ function CollectionsSidebar({
         <p className="px-1 text-sm text-destructive">{deleteError}</p>
       )}
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 overflow-y-auto">
         {collections?.map((collection) => {
           const Icon = TYPE_ICON[collection.type]
           const selected = collection.id === selectedCollectionId

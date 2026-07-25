@@ -165,7 +165,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
   const accept = EXT_BY_TYPE[collection.type]
 
   return (
-    <div className="flex-1 px-6 py-6">
+    <div className="flex-1 overflow-y-auto px-4 py-4">
       <div className="mb-4 flex items-start justify-between">
         <div>
           <h2 className="font-display text-lg font-medium text-ink">
