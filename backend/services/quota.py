@@ -60,16 +60,20 @@ def get_tokens_used_today(user_id: str) -> int:
     return sum((row.get("total_tokens") or 0) for row in rows)
 
 
-def enforce_daily_quota(user_id: Optional[str]) -> None:
+def enforce_daily_quota(user_id: Optional[str], role: Optional[str] = None) -> None:
     """
     Raise DailyQuotaExceeded if this user has hit their daily token limit.
+
+    Admins and superadmins are exempt — the admin panel already refuses to
+    let anyone set a token limit for non-"user" roles, which only makes
+    sense if quotas are meant to not apply to them in the first place.
 
     Call this BEFORE persisting the user's message or invoking the RAG graph,
     so an exhausted user is blocked immediately — no message is saved, no
     LLM call is attempted, and no tokens are spent on router/refine/validate
     calls before the block kicks in.
     """
-    if not user_id:
+    if not user_id or role in ("admin", "superadmin"):
         return
     limit = get_daily_token_limit(user_id)
     used = get_tokens_used_today(user_id)

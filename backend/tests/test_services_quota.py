@@ -97,6 +97,36 @@ class TestEnforceDailyQuota:
         except quota.DailyQuotaExceeded as exc:
             assert exc.used == 1500
 
+    def test_admin_role_is_exempt_even_over_limit(self, monkeypatch):
+        monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
+        monkeypatch.setattr(quota, "get_tokens_used_today", lambda uid: 5000)
+        quota.enforce_daily_quota("admin-1", role="admin")  # should not raise
+
+    def test_superadmin_role_is_exempt_even_over_limit(self, monkeypatch):
+        monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
+        monkeypatch.setattr(quota, "get_tokens_used_today", lambda uid: 5000)
+        quota.enforce_daily_quota("sa-1", role="superadmin")  # should not raise
+
+    def test_regular_user_role_still_enforced(self, monkeypatch):
+        monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
+        monkeypatch.setattr(quota, "get_tokens_used_today", lambda uid: 5000)
+        try:
+            quota.enforce_daily_quota("u1", role="user")
+            assert False, "expected DailyQuotaExceeded"
+        except quota.DailyQuotaExceeded:
+            pass
+
+    def test_none_role_still_enforced_backward_compatible(self, monkeypatch):
+        """Existing call sites that don't pass role at all must keep working
+        exactly as before — role defaults to None, which is not exempt."""
+        monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
+        monkeypatch.setattr(quota, "get_tokens_used_today", lambda uid: 5000)
+        try:
+            quota.enforce_daily_quota("u1")
+            assert False, "expected DailyQuotaExceeded"
+        except quota.DailyQuotaExceeded:
+            pass
+
 
 class TestDailyQuotaExceeded:
     def test_message_includes_used_and_limit(self):

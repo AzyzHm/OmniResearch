@@ -1,4 +1,4 @@
-from backend.tests.conftest import project_row, chat_row, message_row
+from backend.tests.conftest import project_row, chat_row, message_row, make_token
 
 
 class TestListChats:
@@ -305,6 +305,22 @@ class TestQuotaEnforcement:
         client, db = app
         _queue_send(db, daily_token_limit=None, tokens_used_today=[{"total_tokens": 79_999}])
         resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200
+
+    def test_admin_bypasses_quota_even_when_over_limit(self, app):
+        """Admins (and superadmins) are exempt from the daily quota entirely —
+        this exercises the real route, not just the isolated quota service."""
+        client, db = app
+        admin_headers_same_owner = {
+            "Authorization": f"Bearer {make_token(role='admin')}"
+        }
+        db.add_result(data=[chat_row()])       # 1. ownership
+        db.add_result(data=[])                 # 2. history fetch
+        db.add_result(data=[{}])               # 3. insert user msg
+        db.add_result(data=[{}])               # 4. insert assistant reply
+        resp = client.post(
+            "/chats/chat-1/message", json={"message": "Hello"}, headers=admin_headers_same_owner
+        )
         assert resp.status_code == 200
 
 

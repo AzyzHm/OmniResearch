@@ -33,7 +33,7 @@ async def send_message(
     settings = get_settings()
 
     try:
-        enforce_daily_quota(current_user["sub"])
+        enforce_daily_quota(current_user["sub"], current_user.get("role"))
     except DailyQuotaExceeded as exc:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -112,7 +112,7 @@ async def send_message_stream(
     settings = get_settings()
 
     try:
-        enforce_daily_quota(current_user["sub"])
+        enforce_daily_quota(current_user["sub"], current_user.get("role"))
     except DailyQuotaExceeded as exc:
         payload = {
             "type": "error",
