@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link2, Trash2, Upload } from "lucide-react"
+import { ExternalLink, Link2, Search, Trash2, Upload } from "lucide-react"
 
 import {
   addCollectionUrl,
@@ -12,9 +12,11 @@ import {
   type CollectionItem,
 } from "@/api/collections"
 import { ApiError } from "@/lib/apiClient"
+import { shortenUrl } from "@/lib/shortenUrl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import StatusBadge from "@/components/workspace/StatusBadge"
+import SearchModal from "@/components/workspace/SearchModal"
 
 const EXT_BY_TYPE: Record<string, string> = {
   documents: ".pdf",
@@ -45,6 +47,8 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
   const [pendingChanges, setPendingChanges] = useState<Record<string, boolean>>({})
+  const [searchModalOpen, setSearchModalOpen] = useState(false)
+  const [searchInstance, setSearchInstance] = useState(0)
 
   const uploadMutation = useMutation({
     mutationFn: (files: File[]) => uploadCollectionFiles(collection.id, files),
@@ -211,6 +215,18 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
             >
               {addUrlMutation.isPending ? "Adding..." : "Add URL"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchInstance((n) => n + 1)
+                setSearchModalOpen(true)
+              }}
+            >
+              <Search className="size-3.5" data-icon="inline-start" />
+              Search the web
+            </Button>
           </form>
         ) : (
           <>
@@ -257,7 +273,14 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
 
       {!isLoading && items && items.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-border">
-          <table className="w-full text-sm">
+          <table className="w-full table-fixed text-sm">
+            <colgroup>
+              <col className="w-10" />
+              <col />
+              <col className="w-24" />
+              <col className="w-20" />
+              <col className="w-24" />
+            </colgroup>
             <tbody>
               {items.map((item) => {
                 const checked = pendingChanges[item.id] ?? item.is_active
@@ -277,8 +300,23 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                         className="size-4 rounded border-input accent-teal disabled:opacity-40"
                       />
                     </td>
-                    <td className="min-w-0 px-3 py-2.5">
-                      <p className="truncate text-ink">{item.name}</p>
+                    <td className="overflow-hidden px-3 py-2.5">
+                      {collection.type === "urls" ? (
+                        <a
+                          href={item.name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={item.name}
+                          className="flex w-full min-w-0 items-center gap-1 text-teal hover:underline"
+                        >
+                          <span className="min-w-0 truncate">
+                            {shortenUrl(item.name)}
+                          </span>
+                          <ExternalLink className="size-3 shrink-0" />
+                        </a>
+                      ) : (
+                        <p className="truncate text-ink">{item.name}</p>
+                      )}
                       {item.status === "error" && item.error_message && (
                         <p className="truncate text-xs text-destructive">
                           {item.error_message}
@@ -291,9 +329,9 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                       {item.status === "ready" ? `${item.chunk_count} chunks` : ""}
                     </td>
-                    <td className="px-3 py-2.5 text-right">
+                    <td className="px-2 py-2.5 text-right">
                       {confirming ? (
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex flex-col items-end gap-1">
                           <Button
                             type="button"
                             size="xs"
@@ -331,6 +369,17 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {collection.type === "urls" && (
+        <SearchModal
+          key={searchInstance}
+          open={searchModalOpen}
+          onOpenChange={setSearchModalOpen}
+          collectionId={collection.id}
+          existingUrls={new Set((items ?? []).map((i) => i.name))}
+          onAdded={() => queryClient.invalidateQueries({ queryKey })}
+        />
       )}
     </div>
   )
