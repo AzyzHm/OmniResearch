@@ -1,12 +1,26 @@
 import ReactMarkdown from "react-markdown"
+import { ExternalLink } from "lucide-react"
+
+import type { Source } from "@/api/chats"
+import { shortenUrl } from "@/lib/shortenUrl"
 import { cn } from "@/lib/utils"
 
 interface ChatMessageBubbleProps {
   role: "user" | "assistant" | string
   content: string
+  sources?: Source[] | null
 }
 
-function ChatMessageBubble({ role, content }: ChatMessageBubbleProps) {
+function isUrl(value: string): boolean {
+  try {
+    new URL(value)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function ChatMessageBubble({ role, content, sources }: ChatMessageBubbleProps) {
   const isUser = role === "user"
 
   return (
@@ -22,19 +36,54 @@ function ChatMessageBubble({ role, content }: ChatMessageBubbleProps) {
         {isUser ? (
           <p className="whitespace-pre-wrap">{content}</p>
         ) : (
-          <div
-            className={cn(
-              "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-              "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_li]:my-0.5",
-              "[&_ul]:pl-5 [&_ol]:pl-5 [&_strong]:font-semibold",
-              "[&_a]:text-teal [&_a]:underline [&_a]:underline-offset-2",
-              "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs",
-              "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-ink [&_pre]:p-3 [&_pre]:text-xs [&_pre]:text-paper",
-              "[&_pre_code]:bg-transparent [&_pre_code]:p-0"
+          <>
+            <div
+              className={cn(
+                "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+                "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_li]:my-0.5",
+                "[&_ul]:pl-5 [&_ol]:pl-5 [&_strong]:font-semibold",
+                "[&_a]:text-teal [&_a]:underline [&_a]:underline-offset-2",
+                "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs",
+                "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-ink [&_pre]:p-3 [&_pre]:text-xs [&_pre]:text-paper",
+                "[&_pre_code]:bg-transparent [&_pre_code]:p-0"
+              )}
+            >
+              <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
+
+            {sources && sources.length > 0 && (
+              <div className="mt-2 border-t border-border pt-2">
+                <p className="mb-1 font-mono text-[0.65rem] tracking-wide text-muted-foreground uppercase">
+                  Sources
+                </p>
+                <ul className="space-y-1">
+                  {sources.map((s) => (
+                    <li key={s.index} className="flex items-start gap-1.5 text-xs">
+                      <span className="shrink-0 font-mono text-muted-foreground">
+                        [{s.index}]
+                      </span>
+                      {isUrl(s.source_name) ? (
+                        <a
+                          href={s.source_name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={s.source_name}
+                          className="inline-flex min-w-0 items-center gap-1 text-teal hover:underline"
+                        >
+                          <span className="truncate">{shortenUrl(s.source_name)}</span>
+                          <ExternalLink className="size-2.5 shrink-0" />
+                        </a>
+                      ) : (
+                        <span className="truncate text-muted-foreground">
+                          {s.source_name}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
-          >
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </div>
+          </>
         )}
       </div>
     </div>

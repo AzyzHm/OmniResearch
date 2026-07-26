@@ -28,6 +28,10 @@ function ChatArea({ chatId, chatName }: ChatAreaProps) {
   const chatStream = useChatStream()
   const [pendingUserEcho, setPendingUserEcho] = useState<string | null>(null)
 
+  // When a stream finishes (success or error), the user's message has
+  // already been persisted server-side either way — refetch so it (and
+  // any real assistant reply) becomes part of the actual history, then
+  // drop the optimistic local echo.
   const wasStreamingRef = useRef(false)
   useEffect(() => {
     if (wasStreamingRef.current && !chatStream.isStreaming) {
@@ -70,7 +74,12 @@ function ChatArea({ chatId, chatName }: ChatAreaProps) {
         )}
 
         {messages?.map((msg) => (
-          <ChatMessageBubble key={msg.id} role={msg.role} content={msg.content} />
+          <ChatMessageBubble
+            key={msg.id}
+            role={msg.role}
+            content={msg.content}
+            sources={msg.sources}
+          />
         ))}
 
         {pendingUserEcho && (

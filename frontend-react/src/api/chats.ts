@@ -9,12 +9,20 @@ export interface Chat {
   created_at: string
 }
 
+export interface Source {
+  index: number
+  source_name: string
+  collection_id: string | null
+  item_id: string | null
+}
+
 export interface Message {
   id: string
   chat_id: string
   role: "user" | "assistant" | string
   content: string
   created_at: string
+  sources?: Source[] | null
 }
 
 export interface ChatStreamNodeEvent {
@@ -25,6 +33,7 @@ export interface ChatStreamNodeEvent {
 export interface ChatStreamDoneEvent {
   type: "done"
   answer: string
+  sources: Source[]
 }
 
 export interface ChatStreamErrorEvent {
@@ -61,6 +70,12 @@ export function listMessages(chatId: string) {
   return apiClient.get<Message[]>(`/chats/${chatId}/messages`)
 }
 
+/**
+ * Streams a chat reply via SSE. The backend's route accepts POST with a JSON
+ * body and returns text/event-stream, so this can't use the native
+ * EventSource API (GET-only, no custom body) — it reads the raw response
+ * stream and parses "data: {...}\n\n" frames by hand instead.
+ */
 export async function* streamChatMessage(
   chatId: string,
   message: string,
@@ -82,6 +97,7 @@ export async function* streamChatMessage(
     try {
       detail = JSON.parse(text)?.detail ?? detail
     } catch {
+      // Non-JSON error body — fall back to the generic message above.
     }
     throw new ApiError(response.status, detail)
   }
@@ -107,6 +123,7 @@ export async function* streamChatMessage(
       try {
         yield JSON.parse(jsonText) as ChatStreamEvent
       } catch {
+        // Skip a malformed frame rather than breaking the whole stream.
       }
     }
   }
