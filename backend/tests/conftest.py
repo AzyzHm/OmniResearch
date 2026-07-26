@@ -65,12 +65,13 @@ class FakeQuery:
 
 class FakeRAGGraph:
     """
-    Stand-in for the compiled LangGraph RAG pipeline. Configure `.answer`
-    or `.raise_exc` before making a request to control the outcome of
-    POST /chats/{id}/message and /message/stream.
+    Stand-in for the compiled LangGraph RAG pipeline. Configure `.answer`,
+    `.sources`, or `.raise_exc` before making a request to control the
+    outcome of POST /chats/{id}/message and /message/stream.
     """
-    def __init__(self, answer="Mocked AI reply", raise_exc=None):
+    def __init__(self, answer="Mocked AI reply", sources=None, raise_exc=None):
         self.answer = answer
+        self.sources = sources if sources is not None else []
         self.raise_exc = raise_exc
         self.last_invoke_state = None
 
@@ -78,14 +79,14 @@ class FakeRAGGraph:
         self.last_invoke_state = state
         if self.raise_exc:
             raise self.raise_exc
-        return {"answer": self.answer}
+        return {"answer": self.answer, "sources": self.sources}
 
     def stream(self, state, stream_mode="updates"):
         self.last_invoke_state = state
         if self.raise_exc:
             raise self.raise_exc
         yield {"router": {"needs_retrieval": False}}
-        yield {"generate": {"answer": self.answer}}
+        yield {"generate": {"answer": self.answer, "sources": self.sources}}
 
 
 class FakeDB:
