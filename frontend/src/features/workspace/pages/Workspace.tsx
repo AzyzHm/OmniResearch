@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { Link, Outlet, useNavigate } from "react-router-dom"
-import { LogOut, Settings, Sparkles } from "lucide-react"
+import { LogOut, Settings } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
 import { useAuth } from "@/features/auth/context/AuthContext"
 import { Button } from "@/shared/components/ui/button"
+import appLogo from "@/assets/app-logo.svg"
 
 function Workspace() {
   const navigate = useNavigate()
@@ -17,6 +18,8 @@ function Workspace() {
     try {
       await logout()
     } catch {
+      // Even if the request fails, clear local state and send the user
+      // back to the landing page rather than leaving them stuck.
     } finally {
       clearUser()
       navigate("/")
@@ -27,7 +30,7 @@ function Workspace() {
     <div className="min-h-screen bg-paper">
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-paper/90 px-6 backdrop-blur-md">
         <div className="flex items-center gap-2 font-display text-base font-medium text-ink">
-          <Sparkles className="size-4 text-teal" />
+          <img src={appLogo} alt="" className="size-5" />
           OmniResearch
         </div>
 

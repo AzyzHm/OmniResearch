@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
+import appLogo from "@/assets/app-logo.svg"
 
 const sectionLinks = [
   { label: "Features", id: "features" },
@@ -38,7 +39,8 @@ function Nav() {
       }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link to="/" className="font-display italic text-xl text-ink">
+        <Link to="/" className="flex items-center gap-2 font-display italic text-xl text-ink">
+          <img src={appLogo} alt="" className="size-6" />
           OmniResearch
         </Link>
 

@@ -1,9 +1,10 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
-import { LogOut, Settings } from "lucide-react"
+import { LogOut } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
 import { useAuth } from "@/features/auth/context/AuthContext"
 import { cn } from "@/shared/lib/utils"
+import appLogo from "@/assets/app-logo.svg"
 
 const TABS = [
   { to: "/admin", label: "Overview", end: true },
@@ -20,6 +21,7 @@ function AdminLayout() {
     try {
       await logout()
     } catch {
+      // Fall through and clear local state regardless.
     } finally {
       clearUser()
       navigate("/")
@@ -31,7 +33,7 @@ function AdminLayout() {
       <header className="border-b border-border bg-surface px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Settings className="size-5 text-teal" />
+            <img src={appLogo} alt="" className="size-6" />
             <h1 className="font-display text-xl font-medium text-ink">
               Admin Dashboard
             </h1>
