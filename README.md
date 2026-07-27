@@ -9,7 +9,7 @@ The application allows users to seamlessly transition from keyword-based informa
 ## 📚 Documentation
 
 - [**Backend Documentation**](backend/docs/README.md) — architecture, API reference, database schema, the agentic RAG graph, LLM fallback, and usage monitoring.
-- [**Frontend Documentation**](frontend/README.md):**  — Vite + React + TypeScript SPA, feature-folder structure (see below). Dedicated frontend docs are on the to-do list; for now the code itself is the reference.
+- [**Frontend Documentation**](frontend/README.md) — project structure (feature folders), design system, routing/code-splitting, auth architecture, and the SSE chat streaming implementation.
 
 ---
 
