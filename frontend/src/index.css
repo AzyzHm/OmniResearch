@@ -175,6 +175,141 @@
 .animate-blob {
   animation: blob-drift 11s ease-in-out infinite;
 }
+
+@keyframes bot-float-motion {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.bot-float { animation: bot-float-motion 3.2s ease-in-out infinite; }
+
+@keyframes bot-blink-motion {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+.bot-blink { animation: bot-blink-motion 4.5s ease-in-out infinite; }
+
+@keyframes bot-spark-pulse-motion {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.15) rotate(8deg); opacity: 0.85; }
+}
+.bot-spark-pulse { animation: bot-spark-pulse-motion 2.4s ease-in-out infinite; }
+
+@keyframes bot-orbit-fast-motion {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.bot-orbit-fast { animation: bot-orbit-fast-motion 6s linear infinite; }
+
+@keyframes bot-orbit-slow-motion {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+.bot-orbit-slow { animation: bot-orbit-slow-motion 10s linear infinite; }
+
+@keyframes bot-orbit-ring-motion {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.bot-orbit-ring { animation: bot-orbit-ring-motion 24s linear infinite; }
+
+@keyframes pipeline-doc-bob-motion {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.pipeline-doc1 { animation: pipeline-doc-bob-motion 3.4s ease-in-out infinite; }
+.pipeline-doc2 { animation: pipeline-doc-bob-motion 3.8s ease-in-out infinite 0.3s; }
+.pipeline-doc3 { animation: pipeline-doc-bob-motion 3.1s ease-in-out infinite 0.6s; }
+
+@keyframes pipeline-node-pulse-motion {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.35); opacity: 1; }
+}
+.pipeline-node-retrieve { animation: pipeline-node-pulse-motion 3.6s ease-in-out infinite; transform-origin: 230px 205px; }
+.pipeline-node-rerank { animation: pipeline-node-pulse-motion 3.6s ease-in-out infinite 0.6s; transform-origin: 360px 205px; }
+.pipeline-node-validate { animation: pipeline-node-pulse-motion 3.6s ease-in-out infinite 1.2s; transform-origin: 360px 300px; }
+
+@keyframes pipeline-router-pulse-motion {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.pipeline-router { animation: pipeline-router-pulse-motion 2.8s ease-in-out infinite; transform-origin: 460px 130px; }
+
+@keyframes pipeline-dash-flow-motion {
+  to { stroke-dashoffset: -32; }
+}
+.pipeline-flow-main {
+  stroke-dasharray: 6 6;
+  animation: pipeline-dash-flow-motion 1.3s linear infinite;
+}
+.pipeline-leader-flow {
+  stroke-dasharray: 3 5;
+  animation: pipeline-dash-flow-motion 1.6s linear infinite;
+}
+
+@keyframes pipeline-dash-flow-slow-motion {
+  to { stroke-dashoffset: -40; }
+}
+.pipeline-flow-retry {
+  stroke-dasharray: 4 6;
+  animation: pipeline-dash-flow-slow-motion 1.8s linear infinite reverse;
+}
+
+.pipeline-flow-skip {
+  stroke-dasharray: 2 6;
+}
+
+@keyframes pipeline-travel-main-motion {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+.pipeline-packet-main {
+  offset-path: path('M150,205 Q190,190 230,205 L347,205 L360,218 L360,287 Q345,340 305,392');
+  animation: pipeline-travel-main-motion 4.2s linear infinite;
+}
+
+@keyframes pipeline-travel-retry-motion {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+.pipeline-packet-retry {
+  offset-path: path('M347,300 Q260,320 220,260 Q210,240 220,220');
+  animation: pipeline-travel-retry-motion 2.6s linear infinite;
+}
+
+@keyframes pipeline-badge-fade-motion {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.pipeline-badge { animation: pipeline-badge-fade-motion 3.4s ease-in-out infinite; }
+
+@keyframes pipeline-bubble-motion {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+}
+.pipeline-bubble { animation: pipeline-bubble-motion 3.6s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-blob { animation: none; }
+  .animate-blob,
+  .bot-float,
+  .bot-blink,
+  .bot-spark-pulse,
+  .bot-orbit-fast,
+  .bot-orbit-slow,
+  .bot-orbit-ring,
+  .pipeline-doc1,
+  .pipeline-doc2,
+  .pipeline-doc3,
+  .pipeline-node-retrieve,
+  .pipeline-node-rerank,
+  .pipeline-node-validate,
+  .pipeline-router,
+  .pipeline-flow-main,
+  .pipeline-leader-flow,
+  .pipeline-flow-retry,
+  .pipeline-packet-main,
+  .pipeline-packet-retry,
+  .pipeline-badge,
+  .pipeline-bubble {
+    animation: none;
+  }
 }

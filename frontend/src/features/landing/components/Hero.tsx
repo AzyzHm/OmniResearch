@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
-import { ArrowUpRight, FileText, Sparkles } from "lucide-react"
+import { ArrowUpRight, Sparkles } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+import RagPipelineIllustration from "@/shared/components/RagPipelineIllustration"
 
 function Hero() {
   return (
@@ -61,69 +62,12 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative">
-          <div className="hidden md:block absolute -left-8 -bottom-10 bg-surface border border-border rounded-xl shadow-sm p-4 w-56 -rotate-6 z-0">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <FileText className="size-3.5" />
-              <span className="font-mono text-[11px]">
-                q3_market_report.pdf
-              </span>
-            </div>
-            <blockquote className="mt-2 border-l-2 border-teal pl-2.5 text-xs text-ink leading-relaxed italic">
-              Overhead costs fell roughly 30%
-              <sup className="not-italic font-mono text-teal font-semibold">
-                1
-              </sup>
-            </blockquote>
-          </div>
-
-          <div className="relative z-10 bg-surface border border-border rounded-xl shadow-md overflow-hidden">
-            <div className="flex items-center gap-1.5 px-4 py-3 border-b border-border bg-[color-mix(in_srgb,var(--color-ink)_4%,var(--color-surface))]">
-              <span className="size-2.5 rounded-full bg-border" />
-              <span className="size-2.5 rounded-full bg-border" />
-              <span className="size-2.5 rounded-full bg-border" />
-              <span className="ml-2 font-mono text-xs text-muted-foreground">
-                Q3 Market Analysis
-              </span>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <div className="flex justify-end">
-                <div className="bg-ink text-paper rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm max-w-[80%]">
-                  Did remote work actually cut costs for these firms?
-                </div>
-              </div>
-
-              <div className="flex justify-start">
-                <div className="bg-[color-mix(in_srgb,var(--color-teal)_8%,var(--color-surface))] rounded-2xl rounded-tl-sm px-4 py-3 text-sm max-w-[85%] text-ink leading-relaxed">
-                  Remote work reduced office overhead costs by roughly 30% in
-                  the surveyed firms
-                  <sup className="font-mono text-teal font-semibold mx-0.5">
-                    1
-                  </sup>
-                  .
-                  <div className="mt-2.5 pt-2.5 border-t border-border/70 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <FileText className="size-3.5 text-teal" />
-                    <span className="font-mono">
-                      q3_market_report.pdf · p.4
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-mono text-teal bg-[color-mix(in_srgb,var(--color-teal)_6%,var(--color-surface))]">
-                  semantic
-                </span>
-                <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-mono text-muted-foreground">
-                  keyword
-                </span>
-                <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-mono text-muted-foreground">
-                  hybrid
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="relative flex items-center justify-center">
+          <div
+            className="absolute inset-0 m-auto size-80 rounded-full bg-teal/10 blur-2xl pointer-events-none"
+            aria-hidden
+          />
+          <RagPipelineIllustration className="relative z-10 w-104 h-[25.2rem] md:w-120 md:h-116" />
         </div>
       </div>
 

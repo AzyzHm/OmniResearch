@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { FileText } from "lucide-react"
+import AssistantBot from "@/shared/components/AssistantBot"
 
 function AuthLayout({
   title,
@@ -39,32 +39,8 @@ function AuthLayout({
           >
             Every answer, <span className="italic text-teal">traced back</span> to a source.
           </h2>
-          <div
-            className="mt-8 rounded-xl p-4 max-w-sm"
-            style={{
-              backgroundColor: "color-mix(in srgb, #F1F3F0 6%, transparent)",
-              borderWidth: 1,
-              borderColor: "color-mix(in srgb, #F1F3F0 15%, transparent)",
-            }}
-          >
-            <div
-              className="flex items-center gap-1.5"
-              style={{ color: "color-mix(in srgb, #F1F3F0 60%, transparent)" }}
-            >
-              <FileText className="size-3.5" />
-              <span className="font-mono text-[11px]">
-                q3_market_report.pdf
-              </span>
-            </div>
-            <blockquote
-              className="mt-2 border-l-2 border-teal pl-2.5 text-sm leading-relaxed italic"
-              style={{ color: "#F1F3F0" }}
-            >
-              Overhead costs fell roughly 30%
-              <sup className="not-italic font-mono text-teal font-semibold">
-                1
-              </sup>
-            </blockquote>
+          <div className="mt-8 flex justify-center">
+            <AssistantBot scheme="onDark" className="w-64 h-64" />
           </div>
         </div>
 
