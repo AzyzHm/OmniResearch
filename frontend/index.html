@@ -2,7 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/tab-icon.svg" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("omniresearch-theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var isDark = stored === "dark" || (stored !== "light" && prefersDark);
+          if (isDark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

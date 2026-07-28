@@ -5,6 +5,7 @@ import { LogOut, Settings } from "lucide-react"
 import { logout } from "@/features/auth/api"
 import { useAuth } from "@/features/auth/context/AuthContext"
 import { Button } from "@/shared/components/ui/button"
+import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"
 
 function Workspace() {
@@ -35,6 +36,7 @@ function Workspace() {
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {isAdmin && (
             <Link
               to="/admin"

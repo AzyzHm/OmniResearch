@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react"
 import { logout } from "@/features/auth/api"
 import { useAuth } from "@/features/auth/context/AuthContext"
 import { cn } from "@/shared/lib/utils"
+import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"
 
 const TABS = [
@@ -39,6 +40,7 @@ function AdminLayout() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             {user && (
               <span className="text-sm text-muted-foreground">
                 Signed in as <span className="font-medium text-ink">{user.username}</span>

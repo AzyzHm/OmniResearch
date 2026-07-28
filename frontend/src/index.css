@@ -11,12 +11,12 @@
     --font-body: "Inter", sans-serif;
     --font-mono: "IBM Plex Mono", monospace;
 
-    --color-sand: #EAE1CF;
-    --color-paper: #F1F3F0;
-    --color-ink: #1C2321;
-    --color-amber: #C9902F;
-    --color-teal: #2F6F62;
-    --color-surface: #FFFFFF;
+    --color-sand: var(--sand);
+    --color-paper: var(--paper);
+    --color-ink: var(--ink);
+    --color-amber: var(--amber);
+    --color-teal: var(--teal);
+    --color-surface: var(--surface);
 
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -59,38 +59,100 @@
 }
 
 :root {
-    --background: #F1F3F0;
-    --foreground: #1C2321;
-    --card: #FFFFFF;
-    --card-foreground: #1C2321;
-    --popover: #FFFFFF;
-    --popover-foreground: #1C2321;
-    --primary: #1C2321;
-    --primary-foreground: #F1F3F0;
+    --paper: #F1F3F0;
+    --ink: #1C2321;
+    --amber: #C9902F;
+    --teal: #2F6F62;
+    --surface: #FFFFFF;
+    --sand: #EAE1CF;
+
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink);
+    --primary: var(--ink);
+    --primary-foreground: var(--paper);
     --secondary: #E4E8E3;
-    --secondary-foreground: #1C2321;
+    --secondary-foreground: var(--ink);
     --muted: #E4E8E3;
     --muted-foreground: #5B645F;
     --accent: #E7EFEC;
-    --accent-foreground: #1C2321;
+    --accent-foreground: var(--ink);
     --destructive: oklch(0.577 0.245 27.325);
     --border: #D9DDD7;
     --input: #D9DDD7;
-    --ring: #2F6F62;
-    --chart-1: #C9902F;
-    --chart-2: #2F6F62;
-    --chart-3: #1C2321;
+    --ring: var(--teal);
+    --chart-1: var(--amber);
+    --chart-2: var(--teal);
+    --chart-3: var(--ink);
     --chart-4: #8A7A5C;
     --chart-5: #4E6D64;
     --radius: 0.625rem;
-    --sidebar: #F1F3F0;
-    --sidebar-foreground: #1C2321;
-    --sidebar-primary: #1C2321;
-    --sidebar-primary-foreground: #F1F3F0;
+    --sidebar: var(--paper);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--ink);
+    --sidebar-primary-foreground: var(--paper);
     --sidebar-accent: #E7EFEC;
-    --sidebar-accent-foreground: #1C2321;
+    --sidebar-accent-foreground: var(--ink);
     --sidebar-border: #D9DDD7;
-    --sidebar-ring: #2F6F62;
+    --sidebar-ring: var(--teal);
+}
+
+/*
+ * Dark mode: overriding the six brand tokens (paper/ink/amber/teal/surface/
+ * sand) here is what makes dark mode work app-wide — every component was
+ * built using these tokens (bg-paper, text-ink, bg-surface, etc.) rather
+ * than raw Tailwind grays, specifically so a single override point like
+ * this could re-theme the whole app. The shadcn semantic tokens below just
+ * ride along automatically since they already derive from these same
+ * brand tokens via var().
+ *
+ * Exception: AuthLayout's left brand panel is intentionally always-dark
+ * regardless of site theme (a fixed design accent, not a themed surface),
+ * so it's pinned to literal hex values rather than using bg-ink/text-paper
+ * — otherwise it would invert to a light panel here, which would be wrong.
+ */
+.dark {
+    --paper: #14171A;
+    --ink: #E7EAE7;
+    --amber: #D9A548;
+    --teal: #4C9285;
+    --surface: #1C2023;
+    --sand: #262A20;
+
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink);
+    --primary: var(--ink);
+    --primary-foreground: var(--paper);
+    --secondary: #23272A;
+    --secondary-foreground: var(--ink);
+    --muted: #23272A;
+    --muted-foreground: #9AA39D;
+    --accent: #1E2725;
+    --accent-foreground: var(--ink);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: #2A302D;
+    --input: #2A302D;
+    --ring: var(--teal);
+    --chart-1: var(--amber);
+    --chart-2: var(--teal);
+    --chart-3: var(--ink);
+    --chart-4: #A08A63;
+    --chart-5: #5C8378;
+    --sidebar: var(--paper);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--ink);
+    --sidebar-primary-foreground: var(--paper);
+    --sidebar-accent: #1E2725;
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: #2A302D;
+    --sidebar-ring: var(--teal);
 }
 
 @layer base {

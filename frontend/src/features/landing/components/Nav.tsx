@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
+import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"
 
 const sectionLinks = [
@@ -58,6 +59,7 @@ function Nav() {
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link to="/login">
             <Button variant="ghost">Log in</Button>
           </Link>

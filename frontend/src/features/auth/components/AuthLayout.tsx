@@ -12,34 +12,54 @@ function AuthLayout({
 }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="relative hidden lg:flex flex-col justify-between bg-ink px-12 py-10 overflow-hidden">
+      <div
+        className="relative hidden lg:flex flex-col justify-between px-12 py-10 overflow-hidden"
+        style={{ backgroundColor: "#1C2321" }}
+      >
         <div
           className="absolute inset-0 opacity-[0.5] pointer-events-none"
           style={{
             backgroundImage:
-              "radial-gradient(color-mix(in srgb, var(--color-paper) 8%, transparent) 1px, transparent 1px)",
+              "radial-gradient(color-mix(in srgb, #F1F3F0 8%, transparent) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
         <Link
           to="/"
-          className="relative font-display italic text-xl text-paper"
+          className="relative font-display italic text-xl"
+          style={{ color: "#F1F3F0" }}
         >
           OmniResearch
         </Link>
 
         <div className="relative">
-          <h2 className="font-display text-3xl leading-[1.2] text-paper max-w-sm">
+          <h2
+            className="font-display text-3xl leading-[1.2] max-w-sm"
+            style={{ color: "#F1F3F0" }}
+          >
             Every answer, <span className="italic text-teal">traced back</span> to a source.
           </h2>
-          <div className="mt-8 bg-[color-mix(in_srgb,var(--color-paper)_6%,transparent)] border border-[color-mix(in_srgb,var(--color-paper)_15%,transparent)] rounded-xl p-4 max-w-sm">
-            <div className="flex items-center gap-1.5 text-[color-mix(in_srgb,var(--color-paper)_60%,transparent)]">
+          <div
+            className="mt-8 rounded-xl p-4 max-w-sm"
+            style={{
+              backgroundColor: "color-mix(in srgb, #F1F3F0 6%, transparent)",
+              borderWidth: 1,
+              borderColor: "color-mix(in srgb, #F1F3F0 15%, transparent)",
+            }}
+          >
+            <div
+              className="flex items-center gap-1.5"
+              style={{ color: "color-mix(in srgb, #F1F3F0 60%, transparent)" }}
+            >
               <FileText className="size-3.5" />
               <span className="font-mono text-[11px]">
                 q3_market_report.pdf
               </span>
             </div>
-            <blockquote className="mt-2 border-l-2 border-teal pl-2.5 text-sm text-paper leading-relaxed italic">
+            <blockquote
+              className="mt-2 border-l-2 border-teal pl-2.5 text-sm leading-relaxed italic"
+              style={{ color: "#F1F3F0" }}
+            >
               Overhead costs fell roughly 30%
               <sup className="not-italic font-mono text-teal font-semibold">
                 1
@@ -48,7 +68,10 @@ function AuthLayout({
           </div>
         </div>
 
-        <span className="relative text-xs text-[color-mix(in_srgb,var(--color-paper)_50%,transparent)]">
+        <span
+          className="relative text-xs"
+          style={{ color: "color-mix(in srgb, #F1F3F0 50%, transparent)" }}
+        >
           © 2026 OmniResearch
         </span>
       </div>
