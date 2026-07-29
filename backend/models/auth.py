@@ -36,3 +36,8 @@ class TokenResponse(BaseModel):
     username: str
     role: str
 
+class CurrentUserResponse(BaseModel):
+    user_id: str
+    username: str
+    role: str
+

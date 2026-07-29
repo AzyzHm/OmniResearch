@@ -21,7 +21,7 @@ async def get_messages(
 
     result = (
         db.table("messages")
-        .select("id, chat_id, role, content, created_at")
+        .select("id, chat_id, role, content, created_at, sources")
         .eq("chat_id", chat_id)
         .order("created_at", desc=True)
         .limit(settings.ui_history_limit)

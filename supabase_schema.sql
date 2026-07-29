@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     chat_id    UUID NOT NULL REFERENCES public.chats(id) ON DELETE CASCADE,
     role       TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
     content    TEXT NOT NULL,
+    sources    JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

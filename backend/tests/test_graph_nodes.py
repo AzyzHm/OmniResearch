@@ -163,13 +163,14 @@ class TestGenerateNode:
     def test_generates_answer_normally(self, monkeypatch):
         monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: "The answer is 42.")
         result = generate_mod.generate_node(_base_state(context_chunks=[{"content": "x"}])) # type: ignore
-        assert result == {"answer": "The answer is 42."}
+        assert result == {"answer": "The answer is 42.", "sources": []}
 
     def test_retrieval_needed_but_no_chunks_returns_no_sources_message(self, monkeypatch):
         called = []
         monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: called.append(True))
         result = generate_mod.generate_node(_base_state(needs_retrieval=True, context_chunks=[])) # type: ignore
         assert result["answer"] == generate_mod.NO_SOURCES_MESSAGE
+        assert result["sources"] == []
         assert not called  # the LLM should never be called in this case
 
     def test_no_retrieval_needed_generates_without_context(self, monkeypatch):
@@ -177,4 +178,51 @@ class TestGenerateNode:
         get an answer even with zero context chunks."""
         monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: "Hi there!")
         result = generate_mod.generate_node(_base_state(needs_retrieval=False, context_chunks=[])) # type: ignore
-        assert result == {"answer": "Hi there!"}
+        assert result == {"answer": "Hi there!", "sources": []}
+
+    def test_cited_sources_are_extracted_from_the_answer(self, monkeypatch):
+        chunks = [
+            {"content": "a", "source_name": "doc-one.pdf", "collection_id": "c1", "item_id": "i1"},
+            {"content": "b", "source_name": "doc-two.pdf", "collection_id": "c1", "item_id": "i2"},
+        ]
+        monkeypatch.setattr(
+            generate_mod, "generate_answer", lambda **kw: "Revenue grew 12% [2], per the filing [1]."
+        )
+        result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
+        # Order follows first appearance in the answer text, not chunk order.
+        assert result["sources"] == [
+            {"index": 2, "source_name": "doc-two.pdf", "collection_id": "c1", "item_id": "i2"},
+            {"index": 1, "source_name": "doc-one.pdf", "collection_id": "c1", "item_id": "i1"},
+        ]
+
+    def test_uncited_chunks_are_not_included_as_sources(self, monkeypatch):
+        chunks = [
+            {"content": "a", "source_name": "used.pdf", "collection_id": "c1", "item_id": "i1"},
+            {"content": "b", "source_name": "unused.pdf", "collection_id": "c1", "item_id": "i2"},
+        ]
+        monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: "Only this fact [1].")
+        result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
+        assert len(result["sources"]) == 1
+        assert result["sources"][0]["source_name"] == "used.pdf"
+
+    def test_out_of_range_citation_number_is_ignored(self, monkeypatch):
+        """A hallucinated citation number (e.g. [5] when only 1 chunk exists)
+        should be silently dropped rather than raising an IndexError."""
+        chunks = [{"content": "a", "source_name": "only.pdf", "collection_id": "c1", "item_id": "i1"}]
+        monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: "Some fact [5].")
+        result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
+        assert result["sources"] == []
+
+    def test_duplicate_citation_of_same_source_appears_once(self, monkeypatch):
+        chunks = [{"content": "a", "source_name": "doc.pdf", "collection_id": "c1", "item_id": "i1"}]
+        monkeypatch.setattr(
+            generate_mod, "generate_answer", lambda **kw: "First mention [1], second mention [1]."
+        )
+        result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
+        assert len(result["sources"]) == 1
+
+    def test_no_citations_in_answer_yields_empty_sources(self, monkeypatch):
+        chunks = [{"content": "a", "source_name": "doc.pdf", "collection_id": "c1", "item_id": "i1"}]
+        monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: "An answer with no markers.")
+        result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
+        assert result["sources"] == []

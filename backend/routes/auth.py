@@ -1,12 +1,16 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
 
-from backend.config.auth import create_access_token, hash_password, verify_password
+from backend.config.settings import get_settings
+
+from backend.config.auth import create_access_token, hash_password, verify_password, get_current_user
 from backend.database.db import get_supabase
-from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse
+from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse
 from backend.models.log import MessageResponse
+
+from fastapi.security import HTTPAuthorizationCredentials
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -51,7 +55,7 @@ async def register(payload: RegisterRequest):
     response_model=TokenResponse,
     summary="Authenticate and receive a JWT access token",
 )
-async def login(payload: LoginRequest, request: Request):
+async def login(payload: LoginRequest, request: Request, response: Response):
     db = get_supabase()
 
     result = (
@@ -96,9 +100,40 @@ async def login(payload: LoginRequest, request: Request):
         role=user["role"],
     )
 
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=get_settings().cookie_secure,
+        samesite="lax",
+        max_age=get_settings().jwt_expire_minutes * 60,
+        path="/",
+    )
+
     return TokenResponse(
         access_token=token,
         user_id=user["id"],
         username=user["username"],
         role=user["role"],
+    )
+
+@router.post(
+    "/logout",
+    response_model=MessageResponse,
+    summary="Clear the access token cookie",
+)
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    return MessageResponse(message="Logged out successfully.")
+
+@router.get(
+    "/me",
+    response_model=CurrentUserResponse,
+    summary="Return the currently authenticated user",
+)
+async def me(payload: dict = Depends(get_current_user)):
+    return CurrentUserResponse(
+        user_id=payload["sub"],
+        username=payload["username"],
+        role=payload["role"],
     )

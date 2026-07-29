@@ -22,3 +22,4 @@ class RAGState(_RAGStateRequired, total=False):
     validation_passed: bool
 
     answer: str
+    sources: list[dict[str, Any]]

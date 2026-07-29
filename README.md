@@ -9,7 +9,7 @@ The application allows users to seamlessly transition from keyword-based informa
 ## 📚 Documentation
 
 - [**Backend Documentation**](backend/docs/README.md) — architecture, API reference, database schema, the agentic RAG graph, LLM fallback, and usage monitoring.
-- [**Frontend Documentation**](frontend/docs/README.md) — project structure, session state, the services (API client) layer, and the UI/UX patterns behind the workspace.
+- [**Frontend Documentation**](frontend/README.md) — project structure (feature folders), design system, routing/code-splitting, auth architecture, and the SSE chat streaming implementation.
 
 ---
 
@@ -46,7 +46,7 @@ The application allows users to seamlessly transition from keyword-based informa
 
 OmniResearch is built on a modern, decoupled, and high-performance architecture:
 
-* **Frontend:** `Streamlit` (Reactive user interface utilizing native chat and dialog components).
+* **Frontend:** `React` + `TypeScript` (Vite SPA — Tailwind CSS v4, shadcn/ui on Base UI primitives, TanStack Query, SSE streaming for chat).
 
 
 * **Backend / API:** `FastAPI` (Asynchronous server handling business logic and orchestration).

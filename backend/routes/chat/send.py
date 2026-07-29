@@ -33,7 +33,7 @@ async def send_message(
     settings = get_settings()
 
     try:
-        enforce_daily_quota(current_user["sub"])
+        enforce_daily_quota(current_user["sub"], current_user.get("role"))
     except DailyQuotaExceeded as exc:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -76,6 +76,7 @@ async def send_message(
             "retrieved_pool": [],
         })
         reply = result.get("answer") or "⚠️ The model did not return a response."
+        sources = result.get("sources", [])
     except Exception as exc:
         print(f"[RAG] /message error: {exc}")
         raise HTTPException(
@@ -84,10 +85,10 @@ async def send_message(
         )
 
     db.table("messages").insert(
-        {"chat_id": chat_id, "role": "assistant", "content": reply}
+        {"chat_id": chat_id, "role": "assistant", "content": reply, "sources": sources}
     ).execute()
 
-    return ChatMessageResponse(response=reply)
+    return ChatMessageResponse(response=reply, sources=sources)
 
 
 @router.post("/chats/{chat_id}/message/stream")
@@ -104,7 +105,7 @@ async def send_message_stream(
 
     Event shapes:
       {"type": "node", "node": "<node_name>"}
-      {"type": "done", "answer": "<final answer>"}
+      {"type": "done", "answer": "<final answer>", "sources": [...]}
       {"type": "error", "detail": "<message>"}
     """
     chat = _own_chat(chat_id, current_user["sub"])
@@ -112,7 +113,7 @@ async def send_message_stream(
     settings = get_settings()
 
     try:
-        enforce_daily_quota(current_user["sub"])
+        enforce_daily_quota(current_user["sub"], current_user.get("role"))
     except DailyQuotaExceeded as exc:
         payload = {
             "type": "error",
@@ -159,6 +160,7 @@ async def send_message_stream(
     def event_stream():
         graph = get_rag_graph()
         answer = "⚠️ The model did not return a response."
+        sources = []
         try:
             for update in graph.stream(initial_state, stream_mode="updates"): # type: ignore
                 node_name = next(iter(update))
@@ -167,14 +169,16 @@ async def send_message_stream(
                 yield f"data: {json.dumps({'type': 'node', 'node': node_name})}\n\n"
                 if "answer" in node_output:
                     answer = node_output["answer"]
+                if "sources" in node_output:
+                    sources = node_output["sources"]
         except Exception as exc:
             print(f"[RAG] stream error: {exc}")
             yield f"data: {json.dumps({'type': 'error', 'detail': str(exc)})}\n\n"
             return
 
         db.table("messages").insert(
-            {"chat_id": chat_id, "role": "assistant", "content": answer}
+            {"chat_id": chat_id, "role": "assistant", "content": answer, "sources": sources}
         ).execute()
-        yield f"data: {json.dumps({'type': 'done', 'answer': answer})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'answer': answer, 'sources': sources})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

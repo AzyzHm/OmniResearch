@@ -44,6 +44,8 @@ Respond in exactly one of these two forms, and nothing else:
 
 GENERATION_PROMPT = """Answer the user's question using the retrieved context below when it is relevant, along with the ongoing conversation. If the context does not fully cover the question, answer as best you can with what is available and be upfront about what is missing — do not say you "don't have access" without first using whatever relevant context is provided.
 
+When you use a fact from the retrieved context, cite it inline with the matching [n] marker from that context block (e.g., "...grew by 12% last quarter [2]."). Only cite context blocks you actually relied on — do not cite a block you didn't use, and do not invent citation numbers that aren't listed below. If you answer from the conversation history or general knowledge instead of the retrieved context, don't add a citation for that part.
+
 Retrieved context:
 {context_text}
 

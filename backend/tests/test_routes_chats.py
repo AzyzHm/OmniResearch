@@ -1,4 +1,4 @@
-from backend.tests.conftest import project_row, chat_row, message_row
+from backend.tests.conftest import project_row, chat_row, message_row, make_token
 
 
 class TestListChats:
@@ -207,6 +207,28 @@ class TestSendMessage:
         assert resp.status_code == 200
         assert resp.json()["response"] == "The sky is blue because of Rayleigh scattering."
 
+    def test_sources_from_the_graph_are_returned(self, app, user_headers):
+        """Citations produced by generate_node should reach the API response."""
+        client, db = app
+        db.rag_graph.answer = "Revenue grew 12% [1]."
+        db.rag_graph.sources = [
+            {"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}
+        ]
+        self._queue_send(db)
+        resp = client.post("/chats/chat-1/message", json={"message": "How did revenue grow?"}, headers=user_headers)
+        assert resp.status_code == 200
+        assert resp.json()["sources"] == [
+            {"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}
+        ]
+
+    def test_no_sources_defaults_to_empty_list(self, app, user_headers):
+        """A conversational reply with nothing cited should return sources: []."""
+        client, db = app
+        self._queue_send(db)
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
+        assert resp.status_code == 200
+        assert resp.json()["sources"] == []
+
     def test_graph_receives_correct_state(self, app, user_headers):
         """project_id, chat_id, user_id, and query must be threaded into the graph state."""
         client, db = app
@@ -307,6 +329,27 @@ class TestQuotaEnforcement:
         resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 200
 
+    def test_admin_bypasses_quota_even_when_over_limit(self, app):
+        """Admins (and superadmins) are exempt from the daily quota entirely —
+        this exercises the real route, not just the isolated quota service."""
+        client, db = app
+        admin_headers_same_owner = {
+            "Authorization": f"Bearer {make_token(role='admin')}"
+        }
+        # Ownership check passes (chat_row's project.user_id matches the
+        # default make_token user_id). Quota check is skipped for admins,
+        # so no daily_token_limit/tokens_used_today rows are even queued —
+        # if enforce_daily_quota tried to check them, this would 500 on an
+        # empty FakeDB queue instead of reaching history/insert.
+        db.add_result(data=[chat_row()])       # 1. ownership
+        db.add_result(data=[])                 # 2. history fetch
+        db.add_result(data=[{}])               # 3. insert user msg
+        db.add_result(data=[{}])               # 4. insert assistant reply
+        resp = client.post(
+            "/chats/chat-1/message", json={"message": "Hello"}, headers=admin_headers_same_owner
+        )
+        assert resp.status_code == 200
+
 
 class TestSendMessageStream:
     """POST /chats/{chat_id}/message/stream — Server-Sent Events variant."""
@@ -334,6 +377,20 @@ class TestSendMessageStream:
         assert '"type": "node"' in body
         assert '"type": "done"' in body
         assert "Mocked AI reply" in body
+
+    def test_stream_done_event_includes_sources(self, app, user_headers):
+        """Citations produced by generate_node should reach the SSE done event."""
+        client, db = app
+        db.rag_graph.answer = "Revenue grew 12% [1]."
+        db.rag_graph.sources = [
+            {"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}
+        ]
+        self._queue_stream(db)
+        resp = client.post("/chats/chat-1/message/stream", json={"message": "How did revenue grow?"}, headers=user_headers)
+        body = resp.text
+        assert '"type": "done"' in body
+        assert "q3-report.pdf" in body
+        assert '"index": 1' in body
 
     def test_stream_emits_error_event_on_graph_failure(self, app, user_headers):
         client, db = app
