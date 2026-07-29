@@ -31,18 +31,18 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <header className="border-b border-border bg-surface px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={appLogo} alt="" className="size-6" />
-            <h1 className="font-display text-xl font-medium text-ink">
+      <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <img src={appLogo} alt="" className="size-6 shrink-0" />
+            <h1 className="truncate font-display text-lg font-medium text-ink sm:text-xl">
               Admin Dashboard
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />
             {user && (
-              <span className="text-sm text-muted-foreground">
+              <span className="hidden text-sm text-muted-foreground md:inline">
                 Signed in as <span className="font-medium text-ink">{user.username}</span>
               </span>
             )}
@@ -52,12 +52,12 @@ function AdminLayout() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
             >
               <LogOut className="size-3.5" />
-              Sign out
+              <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>
         </div>
 
-        <nav className="mt-4 flex gap-1">
+        <nav className="mt-4 flex gap-1 overflow-x-auto">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}
@@ -65,7 +65,7 @@ function AdminLayout() {
               end={tab.end}
               className={({ isActive }) =>
                 cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
                     ? "bg-teal/10 text-teal"
                     : "text-muted-foreground hover:bg-muted hover:text-ink"
@@ -78,7 +78,7 @@ function AdminLayout() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-6">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         <Outlet />
       </main>
     </div>

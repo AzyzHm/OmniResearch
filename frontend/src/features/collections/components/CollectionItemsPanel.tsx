@@ -272,7 +272,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
       )}
 
       {!isLoading && items && items.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full table-fixed text-sm">
             <colgroup>
               <col className="w-10" />

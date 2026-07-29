@@ -99,7 +99,7 @@ function LogsTab() {
             <p className="text-sm text-muted-foreground">No login logs found.</p>
           ) : (
             <>
-              <div className="overflow-hidden rounded-xl border border-border">
+              <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">

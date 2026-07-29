@@ -29,13 +29,13 @@ function Workspace() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-paper/90 px-6 backdrop-blur-md">
-        <div className="flex items-center gap-2 font-display text-base font-medium text-ink">
-          <img src={appLogo} alt="" className="size-5" />
-          OmniResearch
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border bg-paper/90 px-3 backdrop-blur-md sm:px-6">
+        <div className="flex min-w-0 items-center gap-2 font-display text-base font-medium text-ink">
+          <img src={appLogo} alt="" className="size-5 shrink-0" />
+          <span className="truncate">OmniResearch</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <ThemeToggle />
           {isAdmin && (
             <Link
@@ -43,11 +43,11 @@ function Workspace() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
             >
               <Settings className="size-3.5" />
-              Admin
+              <span className="hidden sm:inline">Admin</span>
             </Link>
           )}
           {user && (
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="hidden font-mono text-xs text-muted-foreground md:inline">
               {user.username}
             </span>
           )}
@@ -59,7 +59,9 @@ function Workspace() {
             disabled={loggingOut}
           >
             <LogOut className="size-3.5" data-icon="inline-start" />
-            {loggingOut ? "Logging out..." : "Log out"}
+            <span className="hidden sm:inline">
+              {loggingOut ? "Logging out..." : "Log out"}
+            </span>
           </Button>
         </div>
       </header>

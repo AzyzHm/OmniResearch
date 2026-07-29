@@ -34,7 +34,7 @@ function Hero() {
             Personal research workspace
           </span>
 
-          <h1 className="font-display text-5xl md:text-6xl leading-[1.08] text-ink mt-6">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-[1.08] text-ink mt-6">
             Every answer,{" "}
             <span className="italic text-teal">traced back</span> to a
             source.
@@ -67,7 +67,7 @@ function Hero() {
             className="absolute inset-0 m-auto size-80 rounded-full bg-teal/10 blur-2xl pointer-events-none"
             aria-hidden
           />
-          <RagPipelineIllustration className="relative z-10 w-104 h-[25.2rem] md:w-120 md:h-116" />
+          <RagPipelineIllustration className="relative z-10 w-64 h-62 sm:w-80 sm:h-[19.4rem] md:w-104 md:h-[25.2rem] lg:w-120 lg:h-116" />
         </div>
       </div>
 

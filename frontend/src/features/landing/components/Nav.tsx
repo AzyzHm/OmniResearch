@@ -33,16 +33,16 @@ function Nav() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 w-full px-6 md:px-10 transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full px-4 sm:px-6 md:px-10 transition-all duration-300 ${
         scrolled
           ? "bg-paper/75 backdrop-blur-md border-b border-border py-3"
           : "bg-transparent border-b border-transparent py-5"
       }`}
     >
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-display italic text-xl text-ink">
-          <img src={appLogo} alt="" className="size-6" />
-          OmniResearch
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+        <Link to="/" className="flex min-w-0 items-center gap-2 font-display italic text-lg sm:text-xl text-ink">
+          <img src={appLogo} alt="" className="size-6 shrink-0" />
+          <span className="truncate">OmniResearch</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
@@ -58,13 +58,17 @@ function Nav() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <ThemeToggle />
           <Link to="/login">
-            <Button variant="ghost">Log in</Button>
+            <Button variant="ghost" size="sm" className="sm:h-9 sm:px-4 sm:py-2 sm:text-sm">
+              Log in
+            </Button>
           </Link>
           <Link to="/signup">
-            <Button>Sign up</Button>
+            <Button size="sm" className="sm:h-9 sm:px-4 sm:py-2 sm:text-sm">
+              Sign up
+            </Button>
           </Link>
         </div>
       </div>

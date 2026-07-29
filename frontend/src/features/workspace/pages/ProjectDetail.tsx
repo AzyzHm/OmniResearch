@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useParams, Link } from "react-router-dom"
-import { ArrowLeft, Library } from "lucide-react"
+import { ArrowLeft, Library, Menu } from "lucide-react"
 
 import type { Chat } from "@/features/chat/api"
 import { Button } from "@/shared/components/ui/button"
@@ -12,28 +12,49 @@ function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>()
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [sourcesOpen, setSourcesOpen] = useState(false)
+  const [chatsOpen, setChatsOpen] = useState(false)
 
   if (!projectId) return null
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <Link
-          to="/app"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back to projects
-        </Link>
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2 sm:px-4">
+        <div className="flex min-w-0 items-center gap-1">
+          <Button
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            className="md:hidden"
+            onClick={() => setChatsOpen(true)}
+            aria-label="Open chats"
+          >
+            <Menu className="size-4" />
+          </Button>
+
+          <Link
+            to="/app"
+            className="inline-flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
+          >
+            <ArrowLeft className="size-3.5" />
+            <span className="hidden sm:inline">Back to projects</span>
+          </Link>
+
+          {selectedChat && (
+            <span className="truncate text-sm font-medium text-ink sm:hidden">
+              {selectedChat.name}
+            </span>
+          )}
+        </div>
 
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={() => setSourcesOpen(true)}
+          className="shrink-0"
         >
           <Library className="size-3.5" data-icon="inline-start" />
-          Sources
+          <span className="hidden sm:inline">Sources</span>
         </Button>
       </div>
 
@@ -42,6 +63,8 @@ function ProjectDetail() {
           projectId={projectId}
           selectedChatId={selectedChat?.id ?? null}
           onSelect={setSelectedChat}
+          mobileOpen={chatsOpen}
+          onMobileClose={() => setChatsOpen(false)}
         />
 
         {selectedChat ? (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react"
+import { MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react"
 
 import {
   createChat,
@@ -18,9 +18,17 @@ interface ChatsSidebarProps {
   projectId: string
   selectedChatId: string | null
   onSelect: (chat: Chat) => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
-function ChatsSidebar({ projectId, selectedChatId, onSelect }: ChatsSidebarProps) {
+function ChatsSidebar({
+  projectId,
+  selectedChatId,
+  onSelect,
+  mobileOpen = false,
+  onMobileClose,
+}: ChatsSidebarProps) {
   const queryClient = useQueryClient()
   const queryKey = ["chats", projectId]
 
@@ -87,8 +95,46 @@ function ChatsSidebar({ projectId, selectedChatId, onSelect }: ChatsSidebarProps
     onSettled: () => setConfirmingDeleteId(null),
   })
 
+  function handleSelect(chat: Chat) {
+    onSelect(chat)
+    onMobileClose?.()
+  }
+
   return (
-    <div className="flex w-56 shrink-0 flex-col gap-2 border-r border-border p-3">
+    <>
+      {/* Backdrop: mobile only, shown while the overlay is open */}
+      <div
+        onClick={onMobileClose}
+        aria-hidden={!mobileOpen}
+        className={cn(
+          "fixed inset-0 z-40 bg-ink/30 backdrop-blur-[1px] transition-opacity duration-200 md:hidden",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+      />
+
+      <div
+        className={cn(
+          "flex w-64 shrink-0 flex-col gap-2 border-r border-border bg-paper p-3",
+          "fixed inset-y-0 left-0 z-40 h-full transition-transform duration-200",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+          "md:static md:z-auto md:h-auto md:w-56 md:translate-x-0"
+        )}
+      >
+        <div className="mb-1 flex items-center justify-between md:hidden">
+          <span className="font-mono text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Chats
+          </span>
+          <Button
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            onClick={onMobileClose}
+            aria-label="Close chats"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
       <Button
         type="button"
         size="sm"
@@ -127,7 +173,7 @@ function ChatsSidebar({ projectId, selectedChatId, onSelect }: ChatsSidebarProps
             >
               <button
                 type="button"
-                onClick={() => onSelect(chat)}
+                onClick={() => handleSelect(chat)}
                 className="flex flex-1 items-center gap-2 overflow-hidden text-left"
               >
                 <MessageSquare className="size-3.5 shrink-0" />
@@ -204,7 +250,8 @@ function ChatsSidebar({ projectId, selectedChatId, onSelect }: ChatsSidebarProps
           if (renameTarget) renameMutation.mutate({ id: renameTarget.id, name })
         }}
       />
-    </div>
+      </div>
+    </>
   )
 }
 

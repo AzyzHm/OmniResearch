@@ -83,7 +83,7 @@ function UsageTab() {
               />
             </div>
 
-            <div className="mt-4 overflow-hidden rounded-xl border border-border">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
@@ -186,7 +186,7 @@ function UsageTab() {
               <MetricCard label="Exa Credits" value={exaCredits} color="amber" />
             </div>
 
-            <div className="mt-4 overflow-hidden rounded-xl border border-border">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
