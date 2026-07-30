@@ -1,24 +1,17 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { FileText, Globe, Plus, Trash2, Type } from "lucide-react"
+import { Layers, Plus, Trash2 } from "lucide-react"
 
 import {
   createCollection,
   deleteCollection,
   listCollections,
   type Collection,
-  type CollectionType,
 } from "@/features/collections/api"
 import { ApiError } from "@/shared/lib/apiClient"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/components/ui/button"
 import CollectionFormDialog from "@/features/collections/components/CollectionFormDialog"
-
-const TYPE_ICON: Record<CollectionType, typeof FileText> = {
-  documents: FileText,
-  urls: Globe,
-  text: Type,
-}
 
 interface CollectionsSidebarProps {
   projectId: string
@@ -46,8 +39,7 @@ function CollectionsSidebar({
   )
 
   const createMutation = useMutation({
-    mutationFn: (payload: { name: string; type: CollectionType }) =>
-      createCollection(projectId, payload),
+    mutationFn: (payload: { name: string }) => createCollection(projectId, payload),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey })
       setCreateOpen(false)
@@ -114,7 +106,6 @@ function CollectionsSidebar({
 
       <div className="flex flex-col gap-1 overflow-y-auto">
         {collections?.map((collection) => {
-          const Icon = TYPE_ICON[collection.type]
           const selected = collection.id === selectedCollectionId
           const confirming = confirmingDeleteId === collection.id
 
@@ -133,7 +124,7 @@ function CollectionsSidebar({
                 onClick={() => onSelect(collection)}
                 className="flex flex-1 items-center gap-2 overflow-hidden text-left"
               >
-                <Icon className="size-3.5 shrink-0" />
+                <Layers className="size-3.5 shrink-0" />
                 <span className="truncate">{collection.name}</span>
               </button>
 
@@ -185,7 +176,7 @@ function CollectionsSidebar({
         }}
         isSubmitting={createMutation.isPending}
         error={createError}
-        onSubmit={(name, type) => createMutation.mutate({ name, type })}
+        onSubmit={(name) => createMutation.mutate({ name })}
       />
     </div>
   )
