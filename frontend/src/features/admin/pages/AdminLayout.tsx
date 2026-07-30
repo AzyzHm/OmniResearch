@@ -1,5 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom"
-import { LogOut } from "lucide-react"
+import { NavLink, Outlet, useNavigate, Link } from "react-router-dom"
+import { ArrowLeft, LogOut } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
 import { useAuth } from "@/features/auth/context/AuthContext"
@@ -33,11 +33,20 @@ function AdminLayout() {
     <div className="min-h-screen bg-paper">
       <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <img src={appLogo} alt="" className="size-6 shrink-0" />
-            <h1 className="truncate font-display text-lg font-medium text-ink sm:text-xl">
-              Admin Dashboard
-            </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              to="/app"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
+            >
+              <ArrowLeft className="size-3.5" />
+              <span className="hidden sm:inline">Back to projects</span>
+            </Link>
+            <div className="flex min-w-0 items-center gap-2 border-l border-border pl-3">
+              <img src={appLogo} alt="" className="size-6 shrink-0" />
+              <h1 className="truncate font-display text-lg font-medium text-ink sm:text-xl">
+                Admin Dashboard
+              </h1>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />

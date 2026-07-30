@@ -288,6 +288,15 @@
 }
 .pipeline-bubble { animation: pipeline-bubble-motion 3.6s ease-in-out infinite; }
 
+@keyframes admin-glow-pulse-motion {
+  0%, 100% { filter: drop-shadow(0 0 3px var(--color-teal)) drop-shadow(0 0 1px var(--color-teal)); }
+  50% { filter: drop-shadow(0 0 7px var(--color-teal)) drop-shadow(0 0 3px var(--color-teal)); }
+}
+.admin-glow {
+  filter: drop-shadow(0 0 5px var(--color-teal)) drop-shadow(0 0 2px var(--color-teal));
+  animation: admin-glow-pulse-motion 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-blob,
   .bot-float,
@@ -309,7 +318,8 @@
   .pipeline-packet-main,
   .pipeline-packet-retry,
   .pipeline-badge,
-  .pipeline-bubble {
+  .pipeline-bubble,
+  .admin-glow {
     animation: none;
   }
 }

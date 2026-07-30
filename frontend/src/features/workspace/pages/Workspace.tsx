@@ -36,16 +36,16 @@ function Workspace() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <ThemeToggle />
           {isAdmin && (
             <Link
               to="/admin"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-ink"
+              className="admin-glow inline-flex items-center gap-1.5 text-sm font-medium text-teal transition-opacity hover:opacity-80"
             >
               <Settings className="size-3.5" />
-              <span className="hidden sm:inline">Admin</span>
+              <span>AdminSpace</span>
             </Link>
           )}
+          <ThemeToggle />
           {user && (
             <span className="hidden font-mono text-xs text-muted-foreground md:inline">
               {user.username}
