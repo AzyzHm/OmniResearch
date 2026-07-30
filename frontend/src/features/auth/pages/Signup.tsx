@@ -4,6 +4,7 @@ import { CheckCircle2 } from "lucide-react"
 import AuthLayout from "@/features/auth/components/AuthLayout"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
+import PasswordInput from "@/shared/components/PasswordInput"
 import { Label } from "@/shared/components/ui/label"
 import { register } from "@/features/auth/api"
 import { ApiError } from "@/shared/lib/apiClient"
@@ -102,9 +103,8 @@ function Signup() {
 
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
@@ -114,9 +114,8 @@ function Signup() {
 
         <div className="space-y-1.5">
           <Label htmlFor="confirmPassword">Confirm password</Label>
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             autoComplete="new-password"
