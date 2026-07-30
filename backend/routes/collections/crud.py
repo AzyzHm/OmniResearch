@@ -20,7 +20,7 @@ async def list_collections(
     db = get_supabase()
     result = (
         db.table("collections")
-        .select("id, project_id, name, type, created_at")
+        .select("id, project_id, name, created_at")
         .eq("project_id", project_id)
         .order("created_at", desc=False)
         .execute()
@@ -41,7 +41,7 @@ async def create_collection(
     db = get_supabase()
 
     result = db.table("collections").insert(
-        {"project_id": project_id, "name": body.name, "type": body.type}
+        {"project_id": project_id, "name": body.name}
     ).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create collection.")
@@ -50,7 +50,7 @@ async def create_collection(
 
     create_chroma_collection(
         collection_id=row["id"],
-        metadata={"name": body.name, "type": body.type, "project_id": project_id},
+        metadata={"name": body.name, "project_id": project_id},
     )
 
     return row

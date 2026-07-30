@@ -6,7 +6,7 @@ from backend.config.auth import get_current_user
 from backend.config.settings import get_settings
 from backend.database.chroma_client import add_item_chunks
 from backend.database.db import get_supabase
-from backend.models.collection import COLLECTION_TYPE_TO_EXT, COLLECTION_TYPE_TO_SOURCE, CollectionItemOut
+from backend.models.collection import ALLOWED_UPLOAD_EXTENSIONS, EXT_TO_SOURCE_TYPE, CollectionItemOut
 from backend.models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
 from backend.routes.collections._shared import _existing_urls, _own_collection
 from backend.services.embeddings import embed_texts
@@ -110,28 +110,26 @@ async def upload_items(
     """
     Upload one or more files into a collection.
 
-    Only 'text' (.txt) and 'documents' (.pdf) collections accept uploads.
-    Each file is inserted as a "processing" row immediately; extraction,
-    chunking, and embedding happen afterward as a background task, so this
-    endpoint returns right away instead of blocking on the full pipeline.
+    Every collection accepts a mix of PDF and TXT files — the source type is
+    derived per-file from its own extension, not from a collection-wide
+    setting. Each file is inserted as a "processing" row immediately;
+    extraction, chunking, and embedding happen afterward as a background
+    task, so this endpoint returns right away instead of blocking on the
+    full pipeline.
     """
-    collection = _own_collection(collection_id, current_user["sub"])
-    col_type = collection["type"]
+    _own_collection(collection_id, current_user["sub"])
 
-    if col_type not in COLLECTION_TYPE_TO_SOURCE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This collection type does not support file uploads.",
-        )
-
-    expected_ext = COLLECTION_TYPE_TO_EXT[col_type]
-    source_type = COLLECTION_TYPE_TO_SOURCE[col_type]
-
-    invalid = [f.filename for f in files if not (f.filename or "").lower().endswith(expected_ext)]
+    invalid = [
+        f.filename for f in files
+        if not (f.filename or "").lower().endswith(ALLOWED_UPLOAD_EXTENSIONS)
+    ]
     if invalid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"These files are not {expected_ext} files: {', '.join(str(n) for n in invalid)}",
+            detail=(
+                f"Unsupported file type for: {', '.join(str(n) for n in invalid)}. "
+                f"Only {' and '.join(ALLOWED_UPLOAD_EXTENSIONS)} files are supported."
+            ),
         )
 
     db = get_supabase()
@@ -139,6 +137,8 @@ async def upload_items(
 
     for upload in files:
         filename = upload.filename or "untitled"
+        ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        source_type = EXT_TO_SOURCE_TYPE[ext]
         raw_bytes = await upload.read()
 
         insert_result = db.table("collection_items").insert({
@@ -165,15 +165,10 @@ async def add_url_item(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
-    """Manually add a single URL. The item row is inserted as "processing" and
-    returned immediately; the Jina fetch + chunk + embed happens afterward as
-    a background task."""
-    collection = _own_collection(collection_id, current_user["sub"])
-    if collection["type"] != "urls":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This collection does not accept URL items.",
-        )
+    """Manually add a single URL to any collection. The item row is inserted
+    as "processing" and returned immediately; the Jina fetch + chunk + embed
+    happens afterward as a background task."""
+    _own_collection(collection_id, current_user["sub"])
 
     url = body.url.strip()
     if url in _existing_urls(collection_id):
@@ -209,7 +204,7 @@ async def add_search_result_items(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Bulk-add URLs selected from a Tavily/Exa search modal.
+    Bulk-add URLs selected from a Tavily/Exa search modal, into any collection.
 
     Every non-duplicate item is inserted as "processing" and the response is
     returned immediately, so the frontend can close the search modal right
@@ -218,12 +213,7 @@ async def add_search_result_items(
     background task per item. URLs already present in the collection are
     skipped rather than erroring the whole batch.
     """
-    collection = _own_collection(collection_id, current_user["sub"])
-    if collection["type"] != "urls":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This collection does not accept URL items.",
-        )
+    _own_collection(collection_id, current_user["sub"])
 
     db = get_supabase()
     existing = _existing_urls(collection_id)

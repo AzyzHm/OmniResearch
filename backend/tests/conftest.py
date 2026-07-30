@@ -173,11 +173,9 @@ def project_row(project_id="proj-1", user_id="user-123", name="My Project"):
     return {"id": project_id, "user_id": user_id, "name": name,
             "created_at": NOW, "updated_at": NOW}
 
-def collection_row(collection_id="col-1", project_id="proj-1",
-                   name="My Coll", type_="documents"):
+def collection_row(collection_id="col-1", project_id="proj-1", name="My Coll"):
     return {"id": collection_id, "project_id": project_id, "name": name,
-            "type": type_, "created_at": NOW,
-            "projects": {"user_id": "user-123"}}
+            "created_at": NOW, "projects": {"user_id": "user-123"}}
 
 def chat_row(chat_id="chat-1", project_id="proj-1", name="My Chat"):
     return {"id": chat_id, "project_id": project_id, "name": name,
