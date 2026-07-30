@@ -18,10 +18,7 @@ import { Input } from "@/shared/components/ui/input"
 import StatusBadge from "@/features/collections/components/StatusBadge"
 import SearchModal from "@/features/collections/components/SearchModal"
 
-const EXT_BY_TYPE: Record<string, string> = {
-  documents: ".pdf",
-  text: ".txt",
-}
+const UPLOAD_ACCEPT = ".pdf,.txt"
 
 interface CollectionItemsPanelProps {
   collection: Collection
@@ -166,7 +163,6 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
   }
 
   const dirty = Object.keys(pendingChanges).length > 0
-  const accept = EXT_BY_TYPE[collection.type]
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -198,15 +194,42 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
         </div>
       )}
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-border p-4">
-        {collection.type === "urls" ? (
-          <form onSubmit={handleAddUrl} className="flex flex-1 items-center gap-2">
+      {/* Every collection accepts both uploads and URLs now, so both
+          controls render together rather than switching on collection type. */}
+      <div className="mb-6 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={UPLOAD_ACCEPT}
+            multiple
+            className="hidden"
+            onChange={handleFilesSelected}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadMutation.isPending}
+          >
+            <Upload className="size-3.5" data-icon="inline-start" />
+            {uploadMutation.isPending ? "Uploading..." : "Upload files"}
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Accepts {UPLOAD_ACCEPT} files
+          </span>
+        </div>
+
+        <div className="border-t border-border/60 pt-4">
+          <form onSubmit={handleAddUrl} className="flex flex-wrap items-center gap-2">
             <Link2 className="size-4 shrink-0 text-muted-foreground" />
             <Input
               value={urlValue}
               onChange={(e) => setUrlValue(e.target.value)}
               placeholder="https://example.com/article"
               disabled={addUrlMutation.isPending}
+              className="min-w-0 flex-1"
             />
             <Button
               type="submit"
@@ -228,33 +251,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
               Search the web
             </Button>
           </form>
-        ) : (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={accept}
-              multiple
-              className="hidden"
-              onChange={handleFilesSelected}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadMutation.isPending}
-            >
-              <Upload className="size-3.5" data-icon="inline-start" />
-              {uploadMutation.isPending
-                ? "Uploading..."
-                : `Upload ${accept ?? "files"}`}
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              Accepts {accept} files
-            </span>
-          </>
-        )}
+        </div>
       </div>
 
       {urlError && <p className="mb-4 text-sm text-destructive">{urlError}</p>}
@@ -301,7 +298,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                       />
                     </td>
                     <td className="overflow-hidden px-3 py-2.5">
-                      {collection.type === "urls" ? (
+                      {item.source_type === "url" ? (
                         <a
                           href={item.name}
                           target="_blank"
@@ -371,16 +368,14 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
         </div>
       )}
 
-      {collection.type === "urls" && (
-        <SearchModal
-          key={searchInstance}
-          open={searchModalOpen}
-          onOpenChange={setSearchModalOpen}
-          collectionId={collection.id}
-          existingUrls={new Set((items ?? []).map((i) => i.name))}
-          onAdded={() => queryClient.invalidateQueries({ queryKey })}
-        />
-      )}
+      <SearchModal
+        key={searchInstance}
+        open={searchModalOpen}
+        onOpenChange={setSearchModalOpen}
+        collectionId={collection.id}
+        existingUrls={new Set((items ?? []).filter((i) => i.source_type === "url").map((i) => i.name))}
+        onAdded={() => queryClient.invalidateQueries({ queryKey })}
+      />
     </div>
   )
 }

@@ -69,29 +69,22 @@ class TestProjectModels:
 
 
 class TestCollectionCreate:
-    def test_valid_documents(self):
-        c = CollectionCreate(name="Docs", type="documents")
-        assert c.type == "documents"
-
-    def test_valid_urls(self):
-        c = CollectionCreate(name="Links", type="urls")
-        assert c.type == "urls"
-
-    def test_valid_text(self):
-        c = CollectionCreate(name="Notes", type="text")
-        assert c.type == "text"
-
-    def test_invalid_type(self):
-        with pytest.raises(ValidationError, match="one of"):
-            CollectionCreate(name="Bad", type="image")
+    def test_valid(self):
+        c = CollectionCreate(name="Background Reading")
+        assert c.name == "Background Reading"
 
     def test_empty_name(self):
         with pytest.raises(ValidationError, match="cannot be empty"):
-            CollectionCreate(name="  ", type="documents")
+            CollectionCreate(name="  ")
 
     def test_name_stripped(self):
-        c = CollectionCreate(name="  My Col  ", type="urls")
+        c = CollectionCreate(name="  My Col  ")
         assert c.name == "My Col"
+
+    def test_type_field_ignored_if_sent(self):
+        c = CollectionCreate(name="Docs", type="documents")  # type: ignore[call-arg]
+        assert c.name == "Docs"
+        assert not hasattr(c, "type")
 
 
 class TestChatModels:

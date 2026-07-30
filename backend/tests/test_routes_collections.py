@@ -21,43 +21,24 @@ class TestCollectionRoutes:
         resp = client.get("/projects/proj-1/collections")
         assert resp.status_code in (401, 403)
 
-    def test_create_collection_documents(self, app, user_headers):
+    def test_create_collection(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
         db.add_result(data=[collection_row()])
         resp = client.post(
             "/projects/proj-1/collections",
-            json={"name": "My Coll", "type": "documents"},
+            json={"name": "My Coll"},
             headers=user_headers,
         )
         assert resp.status_code == 201
         assert resp.json()["name"] == "My Coll"
-
-    def test_create_collection_urls(self, app, user_headers):
-        client, db = app
-        db.add_result(data=[project_row()])
-        db.add_result(data=[collection_row(type_="urls")])
-        resp = client.post(
-            "/projects/proj-1/collections",
-            json={"name": "Links", "type": "urls"},
-            headers=user_headers,
-        )
-        assert resp.status_code == 201
-
-    def test_create_collection_invalid_type(self, app, user_headers):
-        client, _ = app
-        resp = client.post(
-            "/projects/proj-1/collections",
-            json={"name": "Bad", "type": "video"},
-            headers=user_headers,
-        )
-        assert resp.status_code == 422
+        assert "type" not in resp.json()
 
     def test_create_collection_empty_name(self, app, user_headers):
         client, _ = app
         resp = client.post(
             "/projects/proj-1/collections",
-            json={"name": "  ", "type": "documents"},
+            json={"name": "  "},
             headers=user_headers,
         )
         assert resp.status_code == 422

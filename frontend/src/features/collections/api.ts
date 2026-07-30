@@ -1,13 +1,9 @@
 import { apiClient } from "@/shared/lib/apiClient"
 
-export const COLLECTION_TYPES = ["documents", "urls", "text"] as const
-export type CollectionType = (typeof COLLECTION_TYPES)[number]
-
 export interface Collection {
   id: string
   project_id: string
   name: string
-  type: CollectionType
   created_at: string
 }
 
@@ -27,10 +23,7 @@ export function listCollections(projectId: string) {
   return apiClient.get<Collection[]>(`/projects/${projectId}/collections`)
 }
 
-export function createCollection(
-  projectId: string,
-  payload: { name: string; type: CollectionType }
-) {
+export function createCollection(projectId: string, payload: { name: string }) {
   return apiClient.post<Collection>(`/projects/${projectId}/collections`, payload)
 }
 

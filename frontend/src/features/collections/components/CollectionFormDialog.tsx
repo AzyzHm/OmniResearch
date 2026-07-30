@@ -1,11 +1,8 @@
 import { useState } from "react"
-import { FileText, Globe, Type } from "lucide-react"
 
-import { COLLECTION_TYPES, type CollectionType } from "@/features/collections/api"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
-import { cn } from "@/shared/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -15,33 +12,12 @@ import {
   DialogFooter,
 } from "@/shared/components/ui/dialog"
 
-const TYPE_META: Record<
-  CollectionType,
-  { label: string; description: string; icon: typeof FileText }
-> = {
-  documents: {
-    label: "Documents",
-    description: "Upload PDF files",
-    icon: FileText,
-  },
-  urls: {
-    label: "URLs",
-    description: "Add web pages by link",
-    icon: Globe,
-  },
-  text: {
-    label: "Text",
-    description: "Upload plain .txt files",
-    icon: Type,
-  },
-}
-
 interface CollectionFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   isSubmitting: boolean
   error: string | null
-  onSubmit: (name: string, type: CollectionType) => void
+  onSubmit: (name: string) => void
 }
 
 function CollectionFormDialog({
@@ -52,13 +28,12 @@ function CollectionFormDialog({
   onSubmit,
 }: CollectionFormDialogProps) {
   const [name, setName] = useState("")
-  const [type, setType] = useState<CollectionType>("documents")
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) return
-    onSubmit(trimmed, type)
+    onSubmit(trimmed)
   }
 
   return (
@@ -68,7 +43,8 @@ function CollectionFormDialog({
           <DialogHeader>
             <DialogTitle>New collection</DialogTitle>
             <DialogDescription>
-              Collections group related sources together for retrieval.
+              Collections group related sources together for retrieval. Add
+              PDFs, text files, and URLs to any collection.
             </DialogDescription>
           </DialogHeader>
 
@@ -83,36 +59,6 @@ function CollectionFormDialog({
                 autoFocus
                 placeholder="e.g. Background Reading"
               />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label>Source type</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {COLLECTION_TYPES.map((t) => {
-                  const meta = TYPE_META[t]
-                  const Icon = meta.icon
-                  const selected = type === t
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setType(t)}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-colors",
-                        selected
-                          ? "border-teal bg-teal/10 text-teal"
-                          : "border-border text-muted-foreground hover:border-teal/40 hover:text-ink"
-                      )}
-                    >
-                      <Icon className="size-4" />
-                      <span className="text-xs font-medium">{meta.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {TYPE_META[type].description}
-              </p>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

@@ -3,21 +3,15 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
-COLLECTION_TYPES = ("documents", "urls", "text")
-
-COLLECTION_TYPE_TO_SOURCE = {
-    "text": "txt",
-    "documents": "pdf",
+EXT_TO_SOURCE_TYPE = {
+    ".pdf": "pdf",
+    ".txt": "txt",
 }
-COLLECTION_TYPE_TO_EXT = {
-    "text": ".txt",
-    "documents": ".pdf",
-}
+ALLOWED_UPLOAD_EXTENSIONS = tuple(EXT_TO_SOURCE_TYPE)
 
 
 class CollectionCreate(BaseModel):
     name: str
-    type: str
 
     @field_validator("name")
     @classmethod
@@ -27,19 +21,11 @@ class CollectionCreate(BaseModel):
             raise ValueError("Collection name cannot be empty.")
         return v
 
-    @field_validator("type")
-    @classmethod
-    def type_valid(cls, v: str) -> str:
-        if v not in COLLECTION_TYPES:
-            raise ValueError(f"type must be one of: {', '.join(COLLECTION_TYPES)}")
-        return v
-
 
 class CollectionOut(BaseModel):
     id: str
     project_id: str
     name: str
-    type: str
     created_at: datetime
 
 
