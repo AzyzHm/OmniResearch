@@ -120,7 +120,7 @@ function UsageTab() {
 
             <div
               className="mt-4 rounded-xl border border-border p-3"
-              style={{ height: Math.max(llmRows.length * 40, 120) }}
+              style={{ height: Math.max(llmRows.length * 56, 140) }}
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -135,6 +135,7 @@ function UsageTab() {
                     dataKey="username"
                     width={90}
                     tick={{ fontSize: 12 }}
+                    interval={0}
                   />
                   <Tooltip />
                   <Bar dataKey="total_tokens" fill="var(--color-teal)" radius={4} />
@@ -217,7 +218,7 @@ function UsageTab() {
 
             <div
               className="mt-4 rounded-xl border border-border p-3"
-              style={{ height: Math.max(searchRows.length * 40, 120) }}
+              style={{ height: Math.max(searchRows.length * 56, 140) }}
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -234,6 +235,7 @@ function UsageTab() {
                     dataKey="username"
                     width={90}
                     tick={{ fontSize: 12 }}
+                    interval={0}
                   />
                   <Tooltip />
                   <Bar dataKey="total_credits" fill="var(--color-teal)" radius={4} />

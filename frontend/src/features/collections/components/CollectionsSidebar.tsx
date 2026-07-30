@@ -156,7 +156,7 @@ function CollectionsSidebar({
                   type="button"
                   size="icon-xs"
                   variant="ghost"
-                  className="shrink-0 opacity-0 group-hover:opacity-100"
+                  className="shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100"
                   onClick={() => setConfirmingDeleteId(collection.id)}
                   aria-label="Delete collection"
                 >
