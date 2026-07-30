@@ -38,7 +38,7 @@ function ProjectCard({ project, onRename, onDelete, isDeleting }: ProjectCardPro
         </div>
 
         <div
-          className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+          className="flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
           {confirmingDelete ? (
