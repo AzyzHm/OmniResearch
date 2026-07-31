@@ -34,6 +34,7 @@ class TestCreateChat:
     def test_success(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
+        db.add_result(data=[])  # existing-names lookup
         db.add_result(data=[chat_row()])
         resp = client.post("/projects/proj-1/chats", json={"name": "My Chat"}, headers=user_headers)
         assert resp.status_code == 201
@@ -42,6 +43,7 @@ class TestCreateChat:
     def test_default_name_when_omitted(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
+        db.add_result(data=[])  # existing-names lookup
         db.add_result(data=[chat_row(name="New Chat")])
         resp = client.post("/projects/proj-1/chats", json={}, headers=user_headers)
         assert resp.status_code == 201
@@ -50,6 +52,7 @@ class TestCreateChat:
     def test_blank_name_falls_back_to_default(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
+        db.add_result(data=[])  # existing-names lookup
         db.add_result(data=[chat_row(name="New Chat")])
         resp = client.post("/projects/proj-1/chats", json={"name": "   "}, headers=user_headers)
         assert resp.status_code == 201
@@ -60,15 +63,46 @@ class TestCreateChat:
         resp = client.post("/projects/bad/chats", json={"name": "X"}, headers=user_headers)
         assert resp.status_code == 404
 
+    def test_second_default_new_chat_gets_numbered(self, app, user_headers):
+        """The exact bug being fixed: every new chat defaulted to 'New Chat'."""
+        client, db = app
+        db.add_result(data=[project_row()])
+        db.add_result(data=[{"id": "chat-1", "name": "New Chat"}])  # existing-names lookup
+        db.add_result(data=[chat_row(name="New Chat (2)")])
+        resp = client.post("/projects/proj-1/chats", json={}, headers=user_headers)
+        assert resp.status_code == 201
+        assert resp.json()["name"] == "New Chat (2)"
+
+    def test_duplicate_explicit_name_gets_numbered(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[project_row()])
+        db.add_result(data=[{"id": "chat-1", "name": "Research Notes"}])  # existing-names lookup
+        db.add_result(data=[chat_row(name="Research Notes (2)")])
+        resp = client.post(
+            "/projects/proj-1/chats", json={"name": "Research Notes"}, headers=user_headers
+        )
+        assert resp.status_code == 201
+        assert resp.json()["name"] == "Research Notes (2)"
+
 
 class TestRenameChat:
     def test_success(self, app, user_headers):
         client, db = app
         db.add_result(data=[chat_row()])
+        db.add_result(data=[])  # existing-names lookup (excluding self)
         db.add_result(data=[chat_row(name="Renamed")])
         resp = client.put("/chats/chat-1", json={"name": "Renamed"}, headers=user_headers)
         assert resp.status_code == 200
         assert resp.json()["name"] == "Renamed"
+
+    def test_duplicate_name_gets_numbered(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[chat_row()])
+        db.add_result(data=[{"id": "chat-2", "name": "Other Chat"}])  # existing-names lookup
+        db.add_result(data=[chat_row(name="Other Chat (2)")])
+        resp = client.put("/chats/chat-1", json={"name": "Other Chat"}, headers=user_headers)
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "Other Chat (2)"
 
     def test_empty_name_rejected(self, app, user_headers):
         client, _ = app
@@ -336,11 +370,6 @@ class TestQuotaEnforcement:
         admin_headers_same_owner = {
             "Authorization": f"Bearer {make_token(role='admin')}"
         }
-        # Ownership check passes (chat_row's project.user_id matches the
-        # default make_token user_id). Quota check is skipped for admins,
-        # so no daily_token_limit/tokens_used_today rows are even queued —
-        # if enforce_daily_quota tried to check them, this would 500 on an
-        # empty FakeDB queue instead of reaching history/insert.
         db.add_result(data=[chat_row()])       # 1. ownership
         db.add_result(data=[])                 # 2. history fetch
         db.add_result(data=[{}])               # 3. insert user msg

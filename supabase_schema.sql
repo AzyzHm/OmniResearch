@@ -85,6 +85,13 @@ CREATE TABLE IF NOT EXISTS public.search_usage (
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_projects_user_name_ci
+    ON public.projects (user_id, lower(name));
+CREATE UNIQUE INDEX IF NOT EXISTS uq_chats_project_name_ci
+    ON public.chats (project_id, lower(name));
+CREATE UNIQUE INDEX IF NOT EXISTS uq_collections_project_name_ci
+    ON public.collections (project_id, lower(name));
+
 -- ── Indexes ──────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_users_username              ON public.users(username);
 CREATE INDEX IF NOT EXISTS idx_login_logs_user             ON public.login_logs(user_id);
@@ -112,6 +119,60 @@ DROP TRIGGER IF EXISTS trg_projects_updated_at ON public.projects;
 CREATE TRIGGER trg_projects_updated_at
     BEFORE UPDATE ON public.projects
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE OR REPLACE FUNCTION public.touch_project_via_project_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.projects
+    SET updated_at = NOW()
+    WHERE id = COALESCE(NEW.project_id, OLD.project_id);
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.touch_project_via_collection_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.projects p
+    SET updated_at = NOW()
+    FROM public.collections c
+    WHERE c.id = COALESCE(NEW.collection_id, OLD.collection_id)
+      AND p.id = c.project_id;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.touch_project_via_chat_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.projects p
+    SET updated_at = NOW()
+    FROM public.chats c
+    WHERE c.id = COALESCE(NEW.chat_id, OLD.chat_id)
+      AND p.id = c.project_id;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_chats_touch_project ON public.chats;
+CREATE TRIGGER trg_chats_touch_project
+    AFTER INSERT OR UPDATE OR DELETE ON public.chats
+    FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_project_id();
+
+DROP TRIGGER IF EXISTS trg_collections_touch_project ON public.collections;
+CREATE TRIGGER trg_collections_touch_project
+    AFTER INSERT OR UPDATE OR DELETE ON public.collections
+    FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_project_id();
+
+DROP TRIGGER IF EXISTS trg_collection_items_touch_project ON public.collection_items;
+CREATE TRIGGER trg_collection_items_touch_project
+    AFTER INSERT OR UPDATE OR DELETE ON public.collection_items
+    FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_collection_id();
+
+DROP TRIGGER IF EXISTS trg_messages_touch_project ON public.messages;
+CREATE TRIGGER trg_messages_touch_project
+    AFTER INSERT ON public.messages
+    FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_chat_id();
 
 -- ── Row Level Security ───────────────────────────────────────────────────
 ALTER TABLE public.users            ENABLE ROW LEVEL SECURITY;

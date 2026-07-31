@@ -24,6 +24,7 @@ class TestCollectionRoutes:
     def test_create_collection(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
+        db.add_result(data=[])  # existing-names lookup
         db.add_result(data=[collection_row()])
         resp = client.post(
             "/projects/proj-1/collections",
@@ -33,6 +34,32 @@ class TestCollectionRoutes:
         assert resp.status_code == 201
         assert resp.json()["name"] == "My Coll"
         assert "type" not in resp.json()
+
+    def test_create_collection_duplicate_name_gets_numbered(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[project_row()])
+        db.add_result(data=[{"id": "col-1", "name": "Papers"}])  # existing-names lookup
+        db.add_result(data=[collection_row(name="Papers (2)")])
+        resp = client.post(
+            "/projects/proj-1/collections",
+            json={"name": "Papers"},
+            headers=user_headers,
+        )
+        assert resp.status_code == 201
+        assert resp.json()["name"] == "Papers (2)"
+
+    def test_create_collection_duplicate_name_case_insensitive(self, app, user_headers):
+        client, db = app
+        db.add_result(data=[project_row()])
+        db.add_result(data=[{"id": "col-1", "name": "Papers"}])  # existing-names lookup
+        db.add_result(data=[collection_row(name="papers (2)")])
+        resp = client.post(
+            "/projects/proj-1/collections",
+            json={"name": "papers"},
+            headers=user_headers,
+        )
+        assert resp.status_code == 201
+        assert resp.json()["name"] == "papers (2)"
 
     def test_create_collection_empty_name(self, app, user_headers):
         client, _ = app
