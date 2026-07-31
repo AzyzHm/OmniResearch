@@ -17,7 +17,7 @@ import ChatRenameDialog from "@/features/chat/components/ChatRenameDialog"
 interface ChatsSidebarProps {
   projectId: string
   selectedChatId: string | null
-  onSelect: (chat: Chat) => void
+  onSelect: (chat: Chat | null) => void
   mobileOpen?: boolean
   onMobileClose?: () => void
 }
@@ -88,6 +88,7 @@ function ChatsSidebar({
         old ? old.filter((c) => c.id !== chatId) : old
       )
       queryClient.invalidateQueries({ queryKey })
+      if (chatId === selectedChatId) onSelect(null)
     },
     onError: (err) => {
       setDeleteError(err instanceof ApiError ? err.message : "Couldn't delete the chat.")
