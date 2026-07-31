@@ -39,7 +39,7 @@ async def send_message(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
                 "code": "quota_exceeded",
-                "message": str(exc),
+                "message": exc.user_message,
                 "used": exc.used,
                 "limit": exc.limit,
                 "reset_at": exc.reset_at.isoformat(),
@@ -118,7 +118,7 @@ async def send_message_stream(
         payload = {
             "type": "error",
             "code": "quota_exceeded",
-            "detail": str(exc),
+            "detail": exc.user_message,
             "used": exc.used,
             "limit": exc.limit,
             "reset_at": exc.reset_at.isoformat(),

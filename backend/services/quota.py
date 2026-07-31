@@ -26,12 +26,12 @@ class DailyQuotaExceeded(Exception):
         remaining = reset_at - datetime.now(timezone.utc)
         total_minutes = max(int(remaining.total_seconds() // 60), 0)
         hours, minutes = divmod(total_minutes, 60)
-
-        super().__init__(
+        self.user_message = (
             f"You've used all {limit:,} of your daily tokens ({used:,} used today). "
             f"Your quota resets at {reset_at.strftime('%Y-%m-%d %H:%M')} UTC "
             f"(in {hours}h {minutes}m)."
         )
+        super().__init__(self.user_message)
 
 
 def get_daily_token_limit(user_id: str) -> int:

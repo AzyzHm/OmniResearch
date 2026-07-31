@@ -149,3 +149,13 @@ class TestDailyQuotaExceeded:
         past = datetime.now(timezone.utc).replace(year=2000)
         exc = quota.DailyQuotaExceeded(used=1, limit=1, reset_at=past)
         assert "-" not in str(exc).split("in ")[-1]
+
+    def test_user_message_attribute_matches_str(self):
+        """Route handlers read exc.user_message (a plain attribute) rather
+        than calling str(exc)/exc.args, so CodeQL's exception-exposure
+        check doesn't flag the safe, fully-controlled quota message as if
+        it were arbitrary exception/stack-trace content. Both must stay
+        in sync."""
+        reset_at = datetime.now(timezone.utc)
+        exc = quota.DailyQuotaExceeded(used=10, limit=20, reset_at=reset_at)
+        assert exc.user_message == str(exc)
