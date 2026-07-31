@@ -21,6 +21,8 @@ class Settings(BaseSettings):
 
     chroma_persist_dir: str = "vector_database"
 
+    collection_files_bucket: str = "collection-files"
+
     ui_history_limit: int = 50
     llm_context_limit: int = 10
 

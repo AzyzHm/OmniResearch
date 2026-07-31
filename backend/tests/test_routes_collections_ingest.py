@@ -11,6 +11,7 @@ def _patch_pipeline(monkeypatch):
     monkeypatch.setattr(ingest_mod, "embed_texts", lambda chunks: [[0.1, 0.2] for _ in chunks])
     monkeypatch.setattr(ingest_mod, "fetch_url_markdown", lambda url: "fetched markdown")
     monkeypatch.setattr(ingest_mod, "add_item_chunks", lambda **kwargs: None)
+    monkeypatch.setattr(ingest_mod, "upload_collection_file", lambda *a, **kw: None)
 
 
 class TestUploadItems:
@@ -139,6 +140,7 @@ class TestProcessUploadItemCounts:
         monkeypatch.setattr(ingest_mod, "count_pdf_pages", lambda raw: 7)
         monkeypatch.setattr(ingest_mod, "embed_texts", lambda chunks: [[0.1] for _ in chunks])
         monkeypatch.setattr(ingest_mod, "add_item_chunks", lambda **kwargs: None)
+        monkeypatch.setattr(ingest_mod, "upload_collection_file", lambda *a, **kw: None)
 
         fake_db = MagicMock()
         monkeypatch.setattr(ingest_mod, "get_supabase", lambda: fake_db)
@@ -151,6 +153,7 @@ class TestProcessUploadItemCounts:
         assert payload["status"] == "ready"
         assert payload["page_count"] == 7
         assert payload["word_count"] is None
+        assert payload["storage_path"] == "col-1/item-1/report.pdf"
 
     def test_txt_sets_word_count_and_null_page_count(self, monkeypatch):
         import backend.routes.collections.ingest as ingest_mod
@@ -158,6 +161,7 @@ class TestProcessUploadItemCounts:
         monkeypatch.setattr(ingest_mod, "extract_txt", lambda raw: "one two three four")
         monkeypatch.setattr(ingest_mod, "embed_texts", lambda chunks: [[0.1] for _ in chunks])
         monkeypatch.setattr(ingest_mod, "add_item_chunks", lambda **kwargs: None)
+        monkeypatch.setattr(ingest_mod, "upload_collection_file", lambda *a, **kw: None)
 
         fake_db = MagicMock()
         monkeypatch.setattr(ingest_mod, "get_supabase", lambda: fake_db)
@@ -170,3 +174,29 @@ class TestProcessUploadItemCounts:
         assert payload["status"] == "ready"
         assert payload["word_count"] == 4
         assert payload["page_count"] is None
+        assert payload["storage_path"] == "col-1/item-2/notes.txt"
+
+    def test_storage_upload_failure_leaves_null_storage_path_but_still_succeeds(self, monkeypatch):
+        """A storage hiccup must not roll back an otherwise-successful
+        ingestion — the item still becomes ready, just without a preview."""
+        import backend.routes.collections.ingest as ingest_mod
+
+        monkeypatch.setattr(ingest_mod, "extract_txt", lambda raw: "hello world")
+        monkeypatch.setattr(ingest_mod, "embed_texts", lambda chunks: [[0.1] for _ in chunks])
+        monkeypatch.setattr(ingest_mod, "add_item_chunks", lambda **kwargs: None)
+
+        def _raise(*_a, **_kw):
+            raise RuntimeError("storage unreachable")
+
+        monkeypatch.setattr(ingest_mod, "upload_collection_file", _raise)
+
+        fake_db = MagicMock()
+        monkeypatch.setattr(ingest_mod, "get_supabase", lambda: fake_db)
+
+        ingest_mod._process_upload_item("col-1", "item-3", "notes.txt", "txt", b"raw")
+
+        update_call = fake_db.table.return_value.update
+        update_call.assert_called_once()
+        payload = update_call.call_args[0][0]
+        assert payload["status"] == "ready"
+        assert payload["storage_path"] is None

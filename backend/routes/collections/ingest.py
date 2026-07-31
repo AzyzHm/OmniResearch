@@ -11,6 +11,7 @@ from backend.models.search import AddSearchResults, AddSearchResultsResponse, Ma
 from backend.routes.collections._shared import _existing_urls, _own_collection
 from backend.services.embeddings import embed_texts
 from backend.services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
+from backend.services.file_storage import upload_collection_file
 from backend.services.text_processing import chunk_text
 from backend.services.web_fetch import fetch_url_markdown
 
@@ -41,11 +42,20 @@ def _process_upload_item(
         page_count = count_pdf_pages(raw_bytes) if source_type == "pdf" else None
         word_count = count_words(text) if source_type == "txt" else None
 
+        storage_path = f"{collection_id}/{item_id}/{filename}"
+        content_type = "application/pdf" if source_type == "pdf" else "text/plain"
+        try:
+            upload_collection_file(storage_path, raw_bytes, content_type)
+        except Exception as exc:
+            print(f"Warning: failed to store original file for item {item_id!r}: {exc}")
+            storage_path = None
+
         db.table("collection_items").update({
             "status": "ready",
             "chunk_count": len(chunks),
             "page_count": page_count,
             "word_count": word_count,
+            "storage_path": storage_path,
         }).eq("id", item_id).execute()
 
     except Exception as exc:

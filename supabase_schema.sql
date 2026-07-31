@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS public.collection_items (
     chunk_count   INTEGER NOT NULL DEFAULT 0,
     page_count    INTEGER,
     word_count    INTEGER,
+    storage_path  TEXT,
     error_message TEXT,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -175,6 +176,10 @@ DROP TRIGGER IF EXISTS trg_messages_touch_project ON public.messages;
 CREATE TRIGGER trg_messages_touch_project
     AFTER INSERT ON public.messages
     FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_chat_id();
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('collection-files', 'collection-files', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- ── Row Level Security ───────────────────────────────────────────────────
 ALTER TABLE public.users            ENABLE ROW LEVEL SECURITY;
