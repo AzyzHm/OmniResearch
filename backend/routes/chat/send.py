@@ -173,7 +173,7 @@ async def send_message_stream(
                     sources = node_output["sources"]
         except Exception as exc:
             print(f"[RAG] stream error: {exc}")
-            yield f"data: {json.dumps({'type': 'error', 'detail': str(exc)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'detail': 'The assistant encountered an error processing your request.'})}\n\n"
             return
 
         db.table("messages").insert(

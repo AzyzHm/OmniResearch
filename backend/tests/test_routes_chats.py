@@ -428,7 +428,8 @@ class TestSendMessageStream:
         resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 200  # SSE always returns 200; error is in the event body
         assert '"type": "error"' in resp.text
-        assert "stream exploded" in resp.text
+        assert "stream exploded" not in resp.text
+        assert "error processing your request" in resp.text
 
     def test_stream_chat_not_found(self, app, user_headers):
         client, db = app
