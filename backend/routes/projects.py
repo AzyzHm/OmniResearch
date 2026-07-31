@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from backend.config.auth import get_current_user
 from backend.database.db import get_supabase
 from backend.models.project import ProjectCreate, ProjectOut, ProjectUpdate
+from backend.utils.naming import next_unique_name
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -22,6 +23,17 @@ def _own_project(project_id: str, user_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found.")
     row: Any = result.data[0]
     return row
+
+
+def _existing_project_names(user_id: str, exclude_id: str | None = None) -> list[str]:
+    """Names of the user's other projects, used to silently dedupe on create/rename."""
+    db = get_supabase()
+    query = db.table("projects").select("id, name").eq("user_id", user_id)
+    if exclude_id is not None:
+        query = query.neq("id", exclude_id)
+    result = query.execute()
+    return [row["name"] for row in result.data]  # type: ignore
+
 
 @router.get("", response_model=list[ProjectOut])
 async def list_projects(current_user: dict = Depends(get_current_user)):
@@ -42,8 +54,10 @@ async def create_project(
     current_user: dict = Depends(get_current_user),
 ):
     db = get_supabase()
+    existing_names = _existing_project_names(current_user["sub"])
+    unique_name = next_unique_name(body.name, existing_names)
     result = db.table("projects").insert(
-        {"user_id": current_user["sub"], "name": body.name}
+        {"user_id": current_user["sub"], "name": unique_name}
     ).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create project.")
@@ -58,9 +72,11 @@ async def rename_project(
 ):
     _own_project(project_id, current_user["sub"])
     db = get_supabase()
+    existing_names = _existing_project_names(current_user["sub"], exclude_id=project_id)
+    unique_name = next_unique_name(body.name, existing_names)
     result = (
         db.table("projects")
-        .update({"name": body.name})
+        .update({"name": unique_name})
         .eq("id", project_id)
         .execute()
     )

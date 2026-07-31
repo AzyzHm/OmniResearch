@@ -6,8 +6,19 @@ from backend.config.auth import get_current_user
 from backend.database.db import get_supabase
 from backend.models.chat import ChatCreate, ChatOut, ChatUpdate
 from backend.routes.chat._shared import _own_chat, _verify_project_owner
+from backend.utils.naming import next_unique_name
 
 router = APIRouter()
+
+
+def _existing_chat_names(project_id: str, exclude_id: str | None = None) -> list[str]:
+    """Names of the project's other chats, used to silently dedupe on create/rename."""
+    db = get_supabase()
+    query = db.table("chats").select("id, name").eq("project_id", project_id)
+    if exclude_id is not None:
+        query = query.neq("id", exclude_id)
+    result = query.execute()
+    return [row["name"] for row in result.data]  # type: ignore
 
 
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])
@@ -39,8 +50,10 @@ async def create_chat(
 ):
     _verify_project_owner(project_id, current_user["sub"])
     db = get_supabase()
+    existing_names = _existing_chat_names(project_id)
+    unique_name = next_unique_name(body.name, existing_names)
     result = db.table("chats").insert(
-        {"project_id": project_id, "name": body.name}
+        {"project_id": project_id, "name": unique_name}
     ).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create chat.")
@@ -54,11 +67,13 @@ async def rename_chat(
     body: ChatUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    _own_chat(chat_id, current_user["sub"])
+    chat = _own_chat(chat_id, current_user["sub"])
     db = get_supabase()
+    existing_names = _existing_chat_names(chat["project_id"], exclude_id=chat_id)
+    unique_name = next_unique_name(body.name, existing_names)
     result = (
         db.table("chats")
-        .update({"name": body.name})
+        .update({"name": unique_name})
         .eq("id", chat_id)
         .execute()
     )

@@ -7,8 +7,18 @@ from backend.database.chroma_client import create_chroma_collection, delete_chro
 from backend.database.db import get_supabase
 from backend.models.collection import CollectionCreate, CollectionOut
 from backend.routes.collections._shared import _own_collection, _verify_project_owner
+from backend.utils.naming import next_unique_name
 
 router = APIRouter()
+
+
+def _existing_collection_names(project_id: str) -> list[str]:
+    """Names of the project's existing collections, used to silently dedupe on create."""
+    db = get_supabase()
+    result = (
+        db.table("collections").select("id, name").eq("project_id", project_id).execute()
+    )
+    return [row["name"] for row in result.data]  # type: ignore
 
 
 @router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])
@@ -40,8 +50,11 @@ async def create_collection(
     _verify_project_owner(project_id, current_user["sub"])
     db = get_supabase()
 
+    existing_names = _existing_collection_names(project_id)
+    unique_name = next_unique_name(body.name, existing_names)
+
     result = db.table("collections").insert(
-        {"project_id": project_id, "name": body.name}
+        {"project_id": project_id, "name": unique_name}
     ).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create collection.")
@@ -50,7 +63,7 @@ async def create_collection(
 
     create_chroma_collection(
         collection_id=row["id"],
-        metadata={"name": body.name, "project_id": project_id},
+        metadata={"name": unique_name, "project_id": project_id},
     )
 
     return row

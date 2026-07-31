@@ -39,7 +39,7 @@ async def send_message(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
                 "code": "quota_exceeded",
-                "message": str(exc),
+                "message": exc.user_message,
                 "used": exc.used,
                 "limit": exc.limit,
                 "reset_at": exc.reset_at.isoformat(),
@@ -118,7 +118,7 @@ async def send_message_stream(
         payload = {
             "type": "error",
             "code": "quota_exceeded",
-            "detail": str(exc),
+            "detail": exc.user_message,
             "used": exc.used,
             "limit": exc.limit,
             "reset_at": exc.reset_at.isoformat(),
@@ -173,7 +173,7 @@ async def send_message_stream(
                     sources = node_output["sources"]
         except Exception as exc:
             print(f"[RAG] stream error: {exc}")
-            yield f"data: {json.dumps({'type': 'error', 'detail': str(exc)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'detail': 'The assistant encountered an error processing your request.'})}\n\n"
             return
 
         db.table("messages").insert(
