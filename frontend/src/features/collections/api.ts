@@ -1,4 +1,4 @@
-import { apiClient } from "@/shared/lib/apiClient"
+import { API_BASE_URL, apiClient, ApiError } from "@/shared/lib/apiClient"
 
 export interface Collection {
   id: string
@@ -17,6 +17,7 @@ export interface CollectionItem {
   chunk_count: number
   page_count: number | null
   word_count: number | null
+  storage_path: string | null
   error_message: string | null
   created_at: string
 }
@@ -75,4 +76,29 @@ export function bulkUpdateCollectionItems(
 
 export function deleteCollectionItem(collectionId: string, itemId: string) {
   return apiClient.delete<void>(`/collections/${collectionId}/items/${itemId}`)
+}
+
+export function getCollectionItemContentUrl(collectionId: string, itemId: string) {
+  return `${API_BASE_URL}/collections/${collectionId}/items/${itemId}/content`
+}
+
+export async function getCollectionItemContentText(
+  collectionId: string,
+  itemId: string
+): Promise<string> {
+  const response = await fetch(getCollectionItemContentUrl(collectionId, itemId), {
+    credentials: "include",
+    cache: "no-store",
+  })
+  if (!response.ok) {
+    let detail = "Couldn't load this file's content."
+    try {
+      const body = await response.json()
+      if (typeof body?.detail === "string") detail = body.detail
+    } catch {
+      // response wasn't JSON; fall back to the default message
+    }
+    throw new ApiError(response.status, detail)
+  }
+  return response.text()
 }

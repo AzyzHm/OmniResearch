@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ExternalLink, Link2, Search, Trash2, Upload } from "lucide-react"
+import { ExternalLink, Eye, Link2, Search, Trash2, Upload } from "lucide-react"
 
 import {
   addCollectionUrl,
@@ -17,6 +17,7 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import StatusBadge from "@/features/collections/components/StatusBadge"
 import ItemMetaBadges from "@/features/collections/components/ItemMetaBadges"
+import ItemContentModal from "@/features/collections/components/ItemContentModal"
 import SearchModal from "@/features/collections/components/SearchModal"
 
 const UPLOAD_ACCEPT = ".pdf,.txt"
@@ -47,6 +48,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
   const [pendingChanges, setPendingChanges] = useState<Record<string, boolean>>({})
   const [searchModalOpen, setSearchModalOpen] = useState(false)
   const [searchInstance, setSearchInstance] = useState(0)
+  const [previewItem, setPreviewItem] = useState<CollectionItem | null>(null)
 
   const uploadMutation = useMutation({
     mutationFn: (files: File[]) => uploadCollectionFiles(collection.id, files),
@@ -301,6 +303,17 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                       </span>
                       <ExternalLink className="size-3 shrink-0" />
                     </a>
+                  ) : item.status === "ready" && item.storage_path ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewItem(item)}
+                      title={`View ${item.name}`}
+                      aria-label={`View ${item.name}`}
+                      className="flex w-full min-w-0 items-center gap-1 text-left text-teal hover:underline"
+                    >
+                      <span className="min-w-0 truncate">{item.name}</span>
+                      <Eye className="size-3 shrink-0" />
+                    </button>
                   ) : (
                     <p className="truncate text-ink" title={item.name}>
                       {item.name}
@@ -353,6 +366,14 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
           })}
         </div>
       )}
+
+      <ItemContentModal
+        collectionId={collection.id}
+        item={previewItem}
+        onOpenChange={(open) => {
+          if (!open) setPreviewItem(null)
+        }}
+      />
 
       <SearchModal
         key={searchInstance}
