@@ -15,6 +15,8 @@ export interface CollectionItem {
   is_active: boolean
   status: "processing" | "ready" | "error" | string
   chunk_count: number
+  page_count: number | null
+  word_count: number | null
   error_message: string | null
   created_at: string
 }

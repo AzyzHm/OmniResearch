@@ -57,6 +57,8 @@ describe("CollectionItemsPanel", () => {
         is_active: true,
         status: "ready",
         chunk_count: 4,
+        page_count: 12,
+        word_count: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -68,6 +70,8 @@ describe("CollectionItemsPanel", () => {
         is_active: true,
         status: "ready",
         chunk_count: 2,
+        page_count: null,
+        word_count: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -77,5 +81,93 @@ describe("CollectionItemsPanel", () => {
     expect(await screen.findByText("report.pdf")).toBeInTheDocument()
     const link = screen.getByRole("link", { name: /example\.com\/article/ })
     expect(link).toHaveAttribute("href", "https://example.com/article")
+  })
+
+  it("shows a type badge and a page-count badge for a ready PDF item", async () => {
+    const items: CollectionItem[] = [
+      {
+        id: "item-1",
+        collection_id: "col-1",
+        name: "report.pdf",
+        source_type: "pdf",
+        is_active: true,
+        status: "ready",
+        chunk_count: 4,
+        page_count: 12,
+        word_count: null,
+        error_message: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]
+    renderWithProviders(items)
+
+    expect(await screen.findByText("PDF")).toBeInTheDocument()
+    expect(screen.getByText("12 pages")).toBeInTheDocument()
+  })
+
+  it("shows a type badge and a word-count badge for a ready TXT item", async () => {
+    const items: CollectionItem[] = [
+      {
+        id: "item-1",
+        collection_id: "col-1",
+        name: "notes.txt",
+        source_type: "txt",
+        is_active: true,
+        status: "ready",
+        chunk_count: 1,
+        page_count: null,
+        word_count: 2000,
+        error_message: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]
+    renderWithProviders(items)
+
+    expect(await screen.findByText("TXT")).toBeInTheDocument()
+    expect(screen.getByText("2,000 words")).toBeInTheDocument()
+  })
+
+  it("shows only a type badge for a URL item, with no second count badge", async () => {
+    const items: CollectionItem[] = [
+      {
+        id: "item-2",
+        collection_id: "col-1",
+        name: "https://example.com/article",
+        source_type: "url",
+        is_active: true,
+        status: "ready",
+        chunk_count: 2,
+        page_count: null,
+        word_count: null,
+        error_message: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]
+    renderWithProviders(items)
+
+    expect(await screen.findByText("URL")).toBeInTheDocument()
+    expect(screen.queryByText(/pages|words/)).not.toBeInTheDocument()
+  })
+
+  it("does not show a count badge for a PDF that is still processing", async () => {
+    const items: CollectionItem[] = [
+      {
+        id: "item-1",
+        collection_id: "col-1",
+        name: "report.pdf",
+        source_type: "pdf",
+        is_active: false,
+        status: "processing",
+        chunk_count: 0,
+        page_count: null,
+        word_count: null,
+        error_message: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]
+    renderWithProviders(items)
+
+    expect(await screen.findByText("PDF")).toBeInTheDocument()
+    expect(screen.queryByText(/pages/)).not.toBeInTheDocument()
   })
 })

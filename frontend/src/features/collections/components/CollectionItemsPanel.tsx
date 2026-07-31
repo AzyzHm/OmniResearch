@@ -16,6 +16,7 @@ import { shortenUrl } from "@/shared/lib/shortenUrl"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import StatusBadge from "@/features/collections/components/StatusBadge"
+import ItemMetaBadges from "@/features/collections/components/ItemMetaBadges"
 import SearchModal from "@/features/collections/components/SearchModal"
 
 const UPLOAD_ACCEPT = ".pdf,.txt"
@@ -269,102 +270,87 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
       )}
 
       {!isLoading && items && items.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full table-fixed text-sm">
-            <colgroup>
-              <col className="w-10" />
-              <col />
-              <col className="w-24" />
-              <col className="w-20" />
-              <col className="w-24" />
-            </colgroup>
-            <tbody>
-              {items.map((item) => {
-                const checked = pendingChanges[item.id] ?? item.is_active
-                const confirming = confirmingDeleteId === item.id
-                return (
-                  <tr
-                    key={item.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/50"
-                  >
-                    <td className="w-10 px-3 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={item.status !== "ready"}
-                        onChange={(e) => toggleItem(item, e.target.checked)}
-                        aria-label={`Include ${item.name} in retrieval`}
-                        className="size-4 rounded border-input accent-teal disabled:opacity-40"
-                      />
-                    </td>
-                    <td className="overflow-hidden px-3 py-2.5">
-                      {item.source_type === "url" ? (
-                        <a
-                          href={item.name}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={item.name}
-                          className="flex w-full min-w-0 items-center gap-1 text-teal hover:underline"
-                        >
-                          <span className="min-w-0 truncate">
-                            {shortenUrl(item.name)}
-                          </span>
-                          <ExternalLink className="size-3 shrink-0" />
-                        </a>
-                      ) : (
-                        <p className="truncate text-ink">{item.name}</p>
-                      )}
-                      {item.status === "error" && item.error_message && (
-                        <p className="truncate text-xs text-destructive">
-                          {item.error_message}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
-                      {item.status === "ready" ? `${item.chunk_count} chunks` : ""}
-                    </td>
-                    <td className="px-2 py-2.5 text-right">
-                      {confirming ? (
-                        <div className="flex flex-col items-end gap-1">
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="destructive"
-                            disabled={deletingId === item.id}
-                            onClick={() => deleteMutation.mutate(item.id)}
-                          >
-                            {deletingId === item.id ? "Deleting..." : "Confirm"}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="ghost"
-                            disabled={deletingId === item.id}
-                            onClick={() => setConfirmingDeleteId(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          size="icon-xs"
-                          variant="ghost"
-                          onClick={() => setConfirmingDeleteId(item.id)}
-                          aria-label={`Delete ${item.name}`}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="overflow-hidden rounded-xl border border-border">
+          {items.map((item) => {
+            const checked = pendingChanges[item.id] ?? item.is_active
+            const confirming = confirmingDeleteId === item.id
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-0 hover:bg-muted/50"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={item.status !== "ready"}
+                  onChange={(e) => toggleItem(item, e.target.checked)}
+                  aria-label={`Include ${item.name} in retrieval`}
+                  className="size-4 shrink-0 rounded border-input accent-teal disabled:opacity-40"
+                />
+                <div className="min-w-0 flex-1">
+                  {item.source_type === "url" ? (
+                    <a
+                      href={item.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={item.name}
+                      className="flex w-full min-w-0 items-center gap-1 text-teal hover:underline"
+                    >
+                      <span className="min-w-0 truncate">
+                        {shortenUrl(item.name)}
+                      </span>
+                      <ExternalLink className="size-3 shrink-0" />
+                    </a>
+                  ) : (
+                    <p className="truncate text-ink" title={item.name}>
+                      {item.name}
+                    </p>
+                  )}
+                  {item.status === "error" && item.error_message && (
+                    <p className="truncate text-xs text-destructive">
+                      {item.error_message}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                  <StatusBadge status={item.status} />
+                  <ItemMetaBadges item={item} />
+                  {confirming ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="destructive"
+                        disabled={deletingId === item.id}
+                        onClick={() => deleteMutation.mutate(item.id)}
+                      >
+                        {deletingId === item.id ? "Deleting..." : "Confirm"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        disabled={deletingId === item.id}
+                        onClick={() => setConfirmingDeleteId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="icon-xs"
+                      variant="ghost"
+                      onClick={() => setConfirmingDeleteId(item.id)}
+                      aria-label={`Delete ${item.name}`}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
