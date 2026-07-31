@@ -1,5 +1,5 @@
 import backend.services.extraction as extraction
-from backend.services.extraction import extract_pdf, extract_txt
+from backend.services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
 
 
 def _make_pdf(texts: list[str]) -> bytes:
@@ -102,3 +102,35 @@ class TestExtractPdf:
     def test_no_pages_returns_empty_string(self, monkeypatch):
         monkeypatch.setattr(extraction, "PdfReader", lambda _stream: _FakeReader([]))
         assert extract_pdf(b"irrelevant") == ""
+
+
+class TestCountPdfPages:
+    def test_counts_single_page(self):
+        pdf_bytes = _make_pdf(["Hello World"])
+        assert count_pdf_pages(pdf_bytes) == 1
+
+    def test_counts_multiple_pages(self):
+        pdf_bytes = _make_pdf(["Page one", "Page two", "Page three"])
+        assert count_pdf_pages(pdf_bytes) == 3
+
+    def test_counts_pages_even_when_text_is_unextractable(self, monkeypatch):
+        """Page count comes from the reader's page list, independent of
+        whether any text could be extracted from those pages."""
+        monkeypatch.setattr(
+            extraction, "PdfReader", lambda _stream: _FakeReader([None, None])
+        )
+        assert count_pdf_pages(b"irrelevant") == 2
+
+
+class TestCountWords:
+    def test_counts_simple_sentence(self):
+        assert count_words("the quick brown fox") == 4
+
+    def test_collapses_repeated_whitespace(self):
+        assert count_words("word1   word2\n\nword3\tword4") == 4
+
+    def test_empty_string_is_zero_words(self):
+        assert count_words("") == 0
+
+    def test_whitespace_only_is_zero_words(self):
+        assert count_words("   \n\t  ") == 0

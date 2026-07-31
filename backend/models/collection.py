@@ -37,6 +37,8 @@ class CollectionItemOut(BaseModel):
     is_active: bool
     status: str
     chunk_count: int
+    page_count: Optional[int] = None
+    word_count: Optional[int] = None
     error_message: Optional[str] = None
     created_at: datetime
 

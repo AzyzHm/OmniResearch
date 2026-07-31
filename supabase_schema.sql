@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS public.collection_items (
     is_active     BOOLEAN NOT NULL DEFAULT TRUE,
     status        TEXT NOT NULL DEFAULT 'processing' CHECK (status IN ('processing', 'ready', 'error')),
     chunk_count   INTEGER NOT NULL DEFAULT 0,
+    page_count    INTEGER,
+    word_count    INTEGER,
     error_message TEXT,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
