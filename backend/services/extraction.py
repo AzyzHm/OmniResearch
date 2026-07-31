@@ -16,3 +16,14 @@ def extract_pdf(file_bytes: bytes) -> str:
     reader = PdfReader(io.BytesIO(file_bytes))
     pages_text = [page.extract_text() or "" for page in reader.pages]
     return "\n\n".join(pages_text).strip()
+
+
+def count_pdf_pages(file_bytes: bytes) -> int:
+    """Return the number of pages in a PDF, for display purposes only."""
+    reader = PdfReader(io.BytesIO(file_bytes))
+    return len(reader.pages)
+
+
+def count_words(text: str) -> int:
+    """Whitespace-based word count, for display purposes only."""
+    return len(text.split())

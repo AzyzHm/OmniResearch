@@ -16,7 +16,7 @@ import CollectionFormDialog from "@/features/collections/components/CollectionFo
 interface CollectionsSidebarProps {
   projectId: string
   selectedCollectionId: string | null
-  onSelect: (collection: Collection) => void
+  onSelect: (collection: Collection | null) => void
 }
 
 function CollectionsSidebar({
@@ -64,6 +64,7 @@ function CollectionsSidebar({
         old ? old.filter((c) => c.id !== collectionId) : old
       )
       queryClient.invalidateQueries({ queryKey })
+      if (collectionId === selectedCollectionId) onSelect(null)
     },
     onError: (err) => {
       setDeleteError(

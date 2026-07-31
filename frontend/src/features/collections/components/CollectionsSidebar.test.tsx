@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
@@ -81,5 +82,20 @@ describe("CollectionsSidebar mobile visibility", () => {
     expect(classes).toContain("md:opacity-0")
     expect(classes).toContain("md:group-hover:opacity-100")
     expect(classes).not.toContain("opacity-0")
+  })
+
+  it("clears the selection when the currently-selected collection is deleted, instead of leaving stale content showing", async () => {
+    mockCollectionFetch()
+    renderWithProviders()
+    const user = userEvent.setup()
+    await screen.findByText("Background Reading", { selector: "span" })
+    expect(screen.getByTestId("content-pane")).toHaveTextContent("Showing: Background Reading")
+
+    await user.click(await screen.findByRole("button", { name: "Delete collection" }))
+    await user.click(await screen.findByRole("button", { name: "Confirm delete" }))
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("content-pane")).toHaveTextContent("No collection selected")
+    })
   })
 })
