@@ -246,13 +246,25 @@ class TestSendMessage:
         client, db = app
         db.rag_graph.answer = "Revenue grew 12% [1]."
         db.rag_graph.sources = [
-            {"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}
+            {
+                "index": 1,
+                "source_name": "q3-report.pdf",
+                "collection_id": "c1",
+                "item_id": "i1",
+                "content": "Revenue grew 12% year over year.",
+            }
         ]
         self._queue_send(db)
         resp = client.post("/chats/chat-1/message", json={"message": "How did revenue grow?"}, headers=user_headers)
         assert resp.status_code == 200
         assert resp.json()["sources"] == [
-            {"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}
+            {
+                "index": 1,
+                "source_name": "q3-report.pdf",
+                "collection_id": "c1",
+                "item_id": "i1",
+                "content": "Revenue grew 12% year over year.",
+            }
         ]
 
     def test_no_sources_defaults_to_empty_list(self, app, user_headers):
