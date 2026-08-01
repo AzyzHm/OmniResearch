@@ -96,6 +96,7 @@ function ProjectDetail() {
         {selectedChat ? (
           <ChatArea
             key={selectedChat.id}
+            projectId={projectId}
             chatId={selectedChat.id}
             chatName={selectedChat.name}
           />

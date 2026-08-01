@@ -1,14 +1,19 @@
+import { useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { ExternalLink } from "lucide-react"
+import { BookmarkPlus, Check, ExternalLink } from "lucide-react"
 
 import type { Source } from "@/features/chat/api"
 import { shortenUrl } from "@/shared/lib/shortenUrl"
 import { cn } from "@/shared/lib/utils"
+import { Button } from "@/shared/components/ui/button"
+import SaveToNoteDialog from "@/features/notes/components/SaveToNoteDialog"
 
 interface ChatMessageBubbleProps {
   role: "user" | "assistant" | string
   content: string
   sources?: Source[] | null
+  messageId?: string
+  projectId?: string
 }
 
 function isUrl(value: string): boolean {
@@ -20,19 +25,52 @@ function isUrl(value: string): boolean {
   }
 }
 
-function ChatMessageBubble({ role, content, sources }: ChatMessageBubbleProps) {
+function ChatMessageBubble({
+  role,
+  content,
+  sources,
+  messageId,
+  projectId,
+}: ChatMessageBubbleProps) {
   const isUser = role === "user"
+  const canSave = !isUser && !!messageId && !!projectId
+
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+
+  function handleSaved() {
+    setJustSaved(true)
+    window.setTimeout(() => setJustSaved(false), 2000)
+  }
 
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+          "group/bubble relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
           isUser
             ? "bg-teal text-white"
             : "bg-surface text-ink border border-border"
         )}
       >
+        {canSave && (
+          <Button
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            className="absolute top-1.5 right-1.5 opacity-100 md:opacity-0 md:group-hover/bubble:opacity-100"
+            onClick={() => setSaveDialogOpen(true)}
+            aria-label="Save to note"
+            title="Save to note"
+          >
+            {justSaved ? (
+              <Check className="size-3.5 text-teal" />
+            ) : (
+              <BookmarkPlus className="size-3.5" />
+            )}
+          </Button>
+        )}
+
         {isUser ? (
           <p className="whitespace-pre-wrap">{content}</p>
         ) : (
@@ -40,6 +78,7 @@ function ChatMessageBubble({ role, content, sources }: ChatMessageBubbleProps) {
             <div
               className={cn(
                 "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+                canSave && "pr-6",
                 "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_li]:my-0.5",
                 "[&_ul]:pl-5 [&_ol]:pl-5 [&_strong]:font-semibold",
                 "[&_a]:text-teal [&_a]:underline [&_a]:underline-offset-2",
@@ -86,6 +125,16 @@ function ChatMessageBubble({ role, content, sources }: ChatMessageBubbleProps) {
           </>
         )}
       </div>
+
+      {!isUser && messageId && projectId && (
+        <SaveToNoteDialog
+          open={saveDialogOpen}
+          onOpenChange={setSaveDialogOpen}
+          projectId={projectId}
+          messageId={messageId}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   )
 }

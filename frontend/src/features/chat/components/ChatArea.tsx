@@ -11,11 +11,12 @@ import QuotaExceededCard from "@/features/chat/components/QuotaExceededCard"
 import ChatErrorCard from "@/features/chat/components/ChatErrorCard"
 
 interface ChatAreaProps {
+  projectId: string
   chatId: string
   chatName: string
 }
 
-function ChatArea({ chatId, chatName }: ChatAreaProps) {
+function ChatArea({ projectId, chatId, chatName }: ChatAreaProps) {
   const queryClient = useQueryClient()
   const queryKey = useMemo(() => ["messages", chatId], [chatId])
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -28,10 +29,6 @@ function ChatArea({ chatId, chatName }: ChatAreaProps) {
   const chatStream = useChatStream()
   const [pendingUserEcho, setPendingUserEcho] = useState<string | null>(null)
 
-  // When a stream finishes (success or error), the user's message has
-  // already been persisted server-side either way — refetch so it (and
-  // any real assistant reply) becomes part of the actual history, then
-  // drop the optimistic local echo.
   const wasStreamingRef = useRef(false)
   useEffect(() => {
     if (wasStreamingRef.current && !chatStream.isStreaming) {
@@ -79,6 +76,8 @@ function ChatArea({ chatId, chatName }: ChatAreaProps) {
             role={msg.role}
             content={msg.content}
             sources={msg.sources}
+            messageId={msg.id}
+            projectId={projectId}
           />
         ))}
 
