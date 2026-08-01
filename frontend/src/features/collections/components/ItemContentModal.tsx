@@ -8,18 +8,22 @@ import {
 import { ApiError } from "@/shared/lib/apiClient"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog"
 
+type PreviewableItem = Pick<CollectionItem, "id" | "name" | "source_type">
+
 interface ItemContentModalProps {
   collectionId: string
-  item: CollectionItem | null
+  item: PreviewableItem | null
   onOpenChange: (open: boolean) => void
+  highlightText?: string | null
 }
 
 interface ItemContentBodyProps {
   collectionId: string
-  item: CollectionItem
+  item: PreviewableItem
+  highlightText?: string | null
 }
 
-function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
+function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyProps) {
   const [text, setText] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(item.source_type === "txt")
@@ -51,6 +55,7 @@ function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
       <iframe
         src={getCollectionItemContentUrl(collectionId, item.id)}
         title={item.name}
+        data-highlight-text={highlightText || undefined}
         className="size-full border-0"
       />
     )
@@ -58,7 +63,10 @@ function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
 
   if (item.source_type === "txt") {
     return (
-      <div className="h-full overflow-y-auto px-5 py-4">
+      <div
+        className="h-full overflow-y-auto px-5 py-4"
+        data-highlight-text={highlightText || undefined}
+      >
         {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
         {error && <p className="text-sm text-destructive">{error}</p>}
         {!loading && !error && (
@@ -73,7 +81,7 @@ function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
   return null
 }
 
-function ItemContentModal({ collectionId, item, onOpenChange }: ItemContentModalProps) {
+function ItemContentModal({ collectionId, item, onOpenChange, highlightText }: ItemContentModalProps) {
   const open = item !== null
 
   return (
@@ -86,7 +94,14 @@ function ItemContentModal({ collectionId, item, onOpenChange }: ItemContentModal
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-hidden">
-          {item && <ItemContentBody key={item.id} collectionId={collectionId} item={item} />}
+          {item && (
+            <ItemContentBody
+              key={item.id}
+              collectionId={collectionId}
+              item={item}
+              highlightText={highlightText}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
