@@ -185,6 +185,16 @@ def message_row(msg_id="msg-1", chat_id="chat-1", role="user", content="Hello"):
     return {"id": msg_id, "chat_id": chat_id, "role": role, "content": content,
             "created_at": NOW}
 
+def note_row(note_id="note-1", project_id="proj-1", name="My Note"):
+    return {"id": note_id, "project_id": project_id, "name": name,
+            "created_at": NOW, "projects": {"user_id": "user-123"}}
+
+def note_item_row(item_id="item-1", note_id="note-1", message_id="msg-1",
+                   chat_id="chat-1", role="assistant", content="Hi there!", sources=None):
+    return {"id": item_id, "note_id": note_id, "message_id": message_id,
+            "created_at": NOW,
+            "messages": {"chat_id": chat_id, "role": role, "content": content, "sources": sources}}
+
 def user_row(user_id="user-abc", username="alice", role="user", is_approved=True, daily_token_limit=80_000):
     return {"id": user_id, "username": username, "role": role,
             "is_approved": is_approved, "created_at": NOW,
@@ -211,6 +221,9 @@ def _patch_all_get_supabase(fake_db):
     import backend.routes.collections.crud as r_collections_crud
     import backend.routes.collections.ingest as r_collections_ingest
     import backend.routes.collections.items as r_collections_items
+    import backend.routes.notes._shared as r_notes_shared
+    import backend.routes.notes.crud as r_notes_crud
+    import backend.routes.notes.items as r_notes_items
     import backend.routes.projects as r_projects
 
     modules = [
@@ -218,6 +231,7 @@ def _patch_all_get_supabase(fake_db):
         r_admin_users, r_admin_logs, r_admin_stats, r_admin_usage, r_admin_quota,
         r_chat_shared, r_chat_crud, r_chat_messages, r_chat_send,
         r_collections_shared, r_collections_crud, r_collections_ingest, r_collections_items,
+        r_notes_shared, r_notes_crud, r_notes_items,
     ]
     originals = {m: m.get_supabase for m in modules}
 

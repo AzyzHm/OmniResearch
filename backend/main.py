@@ -13,7 +13,7 @@ Do not reorder these two import blocks without re-testing on Windows."""
 from backend.services.embeddings import warm_up_embedding_model
 from backend.services.reranker import warm_up_reranker
 
-from backend.routes import auth_router, admin_router, projects_router, chats_router, collections_router, search_router
+from backend.routes import auth_router, admin_router, projects_router, chats_router, collections_router, notes_router, search_router
 
 settings = get_settings()
 
@@ -47,6 +47,7 @@ app.include_router(admin_router)
 app.include_router(projects_router)
 app.include_router(chats_router)
 app.include_router(collections_router)
+app.include_router(notes_router)
 app.include_router(search_router)
 
 
