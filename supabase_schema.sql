@@ -67,6 +67,20 @@ CREATE TABLE IF NOT EXISTS public.messages (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.notes (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id  UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.note_items (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    note_id    UUID NOT NULL REFERENCES public.notes(id) ON DELETE CASCADE,
+    message_id UUID NOT NULL REFERENCES public.messages(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS public.llm_usage (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id           UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -94,6 +108,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_chats_project_name_ci
     ON public.chats (project_id, lower(name));
 CREATE UNIQUE INDEX IF NOT EXISTS uq_collections_project_name_ci
     ON public.collections (project_id, lower(name));
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notes_project_name_ci
+    ON public.notes (project_id, lower(name));
+CREATE UNIQUE INDEX IF NOT EXISTS uq_note_items_note_message
+    ON public.note_items (note_id, message_id);
 
 -- ── Indexes ──────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_users_username              ON public.users(username);
@@ -104,6 +122,9 @@ CREATE INDEX IF NOT EXISTS idx_chats_project               ON public.chats(proje
 CREATE INDEX IF NOT EXISTS idx_collections_project         ON public.collections(project_id);
 CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON public.collection_items(collection_id);
 CREATE INDEX IF NOT EXISTS idx_messages_chat_time          ON public.messages(chat_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notes_project               ON public.notes(project_id);
+CREATE INDEX IF NOT EXISTS idx_note_items_note              ON public.note_items(note_id);
+CREATE INDEX IF NOT EXISTS idx_note_items_message           ON public.note_items(message_id);
 CREATE INDEX IF NOT EXISTS idx_llm_usage_user              ON public.llm_usage(user_id);
 CREATE INDEX IF NOT EXISTS idx_llm_usage_created           ON public.llm_usage(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_usage_user           ON public.search_usage(user_id);
@@ -145,6 +166,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION public.touch_project_via_note_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.projects p
+    SET updated_at = NOW()
+    FROM public.notes n
+    WHERE n.id = COALESCE(NEW.note_id, OLD.note_id)
+      AND p.id = n.project_id;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION public.touch_project_via_chat_id()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -176,6 +209,16 @@ DROP TRIGGER IF EXISTS trg_messages_touch_project ON public.messages;
 CREATE TRIGGER trg_messages_touch_project
     AFTER INSERT ON public.messages
     FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_chat_id();
+
+DROP TRIGGER IF EXISTS trg_notes_touch_project ON public.notes;
+CREATE TRIGGER trg_notes_touch_project
+    AFTER INSERT OR UPDATE OR DELETE ON public.notes
+    FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_project_id();
+
+DROP TRIGGER IF EXISTS trg_note_items_touch_project ON public.note_items;
+CREATE TRIGGER trg_note_items_touch_project
+    AFTER INSERT OR DELETE ON public.note_items
+    FOR EACH ROW EXECUTE FUNCTION public.touch_project_via_note_id();
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('collection-files', 'collection-files', false)

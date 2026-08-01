@@ -1,20 +1,35 @@
 import { useState } from "react"
 import { useParams, Link } from "react-router-dom"
-import { ArrowLeft, Library, Menu } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { ArrowLeft, Library, Menu, NotebookText } from "lucide-react"
 
 import type { Chat } from "@/features/chat/api"
+import { listChats } from "@/features/chat/api"
 import { Button } from "@/shared/components/ui/button"
 import ChatsSidebar from "@/features/chat/components/ChatsSidebar"
 import ChatArea from "@/features/chat/components/ChatArea"
 import SourcesDrawer from "@/features/workspace/components/SourcesDrawer"
+import NotesDrawer from "@/features/workspace/components/NotesDrawer"
 
 function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>()
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [sourcesOpen, setSourcesOpen] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [chatsOpen, setChatsOpen] = useState(false)
 
+  const { data: chats } = useQuery({
+    queryKey: ["chats", projectId],
+    queryFn: () => listChats(projectId as string),
+    enabled: !!projectId,
+  })
+
   if (!projectId) return null
+
+  function handleJumpToChat(chatId: string) {
+    const chat = chats?.find((c) => c.id === chatId)
+    if (chat) setSelectedChat(chat)
+  }
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
@@ -46,16 +61,27 @@ function ProjectDetail() {
           )}
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setSourcesOpen(true)}
-          className="shrink-0"
-        >
-          <Library className="size-3.5" data-icon="inline-start" />
-          <span className="hidden sm:inline">Sources</span>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setNotesOpen(true)}
+          >
+            <NotebookText className="size-3.5" data-icon="inline-start" />
+            <span className="hidden sm:inline">Notes</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setSourcesOpen(true)}
+          >
+            <Library className="size-3.5" data-icon="inline-start" />
+            <span className="hidden sm:inline">Sources</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -70,6 +96,7 @@ function ProjectDetail() {
         {selectedChat ? (
           <ChatArea
             key={selectedChat.id}
+            projectId={projectId}
             chatId={selectedChat.id}
             chatName={selectedChat.name}
           />
@@ -84,6 +111,13 @@ function ProjectDetail() {
         projectId={projectId}
         open={sourcesOpen}
         onClose={() => setSourcesOpen(false)}
+      />
+
+      <NotesDrawer
+        projectId={projectId}
+        open={notesOpen}
+        onClose={() => setNotesOpen(false)}
+        onJumpToChat={handleJumpToChat}
       />
     </div>
   )
