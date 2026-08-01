@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import {
   getCollectionItemContentText,
@@ -9,6 +9,21 @@ import { ApiError } from "@/shared/lib/apiClient"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog"
 
 type PreviewableItem = Pick<CollectionItem, "id" | "name" | "source_type">
+
+function splitForHighlight(
+  text: string,
+  highlight: string | null | undefined
+): { before: string; match: string; after: string } | null {
+  const needle = highlight?.trim()
+  if (!needle) return null
+  const index = text.indexOf(needle)
+  if (index === -1) return null
+  return {
+    before: text.slice(0, index),
+    match: text.slice(index, index + needle.length),
+    after: text.slice(index + needle.length),
+  }
+}
 
 interface ItemContentModalProps {
   collectionId: string
@@ -27,6 +42,7 @@ function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyP
   const [text, setText] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(item.source_type === "txt")
+  const highlightRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (item.source_type !== "txt") return
@@ -50,6 +66,15 @@ function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyP
     }
   }, [collectionId, item.id, item.source_type])
 
+  const highlightSplit = useMemo(
+    () => (text !== null ? splitForHighlight(text, highlightText) : null),
+    [text, highlightText]
+  )
+
+  useEffect(() => {
+    highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [highlightSplit])
+
   if (item.source_type === "pdf") {
     return (
       <iframe
@@ -63,15 +88,22 @@ function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyP
 
   if (item.source_type === "txt") {
     return (
-      <div
-        className="h-full overflow-y-auto px-5 py-4"
-        data-highlight-text={highlightText || undefined}
-      >
+      <div className="h-full overflow-y-auto px-5 py-4">
         {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
         {error && <p className="text-sm text-destructive">{error}</p>}
         {!loading && !error && (
           <pre className="whitespace-pre-wrap wrap-break-words font-mono text-sm text-ink">
-            {text}
+            {highlightSplit ? (
+              <>
+                {highlightSplit.before}
+                <mark ref={highlightRef} className="rounded-sm bg-teal/25 text-ink">
+                  {highlightSplit.match}
+                </mark>
+                {highlightSplit.after}
+              </>
+            ) : (
+              text
+            )}
           </pre>
         )}
       </div>
