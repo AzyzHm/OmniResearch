@@ -115,6 +115,20 @@ class FakeDB:
         return FakeQuery(result)
 
 
+class _NoOpSweepDB:
+    """
+    Dedicated stand-in for the startup "processing" sweep (see
+    backend.services.ingestion_recovery), which runs automatically every
+    time the `app` fixture's TestClient enters (real ASGI lifespan). It's
+    deliberately NOT the shared FakeDB: that queue is meant for each
+    test's own db.add_result(...) calls, and if the sweep consumed the
+    same queue it would silently eat the first result every test queues,
+    corrupting unrelated assertions instead of failing loudly.
+    """
+    def table(self, _name: str) -> FakeQuery:
+        return FakeQuery(FakeResult(data=[]))
+
+
 @pytest.fixture()
 def app():
     """
@@ -236,6 +250,7 @@ def _patch_all_get_supabase(fake_db):
     import backend.routes.notes.crud as r_notes_crud
     import backend.routes.notes.items as r_notes_items
     import backend.routes.projects as r_projects
+    import backend.services.ingestion_recovery as r_ingestion_recovery
 
     modules = [
         r_auth, r_projects, db_mod,
@@ -245,10 +260,12 @@ def _patch_all_get_supabase(fake_db):
         r_notes_shared, r_notes_crud, r_notes_items,
     ]
     originals = {m: m.get_supabase for m in modules}
+    originals[r_ingestion_recovery] = r_ingestion_recovery.get_supabase
 
     stub = lambda: fake_db
     for m in modules:
         setattr(m, "get_supabase", stub)
+    r_ingestion_recovery.get_supabase = lambda: _NoOpSweepDB()
 
     def restore():
         for m, orig in originals.items():

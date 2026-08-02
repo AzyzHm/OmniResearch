@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.settings import get_settings
+from backend.services.ingestion_recovery import recover_stuck_processing_items
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +27,7 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    recover_stuck_processing_items()
     warm_up_embedding_model()
     warm_up_reranker()
     yield
