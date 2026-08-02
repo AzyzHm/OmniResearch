@@ -1,29 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react"
 
-import {
-  getCollectionItemContentText,
-  getCollectionItemContentUrl,
-  type CollectionItem,
-} from "@/features/collections/api"
+import { getCollectionItemContentText, type CollectionItem } from "@/features/collections/api"
 import { ApiError } from "@/shared/lib/apiClient"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog"
+import { findHighlightRange } from "@/features/collections/lib/textHighlight"
+
+const PdfPreview = lazy(() => import("@/features/collections/components/PdfPreview"))
 
 type PreviewableItem = Pick<CollectionItem, "id" | "name" | "source_type">
-
-function splitForHighlight(
-  text: string,
-  highlight: string | null | undefined
-): { before: string; match: string; after: string } | null {
-  const needle = highlight?.trim()
-  if (!needle) return null
-  const index = text.indexOf(needle)
-  if (index === -1) return null
-  return {
-    before: text.slice(0, index),
-    match: text.slice(index, index + needle.length),
-    after: text.slice(index + needle.length),
-  }
-}
 
 interface ItemContentModalProps {
   collectionId: string
@@ -66,10 +50,16 @@ function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyP
     }
   }, [collectionId, item.id, item.source_type])
 
-  const highlightSplit = useMemo(
-    () => (text !== null ? splitForHighlight(text, highlightText) : null),
-    [text, highlightText]
-  )
+  const highlightSplit = useMemo(() => {
+    if (text === null) return null
+    const range = findHighlightRange(text, highlightText)
+    if (!range) return null
+    return {
+      before: text.slice(0, range.start),
+      match: text.slice(range.start, range.end),
+      after: text.slice(range.end),
+    }
+  }, [text, highlightText])
 
   useEffect(() => {
     highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
@@ -77,12 +67,9 @@ function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyP
 
   if (item.source_type === "pdf") {
     return (
-      <iframe
-        src={getCollectionItemContentUrl(collectionId, item.id)}
-        title={item.name}
-        data-highlight-text={highlightText || undefined}
-        className="size-full border-0"
-      />
+      <Suspense fallback={<p className="p-4 text-sm text-muted-foreground">Loading...</p>}>
+        <PdfPreview collectionId={collectionId} itemId={item.id} highlightText={highlightText} />
+      </Suspense>
     )
   }
 

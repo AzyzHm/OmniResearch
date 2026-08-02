@@ -1,9 +1,29 @@
 import { render, screen, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
+vi.mock("@/features/collections/components/PdfPreview", () => ({
+  default: ({
+    collectionId,
+    itemId,
+    highlightText,
+  }: {
+    collectionId: string
+    itemId: string
+    highlightText?: string | null
+  }) => (
+    <div
+      data-testid="pdf-preview"
+      data-collection-id={collectionId}
+      data-item-id={itemId}
+      data-highlight-text={highlightText ?? ""}
+    />
+  ),
+}))
+
 import ItemContentModal from "@/features/collections/components/ItemContentModal"
 
 const txtItem = { id: "item-1", name: "notes.txt", source_type: "txt" }
+const pdfItem = { id: "item-2", name: "q3-report.pdf", source_type: "pdf" }
 
 function mockTextResponse(body: string) {
   globalThis.fetch = vi.fn(() =>
@@ -59,5 +79,30 @@ describe("ItemContentModal TXT highlighting", () => {
       screen.getByText("The file content has changed since this citation was generated.")
     )
     expect(document.querySelector("mark")).not.toBeInTheDocument()
+  })
+})
+
+describe("ItemContentModal PDF branch", () => {
+  it("renders PdfPreview with the collection/item ids and chunk text", async () => {
+    render(
+      <ItemContentModal
+        collectionId="c1"
+        item={pdfItem}
+        onOpenChange={() => {}}
+        highlightText="Revenue grew 12% year over year."
+      />
+    )
+
+    const preview = await screen.findByTestId("pdf-preview")
+    expect(preview).toHaveAttribute("data-collection-id", "c1")
+    expect(preview).toHaveAttribute("data-item-id", "item-2")
+    expect(preview).toHaveAttribute("data-highlight-text", "Revenue grew 12% year over year.")
+  })
+
+  it("renders PdfPreview with no highlight text when none is provided", async () => {
+    render(<ItemContentModal collectionId="c1" item={pdfItem} onOpenChange={() => {}} />)
+
+    const preview = await screen.findByTestId("pdf-preview")
+    expect(preview).toHaveAttribute("data-highlight-text", "")
   })
 })

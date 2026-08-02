@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
+
+vi.mock("@/features/collections/components/PdfPreview", () => ({
+  default: () => <div data-testid="pdf-preview" />,
+}))
 
 import ChatMessageBubble from "@/features/chat/components/ChatMessageBubble"
 
