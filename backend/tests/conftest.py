@@ -28,6 +28,17 @@ for _mod in [
 ]:
     sys.modules.setdefault(_mod, MagicMock())
 
+import types as _types
+
+
+class _MockChromaNotFoundError(Exception):
+    """Stand-in for chromadb.errors.NotFoundError while chromadb is mocked."""
+
+
+_chromadb_errors = _types.ModuleType("chromadb.errors")
+_chromadb_errors.NotFoundError = _MockChromaNotFoundError  # type: ignore[attr-defined]
+sys.modules.setdefault("chromadb.errors", _chromadb_errors)
+
 import pytest
 from fastapi.testclient import TestClient
 
