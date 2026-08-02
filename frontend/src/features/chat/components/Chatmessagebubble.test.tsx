@@ -1,6 +1,11 @@
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
+
+vi.mock("@/features/collections/components/PdfPreview", () => ({
+  default: () => <div data-testid="pdf-preview" />,
+}))
 
 import ChatMessageBubble from "@/features/chat/components/ChatMessageBubble"
 
@@ -84,6 +89,46 @@ describe("ChatMessageBubble", () => {
     expect(link).toHaveAttribute("href", "https://www.example.com/blog/announcement")
     expect(link).toHaveAttribute("target", "_blank")
     expect(link.textContent).toContain("example.com/blog/announcement")
+  })
+
+  it("renders a PDF/TXT source as a clickable button that opens the item preview modal", async () => {
+    const user = userEvent.setup()
+    renderWithQueryClient(
+      <ChatMessageBubble
+        role="assistant"
+        content="Revenue grew 12% [1]."
+        sources={[
+          {
+            index: 1,
+            source_name: "q3-report.pdf",
+            collection_id: "c1",
+            item_id: "i1",
+            content: "Revenue grew 12% year over year.",
+          },
+        ]}
+      />
+    )
+    const sourceButton = screen.getByRole("button", { name: "q3-report.pdf" })
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+
+    await user.click(sourceButton)
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.getAllByText("q3-report.pdf").length).toBeGreaterThan(0)
+  })
+
+  it("renders a PDF/TXT source as plain text when it has no collection_id/item_id", () => {
+    render(
+      <ChatMessageBubble
+        role="assistant"
+        content="Revenue grew 12% [1]."
+        sources={[
+          { index: 1, source_name: "q3-report.pdf", collection_id: null, item_id: null },
+        ]}
+      />
+    )
+    expect(screen.queryByRole("button", { name: "q3-report.pdf" })).not.toBeInTheDocument()
+    expect(screen.getByText("q3-report.pdf")).toBeInTheDocument()
   })
 
   it("does not render a source list for user messages", () => {

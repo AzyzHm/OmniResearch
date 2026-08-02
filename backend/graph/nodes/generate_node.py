@@ -36,6 +36,7 @@ def _extract_cited_sources(answer: str, context_chunks: list[dict]) -> list[dict
             "source_name": chunk.get("source_name", "unknown source"),
             "collection_id": chunk.get("collection_id"),
             "item_id": chunk.get("item_id"),
+            "content": chunk.get("content"),
         })
     return sources
 

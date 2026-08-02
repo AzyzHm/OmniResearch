@@ -7,6 +7,7 @@ import { shortenUrl } from "@/shared/lib/shortenUrl"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/components/ui/button"
 import SaveToNoteDialog from "@/features/notes/components/SaveToNoteDialog"
+import ItemContentModal from "@/features/collections/components/ItemContentModal"
 
 interface ChatMessageBubbleProps {
   role: "user" | "assistant" | string
@@ -25,6 +26,13 @@ function isUrl(value: string): boolean {
   }
 }
 
+/** Collections only ever ingest PDF or TXT uploads, keyed off the filename
+ * extension (see backend EXT_TO_SOURCE_TYPE) — non-URL sources are always
+ * one of the two. */
+function fileSourceType(sourceName: string): "pdf" | "txt" {
+  return sourceName.toLowerCase().endsWith(".pdf") ? "pdf" : "txt"
+}
+
 function ChatMessageBubble({
   role,
   content,
@@ -37,6 +45,7 @@ function ChatMessageBubble({
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [justSaved, setJustSaved] = useState(false)
+  const [previewSource, setPreviewSource] = useState<Source | null>(null)
 
   function handleSaved() {
     setJustSaved(true)
@@ -112,6 +121,15 @@ function ChatMessageBubble({
                           <span className="truncate">{shortenUrl(s.source_name)}</span>
                           <ExternalLink className="size-2.5 shrink-0" />
                         </a>
+                      ) : s.collection_id && s.item_id ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewSource(s)}
+                          title={s.source_name}
+                          className="min-w-0 truncate text-left text-teal hover:underline"
+                        >
+                          {s.source_name}
+                        </button>
                       ) : (
                         <span className="truncate text-muted-foreground">
                           {s.source_name}
@@ -133,6 +151,25 @@ function ChatMessageBubble({
           projectId={projectId}
           messageId={messageId}
           onSaved={handleSaved}
+        />
+      )}
+
+      {!isUser && (
+        <ItemContentModal
+          collectionId={previewSource?.collection_id ?? ""}
+          item={
+            previewSource?.item_id
+              ? {
+                  id: previewSource.item_id,
+                  name: previewSource.source_name,
+                  source_type: fileSourceType(previewSource.source_name),
+                }
+              : null
+          }
+          onOpenChange={(open) => {
+            if (!open) setPreviewSource(null)
+          }}
+          highlightText={previewSource?.content}
         />
       )}
     </div>

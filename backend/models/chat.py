@@ -37,6 +37,7 @@ class Source(BaseModel):
     source_name: str
     collection_id: Optional[str] = None
     item_id: Optional[str] = None
+    content: Optional[str] = None
 
 
 class MessageOut(BaseModel):

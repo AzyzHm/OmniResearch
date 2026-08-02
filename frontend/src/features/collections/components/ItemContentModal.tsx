@@ -1,28 +1,32 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react"
 
-import {
-  getCollectionItemContentText,
-  getCollectionItemContentUrl,
-  type CollectionItem,
-} from "@/features/collections/api"
+import { getCollectionItemContentText, type CollectionItem } from "@/features/collections/api"
 import { ApiError } from "@/shared/lib/apiClient"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog"
+import { findHighlightRange } from "@/features/collections/lib/textHighlight"
+
+const PdfPreview = lazy(() => import("@/features/collections/components/PdfPreview"))
+
+type PreviewableItem = Pick<CollectionItem, "id" | "name" | "source_type">
 
 interface ItemContentModalProps {
   collectionId: string
-  item: CollectionItem | null
+  item: PreviewableItem | null
   onOpenChange: (open: boolean) => void
+  highlightText?: string | null
 }
 
 interface ItemContentBodyProps {
   collectionId: string
-  item: CollectionItem
+  item: PreviewableItem
+  highlightText?: string | null
 }
 
-function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
+function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyProps) {
   const [text, setText] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(item.source_type === "txt")
+  const highlightRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (item.source_type !== "txt") return
@@ -46,13 +50,26 @@ function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
     }
   }, [collectionId, item.id, item.source_type])
 
+  const highlightSplit = useMemo(() => {
+    if (text === null) return null
+    const range = findHighlightRange(text, highlightText)
+    if (!range) return null
+    return {
+      before: text.slice(0, range.start),
+      match: text.slice(range.start, range.end),
+      after: text.slice(range.end),
+    }
+  }, [text, highlightText])
+
+  useEffect(() => {
+    highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [highlightSplit])
+
   if (item.source_type === "pdf") {
     return (
-      <iframe
-        src={getCollectionItemContentUrl(collectionId, item.id)}
-        title={item.name}
-        className="size-full border-0"
-      />
+      <Suspense fallback={<p className="p-4 text-sm text-muted-foreground">Loading...</p>}>
+        <PdfPreview collectionId={collectionId} itemId={item.id} highlightText={highlightText} />
+      </Suspense>
     )
   }
 
@@ -63,7 +80,17 @@ function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
         {error && <p className="text-sm text-destructive">{error}</p>}
         {!loading && !error && (
           <pre className="whitespace-pre-wrap wrap-break-words font-mono text-sm text-ink">
-            {text}
+            {highlightSplit ? (
+              <>
+                {highlightSplit.before}
+                <mark ref={highlightRef} className="rounded-sm bg-teal/25 text-ink">
+                  {highlightSplit.match}
+                </mark>
+                {highlightSplit.after}
+              </>
+            ) : (
+              text
+            )}
           </pre>
         )}
       </div>
@@ -73,7 +100,7 @@ function ItemContentBody({ collectionId, item }: ItemContentBodyProps) {
   return null
 }
 
-function ItemContentModal({ collectionId, item, onOpenChange }: ItemContentModalProps) {
+function ItemContentModal({ collectionId, item, onOpenChange, highlightText }: ItemContentModalProps) {
   const open = item !== null
 
   return (
@@ -86,7 +113,14 @@ function ItemContentModal({ collectionId, item, onOpenChange }: ItemContentModal
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-hidden">
-          {item && <ItemContentBody key={item.id} collectionId={collectionId} item={item} />}
+          {item && (
+            <ItemContentBody
+              key={item.id}
+              collectionId={collectionId}
+              item={item}
+              highlightText={highlightText}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

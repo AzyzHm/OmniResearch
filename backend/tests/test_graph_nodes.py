@@ -191,9 +191,19 @@ class TestGenerateNode:
         result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
         # Order follows first appearance in the answer text, not chunk order.
         assert result["sources"] == [
-            {"index": 2, "source_name": "doc-two.pdf", "collection_id": "c1", "item_id": "i2"},
-            {"index": 1, "source_name": "doc-one.pdf", "collection_id": "c1", "item_id": "i1"},
+            {"index": 2, "source_name": "doc-two.pdf", "collection_id": "c1", "item_id": "i2", "content": "b"},
+            {"index": 1, "source_name": "doc-one.pdf", "collection_id": "c1", "item_id": "i1", "content": "a"},
         ]
+
+    def test_cited_source_includes_the_chunk_text_used(self, monkeypatch):
+        """The source payload carries the actual chunk content so the frontend
+        can locate and highlight the cited passage in the original document."""
+        chunks = [
+            {"content": "Revenue grew 12% year over year.", "source_name": "doc.pdf", "collection_id": "c1", "item_id": "i1"},
+        ]
+        monkeypatch.setattr(generate_mod, "generate_answer", lambda **kw: "Revenue grew 12% [1].")
+        result = generate_mod.generate_node(_base_state(context_chunks=chunks)) # type: ignore
+        assert result["sources"][0]["content"] == "Revenue grew 12% year over year."
 
     def test_uncited_chunks_are_not_included_as_sources(self, monkeypatch):
         chunks = [

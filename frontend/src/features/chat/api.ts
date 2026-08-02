@@ -14,6 +14,7 @@ export interface Source {
   source_name: string
   collection_id: string | null
   item_id: string | null
+  content?: string | null
 }
 
 export interface Message {
@@ -70,12 +71,6 @@ export function listMessages(chatId: string) {
   return apiClient.get<Message[]>(`/chats/${chatId}/messages`)
 }
 
-/**
- * Streams a chat reply via SSE. The backend's route accepts POST with a JSON
- * body and returns text/event-stream, so this can't use the native
- * EventSource API (GET-only, no custom body) — it reads the raw response
- * stream and parses "data: {...}\n\n" frames by hand instead.
- */
 export async function* streamChatMessage(
   chatId: string,
   message: string,
