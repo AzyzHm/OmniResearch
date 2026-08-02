@@ -5,20 +5,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.settings import get_settings
-from backend.services.ingestion_recovery import recover_stuck_processing_items
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
-""" Import order matters here: the reranker (torch/sentence-transformers) must be imported BEFORE the route modules. Importing the routes first pulls in
+""" Import order matters here: the reranker (torch/sentence-transformers) must be imported BEFORE the route modules and the ingestion recovery service. Importing the routes first pulls in
 the Gemini SDK (google-genai) and its native dependencies (grpc/protobuf); loading those before torch causes a native DLL collision that crashes the
-process with an access violation (0xC0000005) on Windows. Loading torch first avoids it — confirmed by isolated reproduction during debugging.
+process with an access violation (0xC0000005) on Windows. Loading torch first avoids it confirmed by isolated reproduction during debugging.
 Do not reorder these two import blocks without re-testing on Windows."""
 
 from backend.services.embeddings import warm_up_embedding_model
 from backend.services.reranker import warm_up_reranker
+from backend.services.ingestion_recovery import recover_stuck_processing_items
 
 from backend.routes import auth_router, admin_router, projects_router, chats_router, collections_router, notes_router, search_router
 

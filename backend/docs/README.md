@@ -219,7 +219,7 @@ An `.env.example` at the repository root lists the values that must actually be 
 
 **Reranker model**: `HF_HOME`/`HF_HUB_OFFLINE` are read directly by `transformers`/`huggingface_hub` from the process environment, not routed through `Settings` at all, since those libraries already know how to find them on their own. `backend/config/env.py` calls `load_dotenv()` at import time, before `backend/services/reranker.py` is ever imported, so anything set in `.env` is already in `os.environ` by the time the reranker's imports run.
 
-**Import order in `main.py`**: the reranker (`torch`/`sentence-transformers`) is imported before the route modules, which pull in the Gemini SDK (`google-genai`) and its native dependencies (`grpc`/`protobuf`). Importing the Gemini SDK's native deps before torch causes a native DLL collision on Windows (`0xC0000005` access violation, no Python traceback). Loading torch first avoids it, and a comment in `main.py` documents this explicitly so the import blocks aren't reordered without re-testing. A dedicated test (`test_main_import_order.py`) asserts the order in `main.py`'s source directly.
+**Import order in `main.py`**: the reranker (`torch`/`sentence-transformers`) is imported before the route modules , which pull in the Gemini SDK (`google-genai`) and its native dependencies (`grpc`/`protobuf`). Importing the Gemini SDK's native deps before torch causes a native DLL collision on Windows (`0xC0000005` access violation, no Python traceback) (the same for the ingestion service). Loading torch first avoids it, and a comment in `main.py` documents this explicitly so the import blocks aren't reordered without re-testing. A dedicated test (`test_main_import_order.py`) asserts the order in `main.py`'s source directly.
 
 ---
 
