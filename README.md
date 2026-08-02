@@ -1,4 +1,17 @@
-# OmniResearch
+<p align="center">
+  <img src="backend/docs/src/banner.png" alt="OmniResearch" width="100%">
+</p>
+
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Frontend-3178C6?logo=typescript&logoColor=white">
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white">
+  <img alt="ChromaDB" src="https://img.shields.io/badge/ChromaDB-Vector%20Store-FF6F00">
+  <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-Agentic%20RAG-1C3C3C">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
+</p>
 
 OmniResearch is a centralized research, curation, and document analysis platform powered by Artificial Intelligence (Agentic RAG). Designed specifically to streamline research workflows, it eliminates the fragmentation of traditional tools by combining web exploration and knowledge extraction within a single, secure environment.
 
@@ -8,8 +21,8 @@ The application allows users to seamlessly transition from keyword-based informa
 
 ## 📚 Documentation
 
-- [**Backend Documentation**](backend/docs/README.md) — architecture, API reference, database schema, the agentic RAG graph, LLM fallback, and usage monitoring.
-- [**Frontend Documentation**](frontend/README.md) — project structure (feature folders), design system, routing/code-splitting, auth architecture, and the SSE chat streaming implementation.
+- [**Backend Documentation**](backend/docs/README.md) : architecture, API reference, database schema, the agentic RAG graph, LLM fallback, and usage monitoring.
+- [**Frontend Documentation**](frontend/README.md) : project structure (feature folders), design system, routing/code-splitting, auth architecture, and the SSE chat streaming implementation.
 
 ---
 
@@ -24,13 +37,13 @@ The application allows users to seamlessly transition from keyword-based informa
 * **🔎 Integrated Exploratory Engine:** Launch keyword-based searches directly from the interface, view web results, and use checkboxes to select relevant sites to populate your collections.
 
 
-* **📦 Curation by Collections:** Organize your data by project into dedicated collections — local text files, PDF files, or lists of remote URLs.
+* **📦 Curation by Collections:** Organize your data by project into dedicated collections , local text files, PDF files, or lists of remote URLs.
 
 
 * **🧠 Agentic RAG:** Chat in natural language with your corpus. The AI agent decides for itself whether a question needs retrieval at all, refines the query using conversation context, retrieves and validates the evidence it finds, and retries with more context before formulating a contextualized, sourced answer. Responses can be streamed token-by-token in real time.
 
 
-* **🔀 Hybrid Retrieval & Reranking:** Choose between semantic (embedding), keyword (BM25), or hybrid retrieval — the latter fusing both rankings via Reciprocal Rank Fusion — followed by cross-encoder reranking of the pooled candidates for a final, precision-ordered context set.
+* **🔀 Hybrid Retrieval & Reranking:** Choose between semantic (embedding), keyword (BM25), or hybrid retrieval , the latter fusing both rankings via Reciprocal Rank Fusion — followed by cross-encoder reranking of the pooled candidates for a final, precision-ordered context set.
 
 
 * **🚦 Per-User Token Quotas:** Configurable daily LLM token limits per user, enforced automatically before each chat request and adjustable by admins.
@@ -46,7 +59,7 @@ The application allows users to seamlessly transition from keyword-based informa
 
 OmniResearch is built on a modern, decoupled, and high-performance architecture:
 
-* **Frontend:** `React` + `TypeScript` (Vite SPA — Tailwind CSS v4, shadcn/ui on Base UI primitives, TanStack Query, SSE streaming for chat).
+* **Frontend:** `React` + `TypeScript` (Vite SPA Tailwind CSS v4, shadcn/ui on Base UI primitives, TanStack Query, SSE streaming for chat).
 
 
 * **Backend / API:** `FastAPI` (Asynchronous server handling business logic and orchestration).
@@ -75,12 +88,18 @@ OmniResearch is built on a modern, decoupled, and high-performance architecture:
 
 ## 🤝 Contributing
 
-OmniResearch is closed-source and all-rights-reserved, but contributions are welcome. If you'd like to fix a bug, add a feature, or improve the docs, feel free to open a pull request — by submitting one, you agree that the contribution is licensed to the project owner under the terms in [`LICENSE`](LICENSE) (see the "Contributions" clause). Submitting a contribution does not grant you, or anyone else, rights to use, deploy, or redistribute the Software itself.
+Contributions are welcome. If you'd like to fix a bug, add a feature, or improve the docs, feel free to open an issue or a pull request.
 
-For anything beyond a contribution (e.g. wanting to use, host, or build on OmniResearch), please reach out directly to discuss terms.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how to open an issue (including the issue template) and how to submit a pull request.
+
+---
+
+## 🔒 Security
+
+Found a vulnerability? Please report it privately rather than opening a public issue. See [`SECURITY.md`](SECURITY.md) for how to reach out.
 
 ---
 
 ## 📄 License
 
-This project is **not** open source. All rights, including ownership of the codebase and any future derivative works, are reserved by the copyright holder. The Software may be viewed for evaluation and reference purposes only — no use, execution, hosting, copying, modification, distribution, or resale is permitted without prior written consent. External contributions are welcome under the terms described above. See the [`LICENSE`](LICENSE) file at the root of this repository for the full terms.
+This project is licensed under the **Apache License, Version 2.0**. You're free to use, modify, and distribute this software, including for commercial purposes, provided you comply with the license's terms (attribution, a copy of the license, and a note of any changes made to the source). See the [`LICENSE`](LICENSE) file at the root of this repository for the full text.
