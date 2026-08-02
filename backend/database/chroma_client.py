@@ -1,8 +1,11 @@
+import logging
 from functools import lru_cache
 from chromadb import PersistentClient
 from chromadb.config import Settings as ChromaSettings
 from backend.config.settings import get_settings
 from backend.services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -78,4 +81,7 @@ def delete_item_chunks(collection_id: str, item_id: str) -> None:
         collection = get_chroma_collection(collection_id)
         collection.delete(where={"item_id": item_id})
     except Exception as exc:
-        print(f"[chroma] Failed to delete chunks for item {item_id} in collection {collection_id}: {exc}")
+        logger.error(
+            "Failed to delete chunks for item %s in collection %s: %s",
+            item_id, collection_id, exc,
+        )

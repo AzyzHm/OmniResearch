@@ -1,6 +1,10 @@
+import logging
+
 from backend.config.settings import get_settings
 from backend.graph.state import RAGState
 from backend.services.reranker import rerank
+
+logger = logging.getLogger(__name__)
 
 
 def _chunk_key(chunk: dict) -> tuple:
@@ -21,13 +25,15 @@ def rerank_node(state: RAGState) -> dict:
     existing = state.get("context_chunks", [])
 
     if not pool:
-        print("[RAG] rerank_node: empty pool, nothing to rerank")
+        logger.info("rerank_node: empty pool, nothing to rerank")
         return {"context_chunks": existing}
 
     query = state.get("missing_query") or state.get("refined_query") or state["query"]
     is_retry = bool(state.get("missing_query"))
-    print(f"[RAG] rerank_node: reranking {len(pool)} candidate(s) for the "
-          f"{'follow-up' if is_retry else 'initial'} query")
+    logger.info(
+        "rerank_node: reranking %d candidate(s) for the %s query",
+        len(pool), "follow-up" if is_retry else "initial",
+    )
 
     top_chunks = rerank(query, pool, top_k=settings.rerank_top_k)
 
@@ -41,6 +47,8 @@ def rerank_node(state: RAGState) -> dict:
             seen.add(key)
             added += 1
 
-    print(f"[RAG] rerank_node: kept {added} new chunk(s) (of {len(top_chunks)} reranked), "
-          f"total context now {len(merged)}")
+    logger.info(
+        "rerank_node: kept %d new chunk(s) (of %d reranked), total context now %d",
+        added, len(top_chunks), len(merged),
+    )
     return {"context_chunks": merged}

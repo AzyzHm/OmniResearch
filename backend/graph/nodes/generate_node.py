@@ -1,7 +1,10 @@
+import logging
 import re
 
 from backend.graph.state import RAGState
 from backend.services.rag_llm import generate_answer
+
+logger = logging.getLogger(__name__)
 
 NO_SOURCES_MESSAGE = (
     "There are no active sources to search in this project. Add a document, "
@@ -43,11 +46,11 @@ def _extract_cited_sources(answer: str, context_chunks: list[dict]) -> list[dict
 
 def generate_node(state: RAGState) -> dict:
     if state.get("needs_retrieval") and not state.get("context_chunks"):
-        print("[RAG] generate_node: retrieval requested but no sources available — skipping LLM call")
+        logger.info("generate_node: retrieval requested but no sources available — skipping LLM call")
         return {"answer": NO_SOURCES_MESSAGE, "sources": []}
 
     context_chunks = state.get("context_chunks", [])
-    print(f"[RAG] generate_node: context_chunks = {len(context_chunks)}")
+    logger.info("generate_node: context_chunks = %d", len(context_chunks))
     answer = generate_answer(
         history=state.get("history", []),
         query=state["query"],
@@ -55,5 +58,5 @@ def generate_node(state: RAGState) -> dict:
         user_id=state["user_id"],
     )
     sources = _extract_cited_sources(answer, context_chunks)
-    print(f"[RAG] generate_node: done, {len(sources)} source(s) cited")
+    logger.info("generate_node: done, %d source(s) cited", len(sources))
     return {"answer": answer, "sources": sources}
