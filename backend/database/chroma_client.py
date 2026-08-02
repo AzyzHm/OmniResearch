@@ -1,8 +1,12 @@
+import logging
 from functools import lru_cache
 from chromadb import PersistentClient
 from chromadb.config import Settings as ChromaSettings
+from chromadb.errors import NotFoundError
 from backend.config.settings import get_settings
 from backend.services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -29,14 +33,19 @@ def create_chroma_collection(collection_id: str, metadata: dict | None = None) -
 
 def delete_chroma_collection(collection_id: str) -> None:
     """
-    Delete the ChromaDB collection. Safe to call even if it doesn't exist.
+    Delete the ChromaDB collection. Safe to call even if it doesn't exist:
+    a NotFoundError (already deleted) is expected and ignored. Any other
+    failure (outage, permission error, disk issue) is logged rather than
+    silently swallowed.
     Called immediately before or after the Supabase row is deleted.
     """
     client = get_chroma()
     try:
         client.delete_collection(name=collection_id)
-    except Exception:
+    except NotFoundError:
         pass
+    except Exception as exc:
+        logger.warning("Failed to delete Chroma collection %s: %s", collection_id, exc)
 
 
 def get_chroma_collection(collection_id: str):
@@ -78,4 +87,7 @@ def delete_item_chunks(collection_id: str, item_id: str) -> None:
         collection = get_chroma_collection(collection_id)
         collection.delete(where={"item_id": item_id})
     except Exception as exc:
-        print(f"[chroma] Failed to delete chunks for item {item_id} in collection {collection_id}: {exc}")
+        logger.error(
+            "Failed to delete chunks for item %s in collection %s: %s",
+            item_id, collection_id, exc,
+        )

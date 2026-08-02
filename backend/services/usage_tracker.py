@@ -1,6 +1,9 @@
+import logging
 from typing import Optional
 
 from backend.database.db import get_supabase
+
+logger = logging.getLogger(__name__)
 
 
 def record_llm_usage(
@@ -14,7 +17,7 @@ def record_llm_usage(
     """
     Log one LLM call for the usage-monitoring admin view. Best-effort: a
     failure here must never break the actual chat response, so any error
-    is caught and printed rather than raised.
+    is caught and logged rather than raised.
     """
     if not user_id:
         return
@@ -29,7 +32,7 @@ def record_llm_usage(
             "total_tokens": total_tokens or 0,
         }).execute()
     except Exception as exc:
-        print(f"[USAGE] Failed to record LLM usage: {exc}")
+        logger.error("Failed to record LLM usage: %s", exc)
 
 
 def record_search_usage(
@@ -58,4 +61,4 @@ def record_search_usage(
             "credits": credits,
         }).execute()
     except Exception as exc:
-        print(f"[USAGE] Failed to record search usage: {exc}")
+        logger.error("Failed to record search usage: %s", exc)

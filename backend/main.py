@@ -1,9 +1,16 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.settings import get_settings
+from backend.services.ingestion_recovery import recover_stuck_processing_items
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 """ Import order matters here: the reranker (torch/sentence-transformers) must be imported BEFORE the route modules. Importing the routes first pulls in
 the Gemini SDK (google-genai) and its native dependencies (grpc/protobuf); loading those before torch causes a native DLL collision that crashes the
@@ -20,6 +27,7 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    recover_stuck_processing_items()
     warm_up_embedding_model()
     warm_up_reranker()
     yield

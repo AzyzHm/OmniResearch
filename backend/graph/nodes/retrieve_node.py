@@ -1,8 +1,11 @@
+import logging
 from typing import cast
 
 from backend.config.settings import get_settings
 from backend.graph.state import RAGState
 from backend.services.rag_retrieval import RetrievalMode, retrieve_pool
+
+logger = logging.getLogger(__name__)
 
 
 def retrieve_node(state: RAGState) -> dict:
@@ -19,7 +22,7 @@ def retrieve_node(state: RAGState) -> dict:
 
 
     query = state.get("missing_query") or state.get("refined_query") or state["query"]
-    print(f"[RAG] retrieve_node: attempt {attempts + 1}, mode = {mode}, query = {query!r}")
+    logger.info("retrieve_node: attempt %d, mode = %s, query = %r", attempts + 1, mode, query)
 
     pool = retrieve_pool(
         project_id=state["project_id"],
@@ -27,7 +30,7 @@ def retrieve_node(state: RAGState) -> dict:
         pool_size=settings.retrieval_pool_size,
         mode=cast(RetrievalMode, mode),
     )
-    print(f"[RAG] retrieve_node: pool size = {len(pool)}")
+    logger.info("retrieve_node: pool size = %d", len(pool))
 
     return {
         "retrieved_pool": pool,

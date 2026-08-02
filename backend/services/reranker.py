@@ -1,7 +1,11 @@
+import logging
+
 import torch
 from sentence_transformers import CrossEncoder
 
 from backend.config.settings import get_settings
+
+logger = logging.getLogger(__name__)
 
 _model: "CrossEncoder | None" = None
 
@@ -27,9 +31,9 @@ def warm_up_reranker() -> None:
         model = CrossEncoder(settings.reranker_model_name, max_length=512, device=device)
         model.predict([("warmup", "warmup")])
         _model = model
-        print(f"✅ Reranker '{settings.reranker_model_name}' is warmed up on {device.upper()}.")
+        logger.info("Reranker '%s' is warmed up on %s.", settings.reranker_model_name, device.upper())
     except Exception as exc:
-        print(f"⚠️ Could not warm up reranker '{settings.reranker_model_name}': {exc}")
+        logger.warning("Could not warm up reranker '%s': %s", settings.reranker_model_name, exc)
 
 
 def _get_model() -> CrossEncoder:
