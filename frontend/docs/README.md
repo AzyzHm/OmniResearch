@@ -1,12 +1,13 @@
-# OmniResearch — Frontend Documentation
+# OmniResearch : Frontend Documentation
 
-Streamlit frontend for OmniResearch. This document covers the **frontend only** — for backend architecture, the RAG graph, database schema, and API reference, see `backend/docs/README.md`.
+Streamlit frontend for OmniResearch. This document covers the **frontend only** , for backend architecture, the RAG graph, database schema, and API reference, see `backend/docs/README.md`.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
+- [Running the Frontend](#running-the-frontend)
 - [Configuration](#configuration)
 - [Routing](#routing)
 - [Session State](#session-state)
@@ -85,6 +86,18 @@ frontend/
     ├── test_admin.py
     └── test_base.py
 ```
+
+---
+
+## Running the Frontend
+
+For the full from-scratch setup (Python env, dependencies, Supabase, Ollama, `.env`), see the root [`README.md` → Getting Started](../../README.md#-getting-started). Once the backend is running and `.env` is configured at the repo root:
+
+```bash
+streamlit run frontend/app.py
+```
+
+Run this from the repository root, not from inside `frontend/` — `app.py` inserts the repo root onto `sys.path` itself at import time, so `from frontend.* import ...` resolves correctly regardless of the shell's working directory, but the command itself still expects to be invoked from the root. Opens at `http://localhost:8501` by default. Make sure `API_BASE_URL` in `.env` points at wherever the backend is actually running (`http://localhost:8000` by default).
 
 ---
 
