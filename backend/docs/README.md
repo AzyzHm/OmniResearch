@@ -1,4 +1,4 @@
-# OmniResearch — Backend Documentation
+# OmniResearch : Backend Documentation
 
 AI-powered research and document analysis platform. This document covers the **backend only** (FastAPI + Supabase + ChromaDB + LangGraph). Frontend documentation lives separately.
 
@@ -28,7 +28,7 @@ AI-powered research and document analysis platform. This document covers the **b
 
 Users register (admin-approved), create **projects** (workspaces), and inside each project:
 - have one or more **chats** with an LLM (Gemini, falling back to Mistral),
-- attach **collections** of sources — text files, PDFs, or URLs — which are chunked, embedded, and stored in ChromaDB,
+- attach **collections** of sources text files, PDFs, or URLs, which are chunked, embedded, and stored in ChromaDB,
 - toggle which sources are active as context,
 - pick a **retrieval mode** (semantic / keyword / hybrid) per message,
 - get answers grounded in those sources via an **agentic RAG graph** (LangGraph) that decides for itself whether retrieval is even needed, retrieves a wide candidate pool, reranks it with a cross-encoder, and retries with a targeted follow-up query if the first pass isn't enough.
@@ -47,7 +47,7 @@ A three-tier role hierarchy (`user` / `admin` / `superadmin`) governs an admin d
 | Embeddings | `embeddinggemma` via local Ollama |
 | Reranking | `BAAI/bge-reranker-base` cross-encoder via `sentence-transformers`/`torch`, GPU (CUDA/MPS) or CPU |
 | Keyword search | BM25 sparse vectors via ChromaDB's local `ChromaBm25EmbeddingFunction`, scored manually (see [Retrieval Modes](#retrieval-modes-semantic-keyword-hybrid)) |
-| Primary LLM | Gemini (`google-genai` SDK — **not** the legacy `google-generativeai`) |
+| Primary LLM | Gemini (`google-genai` SDK, **not** the legacy `google-generativeai`) |
 | Fallback LLM | Mistral, called via raw `requests` (no `mistralai` SDK, to avoid dependency conflicts) |
 | Agentic RAG orchestration | LangGraph |
 | Web search | Tavily, Exa |
@@ -190,28 +190,53 @@ TAVILY_API_KEY=...
 EXA_API_KEY=...
 ```
 
-**Ollama** must be running locally with `embeddinggemma` pulled (`ollama pull embeddinggemma`) before starting the backend — `warm_up_embedding_model()` runs at startup and logs a warning (not a crash) if Ollama isn't reachable yet.
+**Ollama** must be running locally with `embeddinggemma` pulled (`ollama pull embeddinggemma`) before starting the backend , `warm_up_embedding_model()` runs at startup and logs a warning (not a crash) if Ollama isn't reachable yet.
 
-**Reranker model**: `HF_HOME`/`HF_HUB_OFFLINE` are read directly by `transformers`/`huggingface_hub` from the process environment — they're not routed through `Settings` at all, since those libraries already know how to find them on their own. `backend/config/env.py` calls `load_dotenv()` at import time, before `backend/services/reranker.py` is ever imported, so anything set in `.env` is already in `os.environ` by the time the reranker's imports run.
+**Reranker model**: `HF_HOME`/`HF_HUB_OFFLINE` are read directly by `transformers`/`huggingface_hub` from the process environment, they're not routed through `Settings` at all, since those libraries already know how to find them on their own. `backend/config/env.py` calls `load_dotenv()` at import time, before `backend/services/reranker.py` is ever imported, so anything set in `.env` is already in `os.environ` by the time the reranker's imports run.
 
-**Import order in `main.py`**: the reranker (`torch`/`sentence-transformers`) is imported *before* the route modules, which pull in the Gemini SDK (`google-genai`) and its native dependencies (`grpc`/`protobuf`). Importing the Gemini SDK's native deps before torch causes a native DLL collision on Windows (`0xC0000005` access violation, no Python traceback). Loading torch first avoids it — a comment in `main.py` documents this explicitly so the import blocks aren't reordered without re-testing.
+**Import order in `main.py`**: the reranker (`torch`/`sentence-transformers`) is imported *before* the route modules, which pull in the Gemini SDK (`google-genai`) and its native dependencies (`grpc`/`protobuf`). Importing the Gemini SDK's native deps before torch causes a native DLL collision on Windows (`0xC0000005` access violation, no Python traceback). Loading torch first avoids it, a comment in `main.py` documents this explicitly so the import blocks aren't reordered without re-testing.
 
 ---
 
 ## Running the Backend
 
+For the full from-scratch setup (cloning, Supabase project creation, Ollama install, `.env` configuration), see the root [`README.md` → Getting Started](../../README.md#-getting-started). This section assumes those prerequisites are already in place:
+
+- A Supabase project with [`supabase_schema.sql`](../../supabase_schema.sql) applied, and the **`service_role`** key (not `anon`) in `.env`.
+- Ollama running locally with `embeddinggemma` pulled.
+- A populated `.env` at the repo root (see [Environment Variables](#environment-variables) above).
+
+`requirements.txt` intentionally does **not** pin `torch`, the CUDA build tag (`torch==2.6.0+cu124`) only exists on PyTorch's own package index, not PyPI, so it can't be resolved by a plain `pip install -r requirements.txt`. Install it separately first, matching your machine:
+
 ```bash
-pip install -r requirements.txt --break-system-packages   # if needed
+# GPU dev machine
+pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+
+# CPU-only / CI
+pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+
+pip install -r requirements.txt
+```
+
+**Download the reranker model** before first run, `HF_HUB_OFFLINE=1` means `sentence-transformers` won't hit the network at startup, so `BAAI/bge-reranker-base` must already be cached under `HF_HOME` (`./rerankers` by default):
+
+```bash
+python scripts/setup/reranker_downloader.py
+```
+
+Then start the server:
+
+```bash
 uvicorn backend.main:app --reload --port 8000
 ```
 
-`GET /health` returns service status and the resolved CORS origin list — useful as a first smoke test.
+`GET /health` returns service status and the resolved CORS origin list useful as a first smoke test.
 
 ---
 
 ## Database Schema
 
-All tables live in Supabase/Postgres, under `public`. RLS is enabled on every table (see [Row Level Security](#row-level-security)) — the backend bypasses it entirely via the service role key.
+All tables live in Supabase/Postgres, under `public`. RLS is enabled on every table (see [Row Level Security](#row-level-security)), the backend bypasses it entirely via the service role key.
 
 | Table | Purpose | Key columns |
 |---|---|---|
@@ -227,12 +252,12 @@ All tables live in Supabase/Postgres, under `public`. RLS is enabled on every ta
 
 **Notes:**
 - `users.role` has a `CHECK` constraint restricting it to `'user'`, `'admin'`, `'superadmin'`.
-- `users.daily_token_limit` defaults to `80000`; editable per-user by an admin/superadmin (never for another admin/superadmin's own account — see [Daily Token Quota](#daily-token-quota)).
+- `users.daily_token_limit` defaults to `80000`; editable per-user by an admin/superadmin (never for another admin/superadmin's own account , see [Daily Token Quota](#daily-token-quota)).
 - `collections.type` determines what `collection_items` can be added: `text` → `.txt` uploads, `documents` → `.pdf` uploads, `urls` → manual URL add or web-search results. Uploads for `urls` collections are rejected at the API level.
-- `collection_items.is_active` controls whether that item's chunks are included in RAG retrieval — toggled from the UI, applied via a bulk PATCH endpoint (batches many toggles into one request rather than one request per checkbox).
-- `collection_items.status` starts at `"processing"` the instant a row is inserted (file upload, URL add, or search-result add) and flips to `"ready"`/`"error"` once its background task finishes — see [Document & URL Ingestion Pipeline](#document--url-ingestion-pipeline).
+- `collection_items.is_active` controls whether that item's chunks are included in RAG retrieval, toggled from the UI, applied via a bulk PATCH endpoint (batches many toggles into one request rather than one request per checkbox).
+- `collection_items.status` starts at `"processing"` the instant a row is inserted (file upload, URL add, or search-result add) and flips to `"ready"`/`"error"` once its background task finishes, see [Document & URL Ingestion Pipeline](#document--url-ingestion-pipeline).
 - `search_usage.credits`: Tavily's `advanced` search depth costs ~2x a normal call, so it's logged as 2 credits; everything else (other Tavily depths, all Exa calls) is 1 credit.
-- `llm_usage.created_at` is also what daily quota enforcement sums against (`total_tokens` since UTC midnight for a given `user_id`) — no separate quota-tracking table exists.
+- `llm_usage.created_at` is also what daily quota enforcement sums against (`total_tokens` since UTC midnight for a given `user_id`), no separate quota-tracking table exists.
 - ChromaDB mirrors `collections`: one Chroma collection per Supabase `collections.id`. Each chunk inside it is tagged with `item_id` in its metadata (plus `bm25_indices`/`bm25_values`, JSON-serialized sparse vector fields used by keyword/hybrid retrieval), so toggling/deleting a single file or URL never requires touching other items' chunks.
 
 ---
@@ -244,7 +269,7 @@ All tables live in Supabase/Postgres, under `public`. RLS is enabled on every ta
 3. Login → JWT issued, payload `{"sub": "<user_uuid>", "username": ..., "role": ..., "exp": ...}`. Note `sub` is the UUID, not the username.
 4. Every authenticated request sends `Authorization: Bearer <token>`.
 5. `get_current_user` dependency decodes the JWT into `{sub, username, role}`.
-6. Passwords are hashed with Argon2id (`argon2-cffi`), not bcrypt — bcrypt raises on passwords over 72 bytes, Argon2 has no such limit.
+6. Passwords are hashed with Argon2id (`argon2-cffi`), not bcrypt, bcrypt raises on passwords over 72 bytes, Argon2 has no such limit.
 
 **Role hierarchy** (`backend/config/auth.py`): both `require_admin` and `require_superadmin` are built from one factory, `_require_role(*allowed_roles, message)`, which decodes the token and checks membership:
 
@@ -253,11 +278,11 @@ require_admin = _require_role("admin", "superadmin", message="Admin access requi
 require_superadmin = _require_role("superadmin", message="Super admin access required.")
 ```
 
-- **`user`** — no admin access.
-- **`admin`** — can approve/delete regular user accounts and edit their daily token limits, and can see login logs/stats/usage scoped to regular users only. Cannot see other admins, the superadmin, or themselves in any of those views. Cannot promote, demote, or delete another admin.
-- **`superadmin`** — sees every account except their own (both `user` and `admin` rows), can promote/demote between `user` and `admin` (`require_superadmin`-gated), can delete `user` or `admin` accounts (never another superadmin, never themselves), and can edit the daily token limit for `user`-role accounts only (not for admins, since token quotas don't apply to admin accounts). A `superadmin`'s own role can never be changed or deleted through the API.
+- **`user`** : no admin access.
+- **`admin`** : can approve/delete regular user accounts and edit their daily token limits, and can see login logs/stats/usage scoped to regular users only. Cannot see other admins, the superadmin, or themselves in any of those views. Cannot promote, demote, or delete another admin.
+- **`superadmin`** : sees every account except their own (both `user` and `admin` rows), can promote/demote between `user` and `admin` (`require_superadmin`-gated), can delete `user` or `admin` accounts (never another superadmin, never themselves), and can edit the daily token limit for `user`-role accounts only (not for admins, since token quotas don't apply to admin accounts). A `superadmin`'s own role can never be changed or deleted through the API.
 
-This scoping is enforced at the route level in `routes/admin/*.py` — each handler filters query results by the requester's role and excludes the requester's own `user_id`, rather than relying on the frontend to hide anything.
+This scoping is enforced at the route level in `routes/admin/*.py`, each handler filters query results by the requester's role and excludes the requester's own `user_id`, rather than relying on the frontend to hide anything.
 
 ---
 
@@ -296,7 +321,7 @@ All routes are prefixed at the app root except `/admin/*`, which has its own rou
 | GET / POST | `/projects/{project_id}/chats` | |
 | PUT / DELETE | `/chats/{chat_id}` | |
 | GET | `/chats/{chat_id}/messages` | Last `UI_HISTORY_LIMIT` messages, oldest first |
-| POST | `/chats/{chat_id}/message` | Non-streaming — runs the full RAG graph, returns the final answer. Body includes `retrieval_mode` (`"semantic"` default). Enforces the daily token quota before doing anything else |
+| POST | `/chats/{chat_id}/message` | Non-streaming, runs the full RAG graph, returns the final answer. Body includes `retrieval_mode` (`"semantic"` default). Enforces the daily token quota before doing anything else |
 | POST | `/chats/{chat_id}/message/stream` | SSE — emits `{"type":"node","node":...}` per graph step, then `{"type":"done","answer":...}` or `{"type":"error","detail":...,"code":...}`. A `quota_exceeded` error carries structured `used`/`limit`/`reset_at` fields alongside the message |
 
 ### Collections
@@ -307,7 +332,7 @@ All routes are prefixed at the app root except `/admin/*`, which has its own rou
 | GET | `/collections/{collection_id}/items` | |
 | POST | `/collections/{collection_id}/items` | Multipart file upload (txt/pdf collections only). Returns immediately with `status="processing"` rows; extraction/chunk/embed run as a background task |
 | POST | `/collections/{collection_id}/items/url` | Manual single URL add (urls collections only). Returns immediately; Jina fetch + chunk/embed run as a background task |
-| POST | `/collections/{collection_id}/items/from-search` | Bulk-add selected Tavily/Exa results; rejects URLs already in the collection. Returns immediately; chunk/embed per item runs as a background task (no re-fetch — uses the search engine's snippet) |
+| POST | `/collections/{collection_id}/items/from-search` | Bulk-add selected Tavily/Exa results; rejects URLs already in the collection. Returns immediately; chunk/embed per item runs as a background task (no re-fetch, uses the search engine's snippet) |
 | PATCH | `/collections/{collection_id}/items/{item_id}` | Toggle `is_active` |
 | PATCH | `/collections/{collection_id}/items/bulk` | Batch toggle many items in one request |
 | DELETE | `/collections/{collection_id}/items/{item_id}` | Deletes the Supabase row and its Chroma chunks |
@@ -321,20 +346,20 @@ All routes are prefixed at the app root except `/admin/*`, which has its own rou
 
 ## The Agentic RAG System
 
-Built with LangGraph. Given a user query, the recent chat history, and a chosen retrieval mode, the graph decides for itself whether it needs to search the project's sources at all. If it does, it retrieves a wide candidate pool, reranks it down to the best few chunks, and — if that still isn't enough — retries with a validator-generated follow-up query targeting specifically what's missing, up to a bounded number of attempts, before answering regardless.
+Built with LangGraph. Given a user query, the recent chat history, and a chosen retrieval mode, the graph decides for itself whether it needs to search the project's sources at all. If it does, it retrieves a wide candidate pool, reranks it down to the best few chunks, and if that still isn't enough retries with a validator-generated follow-up query targeting specifically what's missing, up to a bounded number of attempts, before answering regardless.
 
 ![RAG graph workflow](src/rag_graph_workflow.svg)
 
 ### Flow
 
-1. **`router`** (`decide_retrieval`) — one LLM call decides `RETRIEVE` or `DIRECT`. `DIRECT` for greetings, small talk, or anything answerable from the visible chat history alone. `RETRIEVE` for anything needing facts from the project's sources, or an explicit "search my documents" request.
+1. **`router`** (`decide_retrieval`) : one LLM call decides `RETRIEVE` or `DIRECT`. `DIRECT` for greetings, small talk, or anything answerable from the visible chat history alone. `RETRIEVE` for anything needing facts from the project's sources, or an explicit "search my documents" request.
 2. **`DIRECT`** → skips straight to `generate`.
-3. **`RETRIEVE`** → **`refine_query`** — rewrites the raw message into a standalone search query using history to resolve references (e.g. "what is it?" → "what is an LLM?").
-4. **`retrieve`** (`retrieve_pool`, `backend/services/rag_retrieval.py`) — fetches a wide candidate pool (`retrieval_pool_size`, default 50) for the current round's query, using whichever retrieval mode (semantic/keyword/hybrid) the request specified. The first round searches for the refined query; a retry round searches for the validator's `missing_query` instead — a deliberately different, more targeted query, not more results from the same original search.
-5. **`rerank`** (`rerank_node`) — re-scores that round's pool against the same query with the `BAAI/bge-reranker-base` cross-encoder, keeps the top `rerank_top_k` (default 5), and merges them into whatever context chunks were already accepted from earlier rounds — deduplicated by `(collection_id, item_id, content)` so the same chunk never counts twice.
-6. **`validate`** (`validate_context`) — one LLM call judges whether the accumulated `context_chunks` can answer the *original* query (not the retry query). Returns `SUFFICIENT`, or `INSUFFICIENT: <follow-up query>` describing exactly what's still missing. Skipped (auto-pass) only on a truly empty first attempt with no sources at all — if a later retry's pool comes back empty but earlier rounds already found something, validation still runs normally against what's been accumulated so far.
+3. **`RETRIEVE`** → **`refine_query`** : rewrites the raw message into a standalone search query using history to resolve references (e.g. "what is it?" → "what is an LLM?").
+4. **`retrieve`** (`retrieve_pool`, `backend/services/rag_retrieval.py`) : fetches a wide candidate pool (`retrieval_pool_size`, default 50) for the current round's query, using whichever retrieval mode (semantic/keyword/hybrid) the request specified. The first round searches for the refined query; a retry round searches for the validator's `missing_query` instead  a deliberately different, more targeted query, not more results from the same original search.
+5. **`rerank`** (`rerank_node`) : re-scores that round's pool against the same query with the `BAAI/bge-reranker-base` cross-encoder, keeps the top `rerank_top_k` (default 5), and merges them into whatever context chunks were already accepted from earlier rounds  deduplicated by `(collection_id, item_id, content)` so the same chunk never counts twice.
+6. **`validate`** (`validate_context`) : one LLM call judges whether the accumulated `context_chunks` can answer the *original* query (not the retry query). Returns `SUFFICIENT`, or `INSUFFICIENT: <follow-up query>` describing exactly what's still missing. Skipped (auto-pass) only on a truly empty first attempt with no sources at all — if a later retry's pool comes back empty but earlier rounds already found something, validation still runs normally against what's been accumulated so far.
 7. **Conditional**: `SUFFICIENT` → `generate`. `INSUFFICIENT` and `retrieval_attempts < MAX_RETRIEVAL_ATTEMPTS` (3) → back to `retrieve`, now targeting the missing-info query. Attempts exhausted → `generate` anyway, with whatever context exists — the system always answers rather than refusing outright.
-8. **`generate`** (`generate_answer`) — if retrieval was needed but zero context chunks were ever found (no active sources in the project, or all toggled off), returns a fixed message telling the user to add/activate sources, without calling the LLM at all. Otherwise, the retrieved context + question are folded into one final "user" turn appended after the real chat history (so role alternation stays valid for Gemini), then sent to `get_gemini_response`.
+8. **`generate`** (`generate_answer`) : if retrieval was needed but zero context chunks were ever found (no active sources in the project, or all toggled off), returns a fixed message telling the user to add/activate sources, without calling the LLM at all. Otherwise, the retrieved context + question are folded into one final "user" turn appended after the real chat history (so role alternation stays valid for Gemini), then sent to `get_gemini_response`.
 
 ### State (`backend/graph/state.py`)
 
