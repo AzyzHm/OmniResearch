@@ -1,4 +1,4 @@
-from backend.services.text_processing import chunk_text
+from services.text_processing import chunk_text
 
 
 class TestChunkText:

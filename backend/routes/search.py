@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.config.auth import get_current_user
-from backend.models.search import WebSearchRequest, WebSearchResponse
-from backend.services.usage_tracker import record_search_usage
-from backend.services.web_search import search_web
+from config.auth import get_current_user
+from models.search import WebSearchRequest, WebSearchResponse
+from services.usage_tracker import record_search_usage
+from services.web_search import search_web
 
 router = APIRouter(tags=["Search"])
 

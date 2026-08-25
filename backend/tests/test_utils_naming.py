@@ -1,4 +1,4 @@
-from backend.utils.naming import next_unique_name
+from utils.naming import next_unique_name
 
 
 class TestNextUniqueName:

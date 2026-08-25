@@ -2,9 +2,9 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.config.auth import require_admin
-from backend.database.db import get_supabase
-from backend.models import LoginLogListResponse, LoginLogOut
+from config.auth import require_admin
+from database.db import get_supabase
+from models import LoginLogListResponse, LoginLogOut
 
 router = APIRouter()
 

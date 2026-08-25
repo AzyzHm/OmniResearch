@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
-from backend.models.chat import Source
+from models.chat import Source
 
 
 class NoteCreate(BaseModel):

@@ -1,10 +1,10 @@
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.config.auth import get_current_user
-from backend.database.db import get_supabase
-from backend.models.project import ProjectCreate, ProjectOut, ProjectUpdate
-from backend.utils.naming import next_unique_name
+from config.auth import get_current_user
+from database.db import get_supabase
+from models.project import ProjectCreate, ProjectOut, ProjectUpdate
+from utils.naming import next_unique_name
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 

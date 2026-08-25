@@ -2,12 +2,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.config.auth import get_current_user
-from backend.database.chroma_client import create_chroma_collection, delete_chroma_collection
-from backend.database.db import get_supabase
-from backend.models.collection import CollectionCreate, CollectionOut
-from backend.routes.collections._shared import _own_collection, _verify_project_owner
-from backend.utils.naming import next_unique_name
+from config.auth import get_current_user
+from database.chroma_client import create_chroma_collection, delete_chroma_collection
+from database.db import get_supabase
+from models.collection import CollectionCreate, CollectionOut
+from routes.collections._shared import _own_collection, _verify_project_owner
+from utils.naming import next_unique_name
 
 router = APIRouter()
 

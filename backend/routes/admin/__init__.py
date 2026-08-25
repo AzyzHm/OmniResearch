@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from backend.routes.admin import logs, quota, stats, usage, users
+from routes.admin import logs, quota, stats, usage, users
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 

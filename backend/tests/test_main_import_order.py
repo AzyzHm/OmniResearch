@@ -36,18 +36,18 @@ class TestMainImportOrder:
         source = MAIN_PY.read_text()
         positions = _top_level_import_positions(source)
 
-        assert "backend.services.reranker" in positions, (
+        assert "services.reranker" in positions, (
             "backend.main no longer imports backend.services.reranker at "
             "the top level — if the reranker warm-up was refactored (e.g. "
             "into a lazy import), this test should be updated or removed "
             "rather than silently skipped."
         )
-        assert "backend.routes" in positions, (
+        assert "routes" in positions, (
             "backend.main no longer imports backend.routes at the top "
             "level — update this test to match the new import structure."
         )
 
-        assert positions["backend.services.reranker"] < positions["backend.routes"], (
+        assert positions["services.reranker"] < positions["routes"], (
             "backend.services.reranker must be imported before backend.routes "
             "in main.py. Importing the routes first pulls in the Gemini SDK's "
             "native deps (grpc/protobuf) ahead of torch, which causes a "
@@ -65,6 +65,6 @@ class TestMainImportOrder:
         source = MAIN_PY.read_text()
         positions = _top_level_import_positions(source)
 
-        assert "backend.services.embeddings" in positions
-        assert "backend.routes" in positions
-        assert positions["backend.services.embeddings"] < positions["backend.routes"]
+        assert "services.embeddings" in positions
+        assert "routes" in positions
+        assert positions["services.embeddings"] < positions["routes"]

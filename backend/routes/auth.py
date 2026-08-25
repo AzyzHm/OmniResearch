@@ -1,16 +1,14 @@
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
-from backend.config.auth import create_access_token, hash_password, verify_password, get_current_user
-from backend.database.db import get_supabase
-from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse
-from backend.models.log import MessageResponse
-
-from fastapi.security import HTTPAuthorizationCredentials
+from config.auth import create_access_token, hash_password, verify_password, get_current_user
+from database.db import get_supabase
+from models.auth import LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse
+from models.log import MessageResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

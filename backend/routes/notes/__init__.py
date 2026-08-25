@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from backend.routes.notes import crud, items
+from routes.notes import crud, items
 
 router = APIRouter(tags=["Notes"])
 

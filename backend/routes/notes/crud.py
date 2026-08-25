@@ -2,11 +2,11 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.config.auth import get_current_user
-from backend.database.db import get_supabase
-from backend.models.note import NoteCreate, NoteOut, NoteUpdate
-from backend.routes.notes._shared import _existing_note_names, _own_note, _verify_project_owner
-from backend.utils.naming import next_unique_name
+from config.auth import get_current_user
+from database.db import get_supabase
+from models.note import NoteCreate, NoteOut, NoteUpdate
+from routes.notes._shared import _existing_note_names, _own_note, _verify_project_owner
+from utils.naming import next_unique_name
 
 router = APIRouter()
 

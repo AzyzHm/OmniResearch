@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock
 
-from backend.tests.conftest import collection_row
+from tests.conftest import collection_row
 
 
 def _patch_pipeline(monkeypatch):
-    import backend.routes.collections.ingest as ingest_mod
+    import routes.collections.ingest as ingest_mod
 
     monkeypatch.setattr(ingest_mod, "extract_pdf", lambda raw: "pdf text")
     monkeypatch.setattr(ingest_mod, "extract_txt", lambda raw: "txt text")
@@ -134,7 +134,7 @@ class TestProcessUploadItemCounts:
     against a MagicMock db."""
 
     def test_pdf_sets_page_count_and_null_word_count(self, monkeypatch):
-        import backend.routes.collections.ingest as ingest_mod
+        import routes.collections.ingest as ingest_mod
 
         monkeypatch.setattr(ingest_mod, "extract_pdf", lambda raw: "some pdf text")
         monkeypatch.setattr(ingest_mod, "count_pdf_pages", lambda raw: 7)
@@ -156,7 +156,7 @@ class TestProcessUploadItemCounts:
         assert payload["storage_path"] == "col-1/item-1/report.pdf"
 
     def test_txt_sets_word_count_and_null_page_count(self, monkeypatch):
-        import backend.routes.collections.ingest as ingest_mod
+        import routes.collections.ingest as ingest_mod
 
         monkeypatch.setattr(ingest_mod, "extract_txt", lambda raw: "one two three four")
         monkeypatch.setattr(ingest_mod, "embed_texts", lambda chunks: [[0.1] for _ in chunks])
@@ -179,7 +179,7 @@ class TestProcessUploadItemCounts:
     def test_storage_upload_failure_leaves_null_storage_path_but_still_succeeds(self, monkeypatch):
         """A storage hiccup must not roll back an otherwise-successful
         ingestion — the item still becomes ready, just without a preview."""
-        import backend.routes.collections.ingest as ingest_mod
+        import routes.collections.ingest as ingest_mod
 
         monkeypatch.setattr(ingest_mod, "extract_txt", lambda raw: "hello world")
         monkeypatch.setattr(ingest_mod, "embed_texts", lambda chunks: [[0.1] for _ in chunks])

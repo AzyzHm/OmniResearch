@@ -3,7 +3,7 @@ from typing import Any, cast
 
 import ollama
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

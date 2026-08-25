@@ -2,8 +2,8 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends
 
-from backend.config.auth import require_admin
-from backend.database.db import get_supabase
+from config.auth import require_admin
+from database.db import get_supabase
 
 router = APIRouter()
 

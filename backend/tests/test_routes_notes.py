@@ -1,4 +1,4 @@
-from backend.tests.conftest import project_row, note_row, note_item_row, message_row
+from tests.conftest import project_row, note_row, note_item_row, message_row
 
 
 def message_with_chat(msg_id="msg-1", chat_id="chat-1", project_id="proj-1",

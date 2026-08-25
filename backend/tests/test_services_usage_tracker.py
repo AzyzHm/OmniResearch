@@ -1,5 +1,5 @@
-import backend.services.usage_tracker as usage_tracker
-from backend.tests.conftest import FakeDB
+import services.usage_tracker as usage_tracker
+from tests.conftest import FakeDB
 
 
 class _RaisingDB:

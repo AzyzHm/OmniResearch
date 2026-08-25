@@ -2,18 +2,18 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 
-from backend.config.auth import get_current_user
-from backend.config.settings import get_settings
-from backend.database.chroma_client import add_item_chunks
-from backend.database.db import get_supabase
-from backend.models.collection import ALLOWED_UPLOAD_EXTENSIONS, EXT_TO_SOURCE_TYPE, CollectionItemOut
-from backend.models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
-from backend.routes.collections._shared import _existing_urls, _own_collection
-from backend.services.embeddings import embed_texts
-from backend.services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
-from backend.services.file_storage import upload_collection_file
-from backend.services.text_processing import chunk_text
-from backend.services.web_fetch import fetch_url_markdown
+from config.auth import get_current_user
+from config.settings import get_settings
+from database.chroma_client import add_item_chunks
+from database.db import get_supabase
+from models.collection import ALLOWED_UPLOAD_EXTENSIONS, EXT_TO_SOURCE_TYPE, CollectionItemOut
+from models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
+from routes.collections._shared import _existing_urls, _own_collection
+from services.embeddings import embed_texts
+from services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
+from services.file_storage import upload_collection_file
+from services.text_processing import chunk_text
+from services.web_fetch import fetch_url_markdown
 
 router = APIRouter()
 

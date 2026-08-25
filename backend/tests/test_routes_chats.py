@@ -1,4 +1,4 @@
-from backend.tests.conftest import project_row, chat_row, message_row, make_token
+from tests.conftest import project_row, chat_row, message_row, make_token
 
 
 class TestListChats:

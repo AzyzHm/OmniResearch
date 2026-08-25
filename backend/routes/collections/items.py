@@ -3,12 +3,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 
-from backend.config.auth import get_current_user
-from backend.database.chroma_client import delete_item_chunks
-from backend.database.db import get_supabase
-from backend.models.collection import BulkItemsUpdateRequest, CollectionItemOut, CollectionItemUpdate
-from backend.routes.collections._shared import _own_collection
-from backend.services.file_storage import delete_collection_file, download_collection_file
+from config.auth import get_current_user
+from database.chroma_client import delete_item_chunks
+from database.db import get_supabase
+from models.collection import BulkItemsUpdateRequest, CollectionItemOut, CollectionItemUpdate
+from routes.collections._shared import _own_collection
+from services.file_storage import delete_collection_file, download_collection_file
 
 router = APIRouter()
 

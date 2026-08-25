@@ -1,4 +1,4 @@
-import backend.services.rag_llm as rag_llm
+import services.rag_llm as rag_llm
 
 
 class _FakeGemini:

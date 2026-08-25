@@ -1,4 +1,4 @@
-import backend.services.reranker as reranker
+import services.reranker as reranker
 
 
 class _FakeCrossEncoder:

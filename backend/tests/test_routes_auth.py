@@ -1,4 +1,4 @@
-from backend.config.auth import hash_password
+from config.auth import hash_password
 
 
 class TestRegister:

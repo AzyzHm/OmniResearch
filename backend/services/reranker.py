@@ -3,7 +3,7 @@ import logging
 import torch
 from sentence_transformers import CrossEncoder
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from backend.tests.conftest import user_row
+from tests.conftest import user_row
 
 class TestAdminRoutes:
 

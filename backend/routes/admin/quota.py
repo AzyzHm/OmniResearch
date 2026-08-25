@@ -2,9 +2,9 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.config.auth import require_admin
-from backend.database.db import get_supabase
-from backend.models import MessageResponse, TokenLimitUpdate
+from config.auth import require_admin
+from database.db import get_supabase
+from models import MessageResponse, TokenLimitUpdate
 
 router = APIRouter()
 

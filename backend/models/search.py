@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
 
-from backend.models.collection import CollectionItemOut
+from models.collection import CollectionItemOut
 
 
 class WebSearchRequest(BaseModel):

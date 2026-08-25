@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 _ph = PasswordHasher(time_cost=2, memory_cost=65536, parallelism=2)
 

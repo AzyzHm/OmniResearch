@@ -1,5 +1,5 @@
-import backend.services.rag_retrieval as rag_retrieval
-from backend.tests.conftest import FakeDB
+import services.rag_retrieval as rag_retrieval
+from tests.conftest import FakeDB
 
 
 class _FakeSparseVector:

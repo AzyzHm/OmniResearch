@@ -44,7 +44,7 @@ from fastapi.testclient import TestClient
 
 
 def make_token(user_id="user-123", username="testuser", role="user") -> str:
-    from backend.config.auth import create_access_token
+    from config.auth import create_access_token
     return create_access_token(user_id=user_id, username=username, role=role)
 
 def make_admin_token(user_id="admin-001", username="admin") -> str:
@@ -140,11 +140,11 @@ def app():
     Also replaces the compiled RAG graph and the Gemini call so chat tests
     never touch a real model or vector store.
     """
-    import backend.config.models as models_mod
-    import backend.routes.chat.send as r_chat_send
-    import backend.services.quota as quota_mod
-    import backend.services.usage_tracker as usage_mod
-    from backend.config.settings import get_settings
+    import config.models as models_mod
+    import routes.chat.send as r_chat_send
+    import services.quota as quota_mod
+    import services.usage_tracker as usage_mod
+    from config.settings import get_settings
 
     fake_db = FakeDB()
     restore = _patch_all_get_supabase(fake_db)
@@ -164,7 +164,7 @@ def app():
 
     get_settings.cache_clear()
 
-    from backend.main import app as _app
+    from main import app as _app
     with TestClient(_app, raise_server_exceptions=True) as client:
         yield client, fake_db
 
@@ -231,26 +231,26 @@ def _patch_all_get_supabase(fake_db):
     Replace `get_supabase` in every route module that imported it directly.
     Returns a restore function.
     """
-    import backend.database.db as db_mod
-    import backend.routes.admin.logs as r_admin_logs
-    import backend.routes.admin.quota as r_admin_quota
-    import backend.routes.admin.stats as r_admin_stats
-    import backend.routes.admin.usage as r_admin_usage
-    import backend.routes.admin.users as r_admin_users
-    import backend.routes.auth as r_auth
-    import backend.routes.chat._shared as r_chat_shared
-    import backend.routes.chat.crud as r_chat_crud
-    import backend.routes.chat.messages as r_chat_messages
-    import backend.routes.chat.send as r_chat_send
-    import backend.routes.collections._shared as r_collections_shared
-    import backend.routes.collections.crud as r_collections_crud
-    import backend.routes.collections.ingest as r_collections_ingest
-    import backend.routes.collections.items as r_collections_items
-    import backend.routes.notes._shared as r_notes_shared
-    import backend.routes.notes.crud as r_notes_crud
-    import backend.routes.notes.items as r_notes_items
-    import backend.routes.projects as r_projects
-    import backend.services.ingestion_recovery as r_ingestion_recovery
+    import database.db as db_mod
+    import routes.admin.logs as r_admin_logs
+    import routes.admin.quota as r_admin_quota
+    import routes.admin.stats as r_admin_stats
+    import routes.admin.usage as r_admin_usage
+    import routes.admin.users as r_admin_users
+    import routes.auth as r_auth
+    import routes.chat._shared as r_chat_shared
+    import routes.chat.crud as r_chat_crud
+    import routes.chat.messages as r_chat_messages
+    import routes.chat.send as r_chat_send
+    import routes.collections._shared as r_collections_shared
+    import routes.collections.crud as r_collections_crud
+    import routes.collections.ingest as r_collections_ingest
+    import routes.collections.items as r_collections_items
+    import routes.notes._shared as r_notes_shared
+    import routes.notes.crud as r_notes_crud
+    import routes.notes.items as r_notes_items
+    import routes.projects as r_projects
+    import services.ingestion_recovery as r_ingestion_recovery
 
     modules = [
         r_auth, r_projects, db_mod,

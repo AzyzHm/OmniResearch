@@ -1,4 +1,4 @@
-from backend.tests.conftest import project_row, collection_row
+from tests.conftest import project_row, collection_row
 
 
 class TestCollectionRoutes:

@@ -1,6 +1,6 @@
 import pytest
-import backend.config.models as models_mod
-from backend.config.settings import get_settings
+import config.models as models_mod
+from config.settings import get_settings
 
 
 @pytest.fixture(autouse=True)

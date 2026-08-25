@@ -3,8 +3,8 @@ from typing import Any, Optional, cast
 import requests
 from google import genai
 
-from backend.config.settings import get_settings
-from backend.services.usage_tracker import record_llm_usage
+from config.settings import get_settings
+from services.usage_tracker import record_llm_usage
 
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 

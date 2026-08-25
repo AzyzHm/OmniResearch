@@ -1,8 +1,8 @@
 import logging
 import re
 
-from backend.graph.state import RAGState
-from backend.services.rag_llm import generate_answer
+from graph.state import RAGState
+from services.rag_llm import generate_answer
 
 logger = logging.getLogger(__name__)
 

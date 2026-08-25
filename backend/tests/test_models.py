@@ -1,11 +1,11 @@
 import pytest
 from pydantic import ValidationError
 
-from backend.models.auth import RegisterRequest
-from backend.models.project import ProjectCreate, ProjectUpdate
-from backend.models.collection import CollectionCreate
-from backend.models.chat import ChatCreate, ChatUpdate, ChatMessageRequest
-from backend.models.user import UserOut, TokenLimitUpdate
+from models.auth import RegisterRequest
+from models.project import ProjectCreate, ProjectUpdate
+from models.collection import CollectionCreate
+from models.chat import ChatCreate, ChatUpdate, ChatMessageRequest
+from models.user import UserOut, TokenLimitUpdate
 
 
 class TestRegisterRequest:

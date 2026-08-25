@@ -3,7 +3,7 @@ from typing import Any
 from exa_py import Exa
 from tavily import TavilyClient
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 
 def search_tavily(query: str, num_results: int, search_depth: str) -> list[dict]:

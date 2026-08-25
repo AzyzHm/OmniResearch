@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from chromadb.errors import NotFoundError
 
-from backend.database import chroma_client
+from database import chroma_client
 
 
 @pytest.fixture(autouse=True)

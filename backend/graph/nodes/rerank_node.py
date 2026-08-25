@@ -1,8 +1,8 @@
 import logging
 
-from backend.config.settings import get_settings
-from backend.graph.state import RAGState
-from backend.services.reranker import rerank
+from config.settings import get_settings
+from graph.state import RAGState
+from services.reranker import rerank
 
 logger = logging.getLogger(__name__)
 

@@ -1,3 +1,3 @@
-from backend.models.user import UserOut, UserListResponse, TokenLimitUpdate
-from backend.models.log import LoginLogOut, LoginLogListResponse, MessageResponse
-from backend.models.auth import RegisterRequest, LoginRequest, TokenResponse
+from models.user import UserOut, UserListResponse, TokenLimitUpdate
+from models.log import LoginLogOut, LoginLogListResponse, MessageResponse
+from models.auth import RegisterRequest, LoginRequest, TokenResponse

@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import HTTPException, status
 
-from backend.database.db import get_supabase
+from database.db import get_supabase
 
 
 def _verify_project_owner(project_id: str, user_id: str) -> None:

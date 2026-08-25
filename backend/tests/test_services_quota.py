@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-import backend.services.quota as quota
-from backend.tests.conftest import FakeDB
+import services.quota as quota
+from tests.conftest import FakeDB
 
 
 class TestGetDailyTokenLimit:

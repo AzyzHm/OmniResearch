@@ -1,9 +1,9 @@
 import logging
 from typing import cast
 
-from backend.config.settings import get_settings
-from backend.graph.state import RAGState
-from backend.services.rag_retrieval import RetrievalMode, retrieve_pool
+from config.settings import get_settings
+from graph.state import RAGState
+from services.rag_retrieval import RetrievalMode, retrieve_pool
 
 logger = logging.getLogger(__name__)
 

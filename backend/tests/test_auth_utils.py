@@ -6,10 +6,10 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
-from backend.config.auth import (
+from config.auth import (
     create_access_token, hash_password, require_admin, require_superadmin, verify_password,
 )
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 
 def _creds(token: str) -> HTTPAuthorizationCredentials:

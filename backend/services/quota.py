@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, cast
 
-from backend.database.db import get_supabase
+from database.db import get_supabase
 
 DEFAULT_DAILY_TOKEN_LIMIT = 80_000
 

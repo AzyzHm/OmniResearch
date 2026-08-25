@@ -1,7 +1,7 @@
 import logging
 
-import backend.services.ingestion_recovery as ingestion_recovery
-from backend.tests.conftest import FakeDB
+import services.ingestion_recovery as ingestion_recovery
+from tests.conftest import FakeDB
 
 
 class _RaisingDB:

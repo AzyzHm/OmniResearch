@@ -1,9 +1,9 @@
 from typing import Any, Literal, cast
 
-from backend.database.chroma_client import get_chroma_collection
-from backend.database.db import get_supabase
-from backend.services.bm25 import bm25_sparse_vector, sparse_dot, sparse_vector_from_metadata
-from backend.services.embeddings import embed_texts
+from database.chroma_client import get_chroma_collection
+from database.db import get_supabase
+from services.bm25 import bm25_sparse_vector, sparse_dot, sparse_vector_from_metadata
+from services.embeddings import embed_texts
 
 RetrievalMode = Literal["semantic", "keyword", "hybrid"]
 RRF_K = 60

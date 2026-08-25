@@ -1,4 +1,4 @@
-import backend.routes.search as r_search
+import routes.search as r_search
 
 
 class TestSearchWebRoute:

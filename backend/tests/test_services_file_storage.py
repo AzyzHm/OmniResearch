@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-import backend.services.file_storage as file_storage
+import services.file_storage as file_storage
 
 
 class TestUploadCollectionFile:

@@ -3,8 +3,8 @@ from functools import lru_cache
 from chromadb import PersistentClient
 from chromadb.config import Settings as ChromaSettings
 from chromadb.errors import NotFoundError
-from backend.config.settings import get_settings
-from backend.services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
+from config.settings import get_settings
+from services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
 
 logger = logging.getLogger(__name__)
 

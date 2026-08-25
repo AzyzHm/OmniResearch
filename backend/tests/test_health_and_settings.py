@@ -1,4 +1,4 @@
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 
 class TestHealthEndpoint:

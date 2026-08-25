@@ -1,6 +1,6 @@
-from backend.database.chroma_client import get_chroma
-from backend.database.db import get_supabase
-from backend.services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
+from database.chroma_client import get_chroma
+from database.db import get_supabase
+from services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
 
 
 def backfill_collection(collection_id: str) -> int:

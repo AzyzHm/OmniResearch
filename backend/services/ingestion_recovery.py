@@ -1,6 +1,6 @@
 import logging
 
-from backend.database.db import get_supabase
+from database.db import get_supabase
 
 logger = logging.getLogger(__name__)
 

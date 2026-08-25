@@ -4,13 +4,13 @@ from typing import Any, cast
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
-from backend.config.auth import get_current_user
-from backend.config.settings import get_settings
-from backend.database.db import get_supabase
-from backend.graph.graph import get_rag_graph
-from backend.models.chat import ChatMessageRequest, ChatMessageResponse
-from backend.routes.chat._shared import _own_chat
-from backend.services.quota import DailyQuotaExceeded, enforce_daily_quota
+from config.auth import get_current_user
+from config.settings import get_settings
+from database.db import get_supabase
+from graph.graph import get_rag_graph
+from models.chat import ChatMessageRequest, ChatMessageResponse
+from routes.chat._shared import _own_chat
+from services.quota import DailyQuotaExceeded, enforce_daily_quota
 
 router = APIRouter()
 

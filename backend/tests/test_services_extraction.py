@@ -1,5 +1,5 @@
-import backend.services.extraction as extraction
-from backend.services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
+import services.extraction as extraction
+from services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
 
 
 def _make_pdf(texts: list[str]) -> bytes:

@@ -2,9 +2,9 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.config.auth import require_admin, require_superadmin
-from backend.database.db import get_supabase
-from backend.models import MessageResponse, UserListResponse, UserOut
+from config.auth import require_admin, require_superadmin
+from database.db import get_supabase
+from models import MessageResponse, UserListResponse, UserOut
 
 router = APIRouter()
 

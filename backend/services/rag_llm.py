@@ -1,7 +1,7 @@
 from typing import Any, Optional, cast
 
-from backend.config.models import get_gemini_response
-from backend.config.prompts import (
+from config.models import get_gemini_response
+from config.prompts import (
     GENERATION_PROMPT,
     REFINE_QUERY_PROMPT,
     ROUTER_PROMPT,

@@ -1,4 +1,4 @@
-import backend.services.bm25 as bm25
+import services.bm25 as bm25
 
 
 class _FakeSparseVector:
