@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -27,7 +27,7 @@ def _existing_project_names(user_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]
+    return [row["name"] for row in cast(list[dict[str, Any]], result.data)]
 
 
 @router.get("", response_model=list[ProjectOut])

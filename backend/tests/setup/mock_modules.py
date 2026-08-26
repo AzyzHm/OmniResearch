@@ -19,6 +19,7 @@ for _mod in [
     "chromadb",
     "chromadb.config",
     "chromadb.base_types",
+    "chromadb.api",
     "chromadb.utils",
     "chromadb.utils.embedding_functions",
     "google",

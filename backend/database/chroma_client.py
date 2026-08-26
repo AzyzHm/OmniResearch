@@ -2,6 +2,7 @@ import logging
 from functools import lru_cache
 
 from chromadb import PersistentClient
+from chromadb.api import ClientAPI
 from chromadb.config import Settings as ChromaSettings
 from chromadb.errors import NotFoundError
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
-def get_chroma() -> PersistentClient:
+def get_chroma() -> ClientAPI:
     """Return a cached ChromaDB persistent client."""
     settings = get_settings()
     return PersistentClient(

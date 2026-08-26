@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import HTTPException, status
 
@@ -33,7 +33,7 @@ def _existing_note_names(project_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]
+    return [row["name"] for row in cast(list[dict[str, Any]], result.data)]
 
 
 def _own_message_in_project(message_id: str, project_id: str) -> dict:

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import HTTPException, status
 
@@ -35,4 +35,4 @@ def _existing_urls(collection_id: str) -> set[str]:
         .eq("source_type", "url")
         .execute()
     )
-    return {row["name"] for row in result.data}
+    return {row["name"] for row in cast(list[dict[str, Any]], result.data)}

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
@@ -54,7 +54,7 @@ async def bulk_update_items(
             .execute()
         )
         if result.data:
-            results.append(result.data[0])
+            results.append(cast(dict[str, Any], result.data[0]))
 
     return results
 
@@ -150,6 +150,6 @@ async def delete_item(
     delete_item_chunks(collection_id, item_id)
     db.table("collection_items").delete().eq("id", item_id).eq("collection_id", collection_id).execute()
 
-    storage_path = existing.data[0].get("storage_path") if existing.data else None
+    storage_path = cast(dict[str, Any], existing.data[0]).get("storage_path") if existing.data else None
     if storage_path:
-        delete_collection_file(storage_path)
+        delete_collection_file(cast(str, storage_path))

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -18,7 +18,7 @@ def _existing_chat_names(project_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]
+    return [row["name"] for row in cast(list[dict[str, Any]], result.data)]
 
 
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])

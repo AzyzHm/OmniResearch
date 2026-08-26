@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -16,7 +16,7 @@ def _existing_collection_names(project_id: str) -> list[str]:
     """Names of the project's existing collections, used to silently dedupe on create."""
     db = get_supabase()
     result = db.table("collections").select("id, name").eq("project_id", project_id).execute()
-    return [row["name"] for row in result.data]
+    return [row["name"] for row in cast(list[dict[str, Any]], result.data)]
 
 
 @router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])

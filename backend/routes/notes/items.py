@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -39,7 +39,7 @@ async def list_note_items(
         .order("created_at", desc=False)
         .execute()
     )
-    return [_flatten_item(row) for row in result.data]
+    return [_flatten_item(row) for row in cast(list[dict[str, Any]], result.data)]
 
 
 @router.post(

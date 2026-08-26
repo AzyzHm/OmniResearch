@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from database.chroma_client import get_chroma
 from database.db import get_supabase
 from services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
@@ -25,7 +27,7 @@ def backfill_collection(collection_id: str) -> int:
         {**(meta or {}), **sparse_vector_to_metadata(sv)} for meta, sv in zip(metadatas, sparse_vectors, strict=True)
     ]
 
-    collection.update(ids=ids, metadatas=updated_metadatas)
+    collection.update(ids=ids, metadatas=cast(Any, updated_metadatas))
     return len(ids)
 
 
@@ -39,7 +41,8 @@ def main() -> None:
         return
 
     total = 0
-    for row in collections:
+    for row_json in collections:
+        row = cast(dict[str, Any], row_json)
         count = backfill_collection(row["id"])
         total += count
         print(f"  {row['name']} ({row['id']}): {count} chunk(s) updated")

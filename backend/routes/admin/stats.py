@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends
+from postgrest.types import CountMethod
 
 from config.auth import require_admin
 from database.db import get_supabase
@@ -30,7 +31,7 @@ async def get_stats(current_admin: dict = Depends(require_admin)):
     recent_data: list[dict[str, Any]] = []
     if scoped_user_ids:
         logins_result: Any = (
-            db.table("login_logs").select("id", count="exact").in_("user_id", scoped_user_ids).execute()
+            db.table("login_logs").select("id", count=CountMethod.exact).in_("user_id", scoped_user_ids).execute()
         )
         total_logins = logins_result.count or 0
 
