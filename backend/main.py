@@ -19,8 +19,15 @@ Do not reorder these two import blocks without re-testing on Windows."""
 from services.embeddings import warm_up_embedding_model
 from services.reranker import warm_up_reranker
 from services.ingestion_recovery import recover_stuck_processing_items
-
-from routes import auth_router, admin_router, projects_router, chats_router, collections_router, notes_router, search_router
+from routes import (
+    admin_router,
+    auth_router,
+    chats_router,
+    collections_router,
+    notes_router,
+    projects_router,
+    search_router,
+)
 
 settings = get_settings()
 
@@ -36,7 +43,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="OmniResearch API",
     description="Authentication & Administration backend for OmniResearch",
-    version="2.0.0",
+    version="2.0.1",
     lifespan=lifespan,
 )
 
