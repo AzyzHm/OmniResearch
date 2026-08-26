@@ -25,6 +25,8 @@ for _mod in [
     "google",
     "google.genai",
     "supabase",
+    "postgrest",
+    "postgrest.types",
     "ollama",
     "exa_py",
     "tavily",

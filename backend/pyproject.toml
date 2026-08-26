@@ -23,6 +23,10 @@ ignore = [
 "main.py" = ["I001", "E402"]
 # __init__.py files re-export names as a package's public surface on purpose.
 "__init__.py" = ["F401"]
+# mock_modules is imported purely for its side effect (stubbing heavy
+# third-party packages into sys.modules before any production module can
+# import the real ones); it is never referenced by name.
+"tests/conftest.py" = ["F401"]
 # `assert False, "..."` in a try/except is a common, harmless idiom for
 # "this line should be unreachable" and reads clearer than raising manually.
 "tests/**" = ["B011"]
