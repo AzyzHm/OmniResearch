@@ -1,4 +1,4 @@
-from tests.conftest import project_row, note_row, note_item_row, message_row
+from tests.setup.factories import message_row, note_item_row, note_row, project_row
 
 
 def message_with_chat(msg_id="msg-1", chat_id="chat-1", project_id="proj-1",
@@ -186,7 +186,7 @@ class TestCreateNoteItem:
         client, db = app
         db.add_result(data=[note_row()])
         db.add_result(data=[message_with_chat()])
-        db.add_result(data=[{"id": "item-existing"}])  # already saved
+        db.add_result(data=[{"id": "item-existing"}])
         resp = client.post(
             "/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers
         )
@@ -195,7 +195,7 @@ class TestCreateNoteItem:
     def test_message_not_found(self, app, user_headers):
         client, db = app
         db.add_result(data=[note_row()])
-        db.add_result(data=[])  # message lookup empty
+        db.add_result(data=[])
         resp = client.post(
             "/notes/note-1/items", json={"message_id": "missing"}, headers=user_headers
         )

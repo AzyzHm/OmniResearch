@@ -1,4 +1,5 @@
-from tests.conftest import user_row
+from tests.setup.factories import user_row
+
 
 class TestAdminRoutes:
 
@@ -176,7 +177,6 @@ class TestAdminRoutes:
 
     def test_get_logs_excludes_requester_from_scope(self, app, admin_headers):
         client, db = app
-        # admin-001 is the requester; only u1 should remain in scope
         db.add_result(data=[{"id": "u1"}, {"id": "admin-001"}])
         db.add_result(data=[], count=0)
         resp = client.get("/admin/logs", headers=admin_headers)
@@ -193,7 +193,7 @@ class TestAdminRoutes:
         body = resp.json()
         assert body["total_users"] == 1
         assert body["total_logins"] == 3
-        assert "admin_users" not in body  # only superadmins see this breakdown
+        assert "admin_users" not in body
 
     def test_get_stats_no_scoped_users_skips_login_queries(self, app, admin_headers):
         client, db = app

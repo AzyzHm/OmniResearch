@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from tests.conftest import collection_row
+from tests.setup.factories import collection_row
 
 ITEM_PDF = {
     "id": "item-1", "collection_id": "col-1", "name": "report.pdf",
@@ -28,8 +28,8 @@ class TestGetItemContent:
         monkeypatch.setattr(items_mod, "download_collection_file", lambda path: b"%PDF-1.4 fake")
 
         client, db = app
-        db.add_result(data=[collection_row()])  # _own_collection
-        db.add_result(data=[ITEM_PDF])  # item lookup
+        db.add_result(data=[collection_row()])
+        db.add_result(data=[ITEM_PDF])
 
         resp = client.get("/collections/col-1/items/item-1/content", headers=user_headers)
 
@@ -58,7 +58,7 @@ class TestGetItemContent:
     def test_item_not_found_returns_404(self, app, user_headers):
         client, db = app
         db.add_result(data=[collection_row()])
-        db.add_result(data=[])  # item lookup: no rows
+        db.add_result(data=[])
 
         resp = client.get("/collections/col-1/items/missing/content", headers=user_headers)
 
@@ -103,7 +103,7 @@ class TestGetItemContent:
     def test_wrong_owner_returns_404(self, app, user_headers):
         client, db = app
         other_owner_collection = {**collection_row(), "projects": {"user_id": "someone-else"}}
-        db.add_result(data=[other_owner_collection])  # _own_collection
+        db.add_result(data=[other_owner_collection])
 
         resp = client.get("/collections/col-1/items/item-1/content", headers=user_headers)
 
@@ -120,9 +120,9 @@ class TestDeleteItem:
         )
 
         client, db = app
-        db.add_result(data=[collection_row()])  # _own_collection
-        db.add_result(data=[{"storage_path": "col-1/item-1/report.pdf"}])  # storage_path lookup
-        db.add_result(data=[ITEM_PDF])  # the delete() call itself
+        db.add_result(data=[collection_row()])
+        db.add_result(data=[{"storage_path": "col-1/item-1/report.pdf"}])
+        db.add_result(data=[ITEM_PDF])
 
         resp = client.delete("/collections/col-1/items/item-1", headers=user_headers)
 
@@ -155,8 +155,8 @@ class TestDeleteItem:
 
         client, db = app
         db.add_result(data=[collection_row()])
-        db.add_result(data=[])  # storage_path lookup: item already gone
-        db.add_result(data=[])  # the delete() call itself
+        db.add_result(data=[])
+        db.add_result(data=[])
 
         resp = client.delete("/collections/col-1/items/item-1", headers=user_headers)
 

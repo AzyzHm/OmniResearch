@@ -1,5 +1,5 @@
 import services.rag_retrieval as rag_retrieval
-from tests.conftest import FakeDB
+from tests.setup.fakes import FakeDB
 
 
 class _FakeSparseVector:
@@ -24,11 +24,6 @@ class _FakeChromaCollection:
     def query(self, **kwargs):
         self.query_calls.append(kwargs)
         return self._query_result
-
-
-# ---------------------------------------------------------------------------
-# get_active_items_by_collection
-# ---------------------------------------------------------------------------
 
 class TestGetActiveItemsByCollection:
     def test_no_collections_returns_empty_dict(self, monkeypatch):
@@ -68,11 +63,6 @@ class TestGetActiveItemsByCollection:
         monkeypatch.setattr(rag_retrieval, "get_supabase", lambda: db)
         rag_retrieval.get_active_items_by_collection("proj-1")
         assert calls == ["collections"]
-
-
-# ---------------------------------------------------------------------------
-# _fetch_all_active_chunks
-# ---------------------------------------------------------------------------
 
 class TestFetchAllActiveChunks:
     def test_no_active_items_returns_empty(self, monkeypatch):
@@ -132,11 +122,6 @@ class TestFetchAllActiveChunks:
         assert len(chunks) == 1
         assert chunks[0]["content"] == "ok"
 
-
-# ---------------------------------------------------------------------------
-# _retrieve_pool_semantic
-# ---------------------------------------------------------------------------
-
 class TestRetrievePoolSemantic:
     def test_no_active_items_returns_empty(self, monkeypatch):
         monkeypatch.setattr(rag_retrieval, "get_active_items_by_collection", lambda pid: {})
@@ -173,11 +158,6 @@ class TestRetrievePoolSemantic:
         monkeypatch.setattr(rag_retrieval, "get_chroma_collection", lambda cid: _FakeChromaCollection())
         rag_retrieval._retrieve_pool_semantic("proj-1", "my query", pool_size=5)
         assert embed_calls == [["my query"]]
-
-
-# ---------------------------------------------------------------------------
-# _retrieve_pool_keyword
-# ---------------------------------------------------------------------------
 
 class TestRetrievePoolKeyword:
     def test_no_chunks_returns_empty(self, monkeypatch):
@@ -224,11 +204,6 @@ class TestRetrievePoolKeyword:
         pool = rag_retrieval._retrieve_pool_keyword("proj-1", "q", pool_size=2)
         assert len(pool) == 2
 
-
-# ---------------------------------------------------------------------------
-# _retrieve_pool_hybrid
-# ---------------------------------------------------------------------------
-
 class TestRetrievePoolHybrid:
     def test_calls_both_semantic_and_keyword_with_double_pool_size(self, monkeypatch):
         calls = {}
@@ -261,7 +236,7 @@ class TestRetrievePoolHybrid:
 
         pool = rag_retrieval._retrieve_pool_hybrid("proj-1", "q", pool_size=10)
 
-        assert pool[0]["content"] == "shared"  # found by both -> highest RRF score
+        assert pool[0]["content"] == "shared"
 
     def test_deduplicates_the_same_chunk_across_rankings(self, monkeypatch):
         shared_chunk = {"content": "shared", "collection_id": "c", "item_id": "1"}
@@ -284,11 +259,6 @@ class TestRetrievePoolHybrid:
         monkeypatch.setattr(rag_retrieval, "_retrieve_pool_keyword", lambda pid, q, size: [])
         pool = rag_retrieval._retrieve_pool_hybrid("proj-1", "q", pool_size=3)
         assert len(pool) == 3
-
-
-# ---------------------------------------------------------------------------
-# retrieve_pool (dispatcher)
-# ---------------------------------------------------------------------------
 
 class TestRetrievePoolDispatcher:
     def test_semantic_mode_calls_semantic_strategy(self, monkeypatch):

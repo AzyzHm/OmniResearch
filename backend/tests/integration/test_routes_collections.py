@@ -1,4 +1,4 @@
-from tests.conftest import project_row, collection_row
+from tests.setup.factories import collection_row, project_row
 
 
 class TestCollectionRoutes:
@@ -24,7 +24,7 @@ class TestCollectionRoutes:
     def test_create_collection(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[])  # existing-names lookup
+        db.add_result(data=[])
         db.add_result(data=[collection_row()])
         resp = client.post(
             "/projects/proj-1/collections",
@@ -38,7 +38,7 @@ class TestCollectionRoutes:
     def test_create_collection_duplicate_name_gets_numbered(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[{"id": "col-1", "name": "Papers"}])  # existing-names lookup
+        db.add_result(data=[{"id": "col-1", "name": "Papers"}])
         db.add_result(data=[collection_row(name="Papers (2)")])
         resp = client.post(
             "/projects/proj-1/collections",
@@ -51,7 +51,7 @@ class TestCollectionRoutes:
     def test_create_collection_duplicate_name_case_insensitive(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[{"id": "col-1", "name": "Papers"}])  # existing-names lookup
+        db.add_result(data=[{"id": "col-1", "name": "Papers"}])
         db.add_result(data=[collection_row(name="papers (2)")])
         resp = client.post(
             "/projects/proj-1/collections",

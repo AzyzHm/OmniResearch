@@ -1,4 +1,5 @@
 import pytest
+
 import config.models as models_mod
 from config.settings import get_settings
 
@@ -70,7 +71,7 @@ class TestBothProvidersFail:
         with pytest.raises(RuntimeError) as exc_info:
             models_mod.get_gemini_response([{"role": "user", "content": "hi"}])
         assert "quota has been reached" in str(exc_info.value)
-        assert not usage_calls  # no usage should be recorded on total failure
+        assert not usage_calls
 
 
 class TestForceMistral:

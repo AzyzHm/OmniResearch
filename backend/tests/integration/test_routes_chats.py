@@ -1,4 +1,5 @@
-from tests.conftest import project_row, chat_row, message_row, make_token
+from tests.setup.factories import chat_row, message_row, project_row
+from tests.setup.tokens import make_token
 
 
 class TestListChats:
@@ -34,7 +35,7 @@ class TestCreateChat:
     def test_success(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[])  # existing-names lookup
+        db.add_result(data=[])
         db.add_result(data=[chat_row()])
         resp = client.post("/projects/proj-1/chats", json={"name": "My Chat"}, headers=user_headers)
         assert resp.status_code == 201
@@ -43,7 +44,7 @@ class TestCreateChat:
     def test_default_name_when_omitted(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[])  # existing-names lookup
+        db.add_result(data=[])
         db.add_result(data=[chat_row(name="New Chat")])
         resp = client.post("/projects/proj-1/chats", json={}, headers=user_headers)
         assert resp.status_code == 201
@@ -52,7 +53,7 @@ class TestCreateChat:
     def test_blank_name_falls_back_to_default(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[])  # existing-names lookup
+        db.add_result(data=[])
         db.add_result(data=[chat_row(name="New Chat")])
         resp = client.post("/projects/proj-1/chats", json={"name": "   "}, headers=user_headers)
         assert resp.status_code == 201
@@ -67,7 +68,7 @@ class TestCreateChat:
         """The exact bug being fixed: every new chat defaulted to 'New Chat'."""
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[{"id": "chat-1", "name": "New Chat"}])  # existing-names lookup
+        db.add_result(data=[{"id": "chat-1", "name": "New Chat"}])
         db.add_result(data=[chat_row(name="New Chat (2)")])
         resp = client.post("/projects/proj-1/chats", json={}, headers=user_headers)
         assert resp.status_code == 201
@@ -76,7 +77,7 @@ class TestCreateChat:
     def test_duplicate_explicit_name_gets_numbered(self, app, user_headers):
         client, db = app
         db.add_result(data=[project_row()])
-        db.add_result(data=[{"id": "chat-1", "name": "Research Notes"}])  # existing-names lookup
+        db.add_result(data=[{"id": "chat-1", "name": "Research Notes"}])
         db.add_result(data=[chat_row(name="Research Notes (2)")])
         resp = client.post(
             "/projects/proj-1/chats", json={"name": "Research Notes"}, headers=user_headers
@@ -89,7 +90,7 @@ class TestRenameChat:
     def test_success(self, app, user_headers):
         client, db = app
         db.add_result(data=[chat_row()])
-        db.add_result(data=[])  # existing-names lookup (excluding self)
+        db.add_result(data=[])
         db.add_result(data=[chat_row(name="Renamed")])
         resp = client.put("/chats/chat-1", json={"name": "Renamed"}, headers=user_headers)
         assert resp.status_code == 200
@@ -98,7 +99,7 @@ class TestRenameChat:
     def test_duplicate_name_gets_numbered(self, app, user_headers):
         client, db = app
         db.add_result(data=[chat_row()])
-        db.add_result(data=[{"id": "chat-2", "name": "Other Chat"}])  # existing-names lookup
+        db.add_result(data=[{"id": "chat-2", "name": "Other Chat"}])
         db.add_result(data=[chat_row(name="Other Chat (2)")])
         resp = client.put("/chats/chat-1", json={"name": "Other Chat"}, headers=user_headers)
         assert resp.status_code == 200
@@ -158,8 +159,8 @@ class TestGetMessages:
         assert resp.status_code == 200
         messages = resp.json()
         assert len(messages) == 2
-        assert messages[0]["role"] == "user"        # msg-1 was older -> first after reversal
-        assert messages[1]["role"] == "assistant"    # msg-2 was newer -> last
+        assert messages[0]["role"] == "user"
+        assert messages[1]["role"] == "assistant"
 
     def test_returns_empty_list_for_new_chat(self, app, user_headers):
         client, db = app
@@ -212,13 +213,13 @@ def _queue_send(db, history=None, daily_token_limit=None, tokens_used_today=None
 class TestSendMessage:
     """
     send_message's actual DB call order is:
-      1. _own_chat            — ownership check (chats table)
-      2. get_daily_token_limit — quota check (users table)
-      3. get_tokens_used_today — quota check (llm_usage table)
-      4. select messages      — fetch history *before* the new message exists
-      5. insert               — persist the user message
-      6. [RAG graph runs — mocked via db.rag_graph, no DB call]
-      7. insert               — persist the assistant reply
+      1. _own_chat             : ownership check (chats table)
+      2. get_daily_token_limit : quota check (users table)
+      3. get_tokens_used_today : quota check (llm_usage table)
+      4. select messages       :  fetch history *before* the new message exists
+      5. insert                :  persist the user message
+      6. [RAG graph runs       : mocked via db.rag_graph, no DB call]
+      7. insert                :  persist the assistant reply
     """
 
     def _queue_send(self, db, history=None, daily_token_limit=None, tokens_used_today=None):
@@ -364,7 +365,7 @@ class TestQuotaEnforcement:
         db.add_result(data=[{"daily_token_limit": 100}])          # quota limit = 100
         db.add_result(data=[{"total_tokens": 100}])               # exactly at the limit
         resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
-        assert resp.status_code == 200  # SSE always 200; error is in the event body
+        assert resp.status_code == 200
         assert '"type": "error"' in resp.text
         assert '"code": "quota_exceeded"' in resp.text
 
@@ -438,7 +439,7 @@ class TestSendMessageStream:
         self._queue_stream(db)
         db.rag_graph.raise_exc = RuntimeError("stream exploded")
         resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
-        assert resp.status_code == 200  # SSE always returns 200; error is in the event body
+        assert resp.status_code == 200
         assert '"type": "error"' in resp.text
         assert "stream exploded" not in resp.text
         assert "error processing your request" in resp.text

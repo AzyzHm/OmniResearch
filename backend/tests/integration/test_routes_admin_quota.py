@@ -1,4 +1,4 @@
-from tests.conftest import user_row
+from tests.setup.factories import user_row
 
 
 class TestUpdateTokenLimit:

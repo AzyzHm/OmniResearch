@@ -2,10 +2,10 @@ import pytest
 from pydantic import ValidationError
 
 from models.auth import RegisterRequest
-from models.project import ProjectCreate, ProjectUpdate
+from models.chat import ChatCreate, ChatMessageRequest, ChatUpdate
 from models.collection import CollectionCreate
-from models.chat import ChatCreate, ChatUpdate, ChatMessageRequest
-from models.user import UserOut, TokenLimitUpdate
+from models.project import ProjectCreate, ProjectUpdate
+from models.user import TokenLimitUpdate, UserOut
 
 
 class TestRegisterRequest:

@@ -1,7 +1,7 @@
 import ast
 from pathlib import Path
 
-MAIN_PY = Path(__file__).resolve().parent.parent / "main.py"
+MAIN_PY = Path(__file__).resolve().parent.parent.parent / "main.py"
 
 
 def _top_level_import_positions(source: str) -> dict[str, int]:

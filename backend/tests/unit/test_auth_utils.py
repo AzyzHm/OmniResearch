@@ -7,7 +7,11 @@ from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
 from config.auth import (
-    create_access_token, hash_password, require_admin, require_superadmin, verify_password,
+    create_access_token,
+    hash_password,
+    require_admin,
+    require_superadmin,
+    verify_password,
 )
 from config.settings import get_settings
 

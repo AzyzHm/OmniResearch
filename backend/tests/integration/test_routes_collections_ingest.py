@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from tests.conftest import collection_row
+from tests.setup.factories import collection_row
 
 
 def _patch_pipeline(monkeypatch):
@@ -18,7 +18,7 @@ class TestUploadItems:
     def test_mixed_pdf_and_txt_batch_succeeds(self, app, user_headers, monkeypatch):
         _patch_pipeline(monkeypatch)
         client, db = app
-        db.add_result(data=[collection_row()])  # _own_collection lookup
+        db.add_result(data=[collection_row()])
         db.add_result(data=[{"id": "item-1", "collection_id": "col-1", "name": "a.pdf",
                               "source_type": "pdf", "is_active": True, "status": "processing",
                               "chunk_count": 0, "created_at": "2026-01-01T00:00:00Z"}])
@@ -75,8 +75,8 @@ class TestAddUrlItem:
         """No more urls-only gate — a plain collection accepts a URL item too."""
         _patch_pipeline(monkeypatch)
         client, db = app
-        db.add_result(data=[collection_row()])  # _own_collection
-        db.add_result(data=[])  # _existing_urls
+        db.add_result(data=[collection_row()])
+        db.add_result(data=[])
         db.add_result(data=[{"id": "item-3", "collection_id": "col-1",
                               "name": "https://example.com/article", "source_type": "url",
                               "is_active": True, "status": "processing", "chunk_count": 0,
@@ -94,7 +94,7 @@ class TestAddUrlItem:
         _patch_pipeline(monkeypatch)
         client, db = app
         db.add_result(data=[collection_row()])
-        db.add_result(data=[{"name": "https://example.com/article"}])  # _existing_urls
+        db.add_result(data=[{"name": "https://example.com/article"}])
 
         resp = client.post(
             "/collections/col-1/items/url",
@@ -108,8 +108,8 @@ class TestAddSearchResultItems:
     def test_add_search_results_succeeds_on_any_collection(self, app, user_headers, monkeypatch):
         _patch_pipeline(monkeypatch)
         client, db = app
-        db.add_result(data=[collection_row()])  # _own_collection
-        db.add_result(data=[])  # _existing_urls
+        db.add_result(data=[collection_row()])
+        db.add_result(data=[])
         db.add_result(data=[{"id": "item-4", "collection_id": "col-1",
                               "name": "https://example.com/1", "source_type": "url",
                               "is_active": True, "status": "processing", "chunk_count": 0,

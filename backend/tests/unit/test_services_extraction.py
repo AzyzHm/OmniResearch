@@ -11,9 +11,9 @@ def _make_pdf(texts: list[str]) -> bytes:
     n_pages = len(texts)
     font_obj_num = 3 + 2 * n_pages
     objects: list[bytes] = []
-    objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")  # obj 1
+    objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
     kids = " ".join(f"{3 + 2 * i} 0 R" for i in range(n_pages))
-    objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {n_pages} >>".encode())  # obj 2
+    objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {n_pages} >>".encode())
 
     for i, text in enumerate(texts):
         page_num = 3 + 2 * i
@@ -48,7 +48,7 @@ class _FakeReader:
 
 class TestExtractTxt:
     def test_decodes_valid_utf8(self):
-        assert extract_txt("hello world".encode("utf-8")) == "hello world"
+        assert extract_txt(b"hello world") == "hello world"
 
     def test_decodes_utf8_with_special_characters(self):
         text = "café — naïve résumé"

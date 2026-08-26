@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import services.quota as quota
-from tests.conftest import FakeDB
+from tests.setup.fakes import FakeDB
 
 
 class TestGetDailyTokenLimit:
@@ -100,12 +100,12 @@ class TestEnforceDailyQuota:
     def test_admin_role_is_exempt_even_over_limit(self, monkeypatch):
         monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
         monkeypatch.setattr(quota, "get_tokens_used_today", lambda uid: 5000)
-        quota.enforce_daily_quota("admin-1", role="admin")  # should not raise
+        quota.enforce_daily_quota("admin-1", role="admin")
 
     def test_superadmin_role_is_exempt_even_over_limit(self, monkeypatch):
         monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
         monkeypatch.setattr(quota, "get_tokens_used_today", lambda uid: 5000)
-        quota.enforce_daily_quota("sa-1", role="superadmin")  # should not raise
+        quota.enforce_daily_quota("sa-1", role="superadmin")
 
     def test_regular_user_role_still_enforced(self, monkeypatch):
         monkeypatch.setattr(quota, "get_daily_token_limit", lambda uid: 1000)
@@ -130,14 +130,14 @@ class TestEnforceDailyQuota:
 
 class TestDailyQuotaExceeded:
     def test_message_includes_used_and_limit(self):
-        reset_at = datetime.now(timezone.utc).replace(hour=23, minute=59, second=0, microsecond=0)
+        reset_at = datetime.now(UTC).replace(hour=23, minute=59, second=0, microsecond=0)
         exc = quota.DailyQuotaExceeded(used=80_000, limit=80_000, reset_at=reset_at)
         msg = str(exc)
         assert "80,000" in msg
         assert "resets at" in msg
 
     def test_stores_used_limit_and_reset_at_as_attributes(self):
-        reset_at = datetime.now(timezone.utc)
+        reset_at = datetime.now(UTC)
         exc = quota.DailyQuotaExceeded(used=10, limit=20, reset_at=reset_at)
         assert exc.used == 10
         assert exc.limit == 20
@@ -146,7 +146,7 @@ class TestDailyQuotaExceeded:
     def test_time_remaining_is_never_negative_in_message(self):
         """If reset_at is (implausibly) already in the past, hours/minutes
         should clamp to 0 rather than showing a negative countdown."""
-        past = datetime.now(timezone.utc).replace(year=2000)
+        past = datetime.now(UTC).replace(year=2000)
         exc = quota.DailyQuotaExceeded(used=1, limit=1, reset_at=past)
         assert "-" not in str(exc).split("in ")[-1]
 
@@ -156,6 +156,6 @@ class TestDailyQuotaExceeded:
         check doesn't flag the safe, fully-controlled quota message as if
         it were arbitrary exception/stack-trace content. Both must stay
         in sync."""
-        reset_at = datetime.now(timezone.utc)
+        reset_at = datetime.now(UTC)
         exc = quota.DailyQuotaExceeded(used=10, limit=20, reset_at=reset_at)
         assert exc.user_message == str(exc)

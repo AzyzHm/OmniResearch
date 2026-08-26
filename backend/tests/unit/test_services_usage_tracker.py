@@ -1,5 +1,5 @@
 import services.usage_tracker as usage_tracker
-from tests.conftest import FakeDB
+from tests.setup.fakes import FakeDB
 
 
 class _RaisingDB:
