@@ -23,7 +23,7 @@ describe("AdminLayout — leaving admin without logging out", () => {
     render(
       <MemoryRouter>
         <AdminLayout />
-      </MemoryRouter>
+      </MemoryRouter>,
     )
 
     const backLink = screen.getByRole("link", { name: /Back to projects/ })

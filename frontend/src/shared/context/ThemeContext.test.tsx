@@ -59,7 +59,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
     expect(screen.getByTestId("theme")).toHaveTextContent("system")
     expect(screen.getByTestId("resolved")).toHaveTextContent("dark")
@@ -72,7 +72,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
     expect(screen.getByTestId("resolved")).toHaveTextContent("light")
     expect(document.documentElement.classList.contains("dark")).toBe(false)
@@ -84,7 +84,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
 
     await user.click(screen.getByRole("button", { name: "dark" }))
@@ -99,7 +99,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
     expect(screen.getByTestId("resolved")).toHaveTextContent("light")
 
@@ -117,7 +117,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
 
     await user.click(screen.getByRole("button", { name: "light" }))

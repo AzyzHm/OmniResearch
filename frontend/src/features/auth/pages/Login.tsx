@@ -43,10 +43,7 @@ function Login() {
   }
 
   return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Log in to pick up where you left off."
-    >
+    <AuthLayout title="Welcome back" subtitle="Log in to pick up where you left off.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="username">Username</Label>

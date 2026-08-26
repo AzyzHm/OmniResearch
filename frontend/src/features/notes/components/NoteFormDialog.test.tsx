@@ -16,7 +16,7 @@ describe("NoteFormDialog", () => {
         isSubmitting={false}
         error={null}
         onSubmit={onSubmit}
-      />
+      />,
     )
 
     await user.type(screen.getByLabelText("Note name"), "  Key Findings  ")
@@ -33,7 +33,7 @@ describe("NoteFormDialog", () => {
         isSubmitting={false}
         error={null}
         onSubmit={() => {}}
-      />
+      />,
     )
 
     expect(screen.getByRole("button", { name: "Create note" })).toBeDisabled()

@@ -39,9 +39,7 @@ function Features() {
       />
 
       <div className="relative max-w-4xl mx-auto">
-        <h2 className="font-display text-2xl md:text-3xl text-ink mb-14">
-          What you get
-        </h2>
+        <h2 className="font-display text-2xl md:text-3xl text-ink mb-14">What you get</h2>
 
         <div ref={ref}>
           {features.map(({ icon: Icon, title, description, accent }, i) => (
@@ -62,9 +60,7 @@ function Features() {
                     : "size-12 rounded-full flex items-center justify-center shrink-0 bg-[color-mix(in_srgb,var(--color-amber)_15%,transparent)]"
                 }
               >
-                <Icon
-                  className={accent === "teal" ? "size-5 text-teal" : "size-5 text-amber"}
-                />
+                <Icon className={accent === "teal" ? "size-5 text-teal" : "size-5 text-amber"} />
               </div>
               <div>
                 <h3 className="font-display text-xl text-ink">{title}</h3>

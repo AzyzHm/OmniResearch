@@ -26,7 +26,7 @@ function renderWorkspace(role: string | undefined) {
   return render(
     <MemoryRouter>
       <Workspace />
-    </MemoryRouter>
+    </MemoryRouter>,
   )
 }
 

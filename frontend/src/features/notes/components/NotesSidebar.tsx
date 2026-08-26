@@ -2,13 +2,7 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { NotebookText, Pencil, Plus, Trash2 } from "lucide-react"
 
-import {
-  createNote,
-  deleteNote,
-  listNotes,
-  renameNote,
-  type Note,
-} from "@/features/notes/api"
+import { createNote, deleteNote, listNotes, renameNote, type Note } from "@/features/notes/api"
 import { ApiError } from "@/shared/lib/apiClient"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/components/ui/button"
@@ -72,7 +66,7 @@ function NotesSidebar({ projectId, selectedNoteId, onSelect }: NotesSidebarProps
     },
     onSuccess: (_data, noteId) => {
       queryClient.setQueryData<Note[]>(queryKey, (old) =>
-        old ? old.filter((n) => n.id !== noteId) : old
+        old ? old.filter((n) => n.id !== noteId) : old,
       )
       queryClient.invalidateQueries({ queryKey })
       if (noteId === selectedNoteId) onSelect(null)
@@ -118,7 +112,7 @@ function NotesSidebar({ projectId, selectedNoteId, onSelect }: NotesSidebarProps
               key={note.id}
               className={cn(
                 "group flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                selected ? "bg-teal/10 text-teal" : "text-ink hover:bg-muted"
+                selected ? "bg-teal/10 text-teal" : "text-ink hover:bg-muted",
               )}
             >
               <button

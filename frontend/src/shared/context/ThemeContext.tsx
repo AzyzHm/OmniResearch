@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 export type ThemePreference = "light" | "dark" | "system"
 type ResolvedTheme = "light" | "dark"
@@ -21,9 +15,7 @@ function applyTheme(resolved: ResolvedTheme) {
 
 function readStoredPreference(): ThemePreference {
   const stored = window.localStorage.getItem(STORAGE_KEY)
-  return stored === "light" || stored === "dark" || stored === "system"
-    ? stored
-    : "system"
+  return stored === "light" || stored === "dark" || stored === "system" ? stored : "system"
 }
 
 interface ThemeContextValue {

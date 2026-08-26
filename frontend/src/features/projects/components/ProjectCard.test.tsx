@@ -26,7 +26,7 @@ function renderCard(overrides: Partial<Parameters<typeof ProjectCard>[0]> = {}) 
         isDeleting={false}
         {...overrides}
       />
-    </MemoryRouter>
+    </MemoryRouter>,
   )
   return { onRename, onDelete }
 }

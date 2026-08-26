@@ -24,19 +24,12 @@ function AuthLayout({
             backgroundSize: "24px 24px",
           }}
         />
-        <Link
-          to="/"
-          className="relative font-display italic text-xl"
-          style={{ color: "#F1F3F0" }}
-        >
+        <Link to="/" className="relative font-display italic text-xl" style={{ color: "#F1F3F0" }}>
           OmniResearch
         </Link>
 
         <div className="relative">
-          <h2
-            className="font-display text-3xl leading-[1.2] max-w-sm"
-            style={{ color: "#F1F3F0" }}
-          >
+          <h2 className="font-display text-3xl leading-[1.2] max-w-sm" style={{ color: "#F1F3F0" }}>
             Every answer, <span className="italic text-teal">traced back</span> to a source.
           </h2>
           <div className="mt-8 flex justify-center">

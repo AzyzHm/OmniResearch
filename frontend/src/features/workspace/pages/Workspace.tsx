@@ -59,9 +59,7 @@ function Workspace() {
             disabled={loggingOut}
           >
             <LogOut className="size-3.5" data-icon="inline-start" />
-            <span className="hidden sm:inline">
-              {loggingOut ? "Logging out..." : "Log out"}
-            </span>
+            <span className="hidden sm:inline">{loggingOut ? "Logging out..." : "Log out"}</span>
           </Button>
         </div>
       </header>

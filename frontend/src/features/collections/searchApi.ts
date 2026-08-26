@@ -14,7 +14,7 @@ export function searchWeb(
   engine: SearchEngine,
   query: string,
   numResults: number,
-  searchDepth: TavilySearchDepth = "basic"
+  searchDepth: TavilySearchDepth = "basic",
 ) {
   return apiClient
     .post<{ results: WebSearchResult[] }>("/search/web", {
@@ -29,6 +29,6 @@ export function searchWeb(
 export function addSearchResults(collectionId: string, items: WebSearchResult[]) {
   return apiClient.post<{ added: CollectionItem[]; skipped: string[] }>(
     `/collections/${collectionId}/items/from-search`,
-    { items }
+    { items },
   )
 }

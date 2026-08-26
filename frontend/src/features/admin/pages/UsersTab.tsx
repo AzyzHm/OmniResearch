@@ -42,8 +42,7 @@ function UsersTab() {
     onError: onMutationError,
   })
   const roleMutation = useMutation({
-    mutationFn: ({ id, role }: { id: string; role: "admin" | "user" }) =>
-      changeUserRole(id, role),
+    mutationFn: ({ id, role }: { id: string; role: "admin" | "user" }) => changeUserRole(id, role),
     onSuccess: invalidateAll,
     onError: onMutationError,
   })
@@ -53,8 +52,7 @@ function UsersTab() {
     onError: onMutationError,
   })
   const limitMutation = useMutation({
-    mutationFn: ({ id, limit }: { id: string; limit: number }) =>
-      updateTokenLimit(id, limit),
+    mutationFn: ({ id, limit }: { id: string; limit: number }) => updateTokenLimit(id, limit),
     onSuccess: invalidateAll,
     onError: onMutationError,
   })
@@ -70,9 +68,7 @@ function UsersTab() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-display text-base font-medium text-ink">
-          Registered Users
-        </h2>
+        <h2 className="font-display text-base font-medium text-ink">Registered Users</h2>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <input
@@ -89,14 +85,10 @@ function UsersTab() {
         </div>
       </div>
 
-      {actionError && (
-        <p className="mb-3 text-sm text-destructive">{actionError}</p>
-      )}
+      {actionError && <p className="mb-3 text-sm text-destructive">{actionError}</p>}
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
-      {isError && (
-        <p className="text-sm text-destructive">Failed to load users.</p>
-      )}
+      {isError && <p className="text-sm text-destructive">Failed to load users.</p>}
 
       {!isLoading && !isError && data && (
         <>
@@ -115,9 +107,7 @@ function UsersTab() {
                   onApprove={() => approveMutation.mutate(u.id)}
                   onChangeRole={(role) => roleMutation.mutate({ id: u.id, role })}
                   onDelete={() => deleteMutation.mutate(u.id)}
-                  onUpdateTokenLimit={(limit) =>
-                    limitMutation.mutate({ id: u.id, limit })
-                  }
+                  onUpdateTokenLimit={(limit) => limitMutation.mutate({ id: u.id, limit })}
                 />
               ))}
             </div>

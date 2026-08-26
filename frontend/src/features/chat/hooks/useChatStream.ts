@@ -29,49 +29,46 @@ export function useChatStream(): UseChatStreamResult {
     return () => abortRef.current?.abort()
   }, [])
 
-  const send = useCallback(
-    (chatId: string, message: string, retrievalMode: RetrievalMode) => {
-      abortRef.current?.abort()
-      const controller = new AbortController()
-      abortRef.current = controller
+  const send = useCallback((chatId: string, message: string, retrievalMode: RetrievalMode) => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
 
-      setError(null)
-      setIsStreaming(true)
-      setNodeName(null)
+    setError(null)
+    setIsStreaming(true)
+    setNodeName(null)
 
-      ;(async () => {
-        try {
-          for await (const event of streamChatMessage(
-            chatId,
-            message,
-            retrievalMode,
-            controller.signal
-          )) {
-            if (event.type === "node") {
-              setNodeName(event.node)
-            } else if (event.type === "error") {
-              setError({
-                message: event.detail,
-                code: event.code,
-                used: event.used,
-                limit: event.limit,
-                resetAt: event.reset_at,
-              })
-            }
+    ;(async () => {
+      try {
+        for await (const event of streamChatMessage(
+          chatId,
+          message,
+          retrievalMode,
+          controller.signal,
+        )) {
+          if (event.type === "node") {
+            setNodeName(event.node)
+          } else if (event.type === "error") {
+            setError({
+              message: event.detail,
+              code: event.code,
+              used: event.used,
+              limit: event.limit,
+              resetAt: event.reset_at,
+            })
           }
-        } catch (err) {
-          if (err instanceof DOMException && err.name === "AbortError") return
-          setError({
-            message: err instanceof ApiError ? err.message : "Something went wrong.",
-          })
-        } finally {
-          setIsStreaming(false)
-          setNodeName(null)
         }
-      })()
-    },
-    []
-  )
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return
+        setError({
+          message: err instanceof ApiError ? err.message : "Something went wrong.",
+        })
+      } finally {
+        setIsStreaming(false)
+        setNodeName(null)
+      }
+    })()
+  }, [])
 
   return {
     isStreaming,

@@ -32,7 +32,12 @@ function FakeDocument({ onLoadSuccess, children }: FakeDocumentProps) {
   return <div data-testid="pdf-document">{children}</div>
 }
 
-function FakePage({ pageNumber, onGetTextSuccess, onRenderTextLayerSuccess, customTextRenderer }: FakePageProps) {
+function FakePage({
+  pageNumber,
+  onGetTextSuccess,
+  onRenderTextLayerSuccess,
+  customTextRenderer,
+}: FakePageProps) {
   useEffect(() => {
     onGetTextSuccess?.({ items: fakePageItems, styles: {} })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,7 +53,12 @@ function FakePage({ pageNumber, onGetTextSuccess, onRenderTextLayerSuccess, cust
           data-testid={`pdf-item-${pageNumber}-${itemIndex}`}
           dangerouslySetInnerHTML={{
             __html: customTextRenderer
-              ? customTextRenderer({ pageIndex: pageNumber - 1, pageNumber, itemIndex, str: item.str })
+              ? customTextRenderer({
+                  pageIndex: pageNumber - 1,
+                  pageNumber,
+                  itemIndex,
+                  str: item.str,
+                })
               : item.str,
           }}
         />
@@ -71,7 +81,7 @@ function mockPdfFetch(ok = true) {
       ok,
       status: ok ? 200 : 500,
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-    })
+    }),
   ) as unknown as typeof fetch
 }
 
@@ -88,7 +98,7 @@ describe("PdfPreview", () => {
 
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/collections/c1/items/i1/content"),
-      expect.objectContaining({ credentials: "include" })
+      expect.objectContaining({ credentials: "include" }),
     )
   })
 
@@ -103,7 +113,7 @@ describe("PdfPreview", () => {
   it("wraps only the items that make up the cited chunk in a highlight mark", async () => {
     mockPdfFetch()
     render(
-      <PdfPreview collectionId="c1" itemId="i1" highlightText="Revenue grew 12% year over year." />
+      <PdfPreview collectionId="c1" itemId="i1" highlightText="Revenue grew 12% year over year." />,
     )
 
     const item1 = await screen.findByTestId("pdf-item-1-1")
@@ -130,10 +140,12 @@ describe("PdfPreview", () => {
     const scrollSpy = vi.spyOn(Element.prototype, "scrollIntoView")
 
     render(
-      <PdfPreview collectionId="c1" itemId="i1" highlightText="Revenue grew 12% year over year." />
+      <PdfPreview collectionId="c1" itemId="i1" highlightText="Revenue grew 12% year over year." />,
     )
 
-    await waitFor(() => expect(scrollSpy).toHaveBeenCalledWith({ behavior: "smooth", block: "center" }))
+    await waitFor(() =>
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: "smooth", block: "center" }),
+    )
     expect((scrollSpy.mock.instances[0] as HTMLElement).className).toContain("pdf-chunk-highlight")
   })
 

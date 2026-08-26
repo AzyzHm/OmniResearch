@@ -46,10 +46,7 @@ export interface ChatStreamErrorEvent {
   reset_at?: string
 }
 
-export type ChatStreamEvent =
-  | ChatStreamNodeEvent
-  | ChatStreamDoneEvent
-  | ChatStreamErrorEvent
+export type ChatStreamEvent = ChatStreamNodeEvent | ChatStreamDoneEvent | ChatStreamErrorEvent
 
 export function listChats(projectId: string) {
   return apiClient.get<Chat[]>(`/projects/${projectId}/chats`)
@@ -75,7 +72,7 @@ export async function* streamChatMessage(
   chatId: string,
   message: string,
   retrievalMode: RetrievalMode,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): AsyncGenerator<ChatStreamEvent> {
   const response = await fetch(`${API_BASE_URL}/chats/${chatId}/message/stream`, {
     method: "POST",

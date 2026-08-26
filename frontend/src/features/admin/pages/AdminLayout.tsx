@@ -77,7 +77,7 @@ function AdminLayout() {
                   "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
                     ? "bg-teal/10 text-teal"
-                    : "text-muted-foreground hover:bg-muted hover:text-ink"
+                    : "text-muted-foreground hover:bg-muted hover:text-ink",
                 )
               }
             >

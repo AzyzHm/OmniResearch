@@ -16,9 +16,7 @@ function LegalPage({ title, lastUpdated, content }: LegalPageProps) {
       <Nav />
       <div className="flex-1 px-6 md:px-10 py-20 max-w-3xl mx-auto w-full">
         <h1 className="font-display text-3xl text-ink">{title}</h1>
-        <p className="mt-2 font-mono text-xs text-muted-foreground">
-          Last updated: {lastUpdated}
-        </p>
+        <p className="mt-2 font-mono text-xs text-muted-foreground">Last updated: {lastUpdated}</p>
 
         <div
           className={[

@@ -19,7 +19,7 @@ function renderLogin() {
       <MemoryRouter>
         <Login />
       </MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   )
 }
 
