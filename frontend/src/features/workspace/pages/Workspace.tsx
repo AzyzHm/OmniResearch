@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom"
 import { LogOut, Settings } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
-import { useAuth } from "@/features/auth/context/AuthContext"
+import { useAuth } from "@/features/auth/context/useAuth"
 import { Button } from "@/shared/components/ui/button"
 import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"

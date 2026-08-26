@@ -28,6 +28,7 @@ interface FakePageProps {
 function FakeDocument({ onLoadSuccess, children }: FakeDocumentProps) {
   useEffect(() => {
     onLoadSuccess?.({ numPages: 1 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return <div data-testid="pdf-document">{children}</div>
 }
@@ -44,6 +45,7 @@ function FakePage({
   }, [])
   useEffect(() => {
     onRenderTextLayerSuccess?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customTextRenderer])
   return (
     <div data-testid={`pdf-page-${pageNumber}`}>

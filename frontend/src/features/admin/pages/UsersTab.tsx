@@ -9,7 +9,7 @@ import {
   updateTokenLimit,
 } from "@/features/admin/api"
 import { ApiError } from "@/shared/lib/apiClient"
-import { useAuth } from "@/features/auth/context/AuthContext"
+import { useAuth } from "@/features/auth/context/useAuth"
 import { Button } from "@/shared/components/ui/button"
 import UserRow from "@/features/admin/components/UserRow"
 

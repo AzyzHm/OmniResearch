@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from "vitest"
 
 import AdminLayout from "@/features/admin/pages/AdminLayout"
 
-vi.mock("@/features/auth/context/AuthContext", () => ({
+vi.mock("@/features/auth/context/useAuth", () => ({
   useAuth: vi.fn(() => ({
     user: { user_id: "u1", username: "Azyz", role: "admin" },
     isLoading: false,

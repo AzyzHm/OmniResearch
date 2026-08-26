@@ -1,6 +1,7 @@
 import { Moon, Sun, Monitor } from "lucide-react"
 
-import { useTheme, type ThemePreference } from "@/shared/context/ThemeContext"
+import { useTheme } from "@/shared/context/useTheme"
+import type { ThemePreference } from "@/shared/context/theme-context"
 import { Button } from "@/shared/components/ui/button"
 
 const CYCLE: ThemePreference[] = ["system", "light", "dark"]

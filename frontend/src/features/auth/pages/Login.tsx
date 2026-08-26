@@ -7,7 +7,7 @@ import PasswordInput from "@/shared/components/PasswordInput"
 import { Label } from "@/shared/components/ui/label"
 import { login } from "@/features/auth/api"
 import { ApiError } from "@/shared/lib/apiClient"
-import { useAuth } from "@/features/auth/context/AuthContext"
+import { useAuth } from "@/features/auth/context/useAuth"
 
 function Login() {
   const navigate = useNavigate()

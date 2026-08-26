@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate, Link } from "react-router-dom"
 import { ArrowLeft, LogOut } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
-import { useAuth } from "@/features/auth/context/AuthContext"
+import { useAuth } from "@/features/auth/context/useAuth"
 import { cn } from "@/shared/lib/utils"
 import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"
