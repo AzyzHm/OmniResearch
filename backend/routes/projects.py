@@ -1,4 +1,5 @@
 from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from config.auth import get_current_user
@@ -32,7 +33,7 @@ def _existing_project_names(user_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]  # type: ignore
+    return [row["name"] for row in result.data]
 
 
 @router.get("", response_model=list[ProjectOut])

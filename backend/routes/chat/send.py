@@ -44,7 +44,7 @@ async def send_message(
                 "limit": exc.limit,
                 "reset_at": exc.reset_at.isoformat(),
             },
-        )
+        ) from exc
 
     hist = (
         db.table("messages")
@@ -82,7 +82,7 @@ async def send_message(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
-        )
+        ) from exc
 
     db.table("messages").insert(
         {"chat_id": chat_id, "role": "assistant", "content": reply, "sources": sources}
@@ -162,7 +162,7 @@ async def send_message_stream(
         answer = "⚠️ The model did not return a response."
         sources = []
         try:
-            for update in graph.stream(initial_state, stream_mode="updates"): # type: ignore
+            for update in graph.stream(initial_state, stream_mode="updates"):
                 node_name = next(iter(update))
                 node_output = update[node_name] or {}
                 print(f"[RAG] stream: {node_name} finished")

@@ -54,7 +54,7 @@ async def bulk_update_items(
             .execute()
         )
         if result.data:
-            results.append(result.data[0]) # type: ignore
+            results.append(result.data[0])
 
     return results
 
@@ -119,11 +119,11 @@ async def get_item_content(
 
     try:
         raw_bytes = download_collection_file(item["storage_path"])
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Could not retrieve the file from storage.",
-        )
+        ) from exc
 
     media_type = "application/pdf" if item["source_type"] == "pdf" else "text/plain; charset=utf-8"
     return Response(
@@ -156,6 +156,6 @@ async def delete_item(
     delete_item_chunks(collection_id, item_id)
     db.table("collection_items").delete().eq("id", item_id).eq("collection_id", collection_id).execute()
 
-    storage_path = existing.data[0].get("storage_path") if existing.data else None #type: ignore
+    storage_path = existing.data[0].get("storage_path") if existing.data else None
     if storage_path:
-        delete_collection_file(storage_path) #type: ignore
+        delete_collection_file(storage_path)

@@ -44,7 +44,7 @@ def _existing_note_names(project_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]  # type: ignore
+    return [row["name"] for row in result.data]
 
 
 def _own_message_in_project(message_id: str, project_id: str) -> dict:

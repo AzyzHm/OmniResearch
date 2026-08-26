@@ -18,7 +18,7 @@ def _existing_collection_names(project_id: str) -> list[str]:
     result = (
         db.table("collections").select("id, name").eq("project_id", project_id).execute()
     )
-    return [row["name"] for row in result.data]  # type: ignore
+    return [row["name"] for row in result.data]
 
 
 @router.get("/projects/{project_id}/collections", response_model=list[CollectionOut])

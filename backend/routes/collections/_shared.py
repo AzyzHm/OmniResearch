@@ -46,4 +46,4 @@ def _existing_urls(collection_id: str) -> set[str]:
         .eq("source_type", "url")
         .execute()
     )
-    return {row["name"] for row in result.data} # type: ignore
+    return {row["name"] for row in result.data}

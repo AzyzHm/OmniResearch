@@ -18,7 +18,7 @@ def _existing_chat_names(project_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]  # type: ignore
+    return [row["name"] for row in result.data]
 
 
 @router.get("/projects/{project_id}/chats", response_model=list[ChatOut])

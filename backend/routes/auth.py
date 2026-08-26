@@ -1,13 +1,12 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
+from config.auth import create_access_token, get_current_user, hash_password, verify_password
 from config.settings import get_settings
-
-from config.auth import create_access_token, hash_password, verify_password, get_current_user
 from database.db import get_supabase
-from models.auth import LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse
+from models.auth import CurrentUserResponse, LoginRequest, RegisterRequest, TokenResponse
 from models.log import MessageResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -87,7 +86,7 @@ async def login(payload: LoginRequest, request: Request, response: Response):
         {
             "user_id": user["id"],
             "username": user["username"],
-            "login_time": datetime.now(timezone.utc).isoformat(),
+            "login_time": datetime.now(UTC).isoformat(),
             "ip_address": ip,
         }
     ).execute()

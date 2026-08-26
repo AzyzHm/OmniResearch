@@ -39,7 +39,7 @@ async def list_note_items(
         .order("created_at", desc=False)
         .execute()
     )
-    return [_flatten_item(row) for row in result.data]  # type: ignore
+    return [_flatten_item(row) for row in result.data]
 
 
 @router.post(

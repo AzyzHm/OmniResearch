@@ -24,7 +24,7 @@ async def search_web_route(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Search error: {exc}",
-        )
+        ) from exc
 
     record_search_usage(
         user_id=current_user["sub"],
