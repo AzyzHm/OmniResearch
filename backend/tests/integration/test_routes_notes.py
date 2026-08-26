@@ -1,11 +1,12 @@
 from tests.setup.factories import message_row, note_item_row, note_row, project_row
 
 
-def message_with_chat(msg_id="msg-1", chat_id="chat-1", project_id="proj-1",
-                       role="assistant", content="Hi there!", sources=None):
+def message_with_chat(
+    msg_id="msg-1", chat_id="chat-1", project_id="proj-1", role="assistant", content="Hi there!", sources=None
+):
     row = message_row(msg_id, chat_id, role, content)
-    row["sources"] = sources #type: ignore
-    row["chats"] = {"project_id": project_id} #type: ignore
+    row["sources"] = sources  # type: ignore
+    row["chats"] = {"project_id": project_id}  # type: ignore
     return row
 
 
@@ -53,9 +54,7 @@ class TestCreateNote:
         db.add_result(data=[project_row()])
         db.add_result(data=[{"id": "note-1", "name": "Key Findings"}])  # existing-names lookup
         db.add_result(data=[note_row(name="Key Findings (2)")])
-        resp = client.post(
-            "/projects/proj-1/notes", json={"name": "Key Findings"}, headers=user_headers
-        )
+        resp = client.post("/projects/proj-1/notes", json={"name": "Key Findings"}, headers=user_headers)
         assert resp.status_code == 201
         assert resp.json()["name"] == "Key Findings (2)"
 
@@ -136,9 +135,7 @@ class TestListNoteItems:
     def test_returns_items_with_message_fields(self, app, user_headers):
         client, db = app
         db.add_result(data=[note_row()])  # ownership
-        db.add_result(data=[
-            note_item_row(sources=[{"index": 1, "source_name": "report.pdf"}])
-        ])
+        db.add_result(data=[note_item_row(sources=[{"index": 1, "source_name": "report.pdf"}])])
         resp = client.get("/notes/note-1/items", headers=user_headers)
         assert resp.status_code == 200
         items = resp.json()
@@ -168,14 +165,13 @@ class TestCreateNoteItem:
 
     def test_success(self, app, user_headers):
         client, db = app
-        db.add_result(data=[note_row()])                    # own note
-        db.add_result(data=[message_with_chat()])            # own message (joined w/ chat->project)
-        db.add_result(data=[])                                # duplicate-save check (none)
-        db.add_result(data=[{"id": "item-1", "note_id": "note-1",
-                              "message_id": "msg-1", "created_at": note_row()["created_at"]}])
-        resp = client.post(
-            "/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers
+        db.add_result(data=[note_row()])  # own note
+        db.add_result(data=[message_with_chat()])  # own message (joined w/ chat->project)
+        db.add_result(data=[])  # duplicate-save check (none)
+        db.add_result(
+            data=[{"id": "item-1", "note_id": "note-1", "message_id": "msg-1", "created_at": note_row()["created_at"]}]
         )
+        resp = client.post("/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers)
         assert resp.status_code == 201
         body = resp.json()
         assert body["message_id"] == "msg-1"
@@ -187,18 +183,14 @@ class TestCreateNoteItem:
         db.add_result(data=[note_row()])
         db.add_result(data=[message_with_chat()])
         db.add_result(data=[{"id": "item-existing"}])
-        resp = client.post(
-            "/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers
-        )
+        resp = client.post("/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers)
         assert resp.status_code == 409
 
     def test_message_not_found(self, app, user_headers):
         client, db = app
         db.add_result(data=[note_row()])
         db.add_result(data=[])
-        resp = client.post(
-            "/notes/note-1/items", json={"message_id": "missing"}, headers=user_headers
-        )
+        resp = client.post("/notes/note-1/items", json={"message_id": "missing"}, headers=user_headers)
         assert resp.status_code == 404
 
     def test_message_from_other_project_rejected(self, app, user_headers):
@@ -206,17 +198,13 @@ class TestCreateNoteItem:
         client, db = app
         db.add_result(data=[note_row(project_id="proj-1")])
         db.add_result(data=[message_with_chat(project_id="proj-OTHER")])
-        resp = client.post(
-            "/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers
-        )
+        resp = client.post("/notes/note-1/items", json={"message_id": "msg-1"}, headers=user_headers)
         assert resp.status_code == 404
 
     def test_note_not_found(self, app, user_headers):
         client, db = app
         db.add_result(data=[])
-        resp = client.post(
-            "/notes/missing/items", json={"message_id": "msg-1"}, headers=user_headers
-        )
+        resp = client.post("/notes/missing/items", json={"message_id": "msg-1"}, headers=user_headers)
         assert resp.status_code == 404
 
 

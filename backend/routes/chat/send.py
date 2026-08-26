@@ -56,25 +56,25 @@ async def send_message(
     )
     history = cast(list[dict[str, Any]], list(reversed(hist.data)))
 
-    db.table("messages").insert(
-        {"chat_id": chat_id, "role": "user", "content": body.message}
-    ).execute()
+    db.table("messages").insert({"chat_id": chat_id, "role": "user", "content": body.message}).execute()
 
     try:
         graph = get_rag_graph()
-        result = graph.invoke({
-            "project_id": chat["project_id"],
-            "chat_id": chat_id,
-            "user_id": current_user["sub"],
-            "query": body.message,
-            "history": history,
-            "retrieval_mode": body.retrieval_mode,
-            "retrieval_attempts": 0,
-            "needs_retrieval": False,
-            "validation_passed": False,
-            "context_chunks": [],
-            "retrieved_pool": [],
-        })
+        result = graph.invoke(
+            {
+                "project_id": chat["project_id"],
+                "chat_id": chat_id,
+                "user_id": current_user["sub"],
+                "query": body.message,
+                "history": history,
+                "retrieval_mode": body.retrieval_mode,
+                "retrieval_attempts": 0,
+                "needs_retrieval": False,
+                "validation_passed": False,
+                "context_chunks": [],
+                "retrieved_pool": [],
+            }
+        )
         reply = result.get("answer") or "⚠️ The model did not return a response."
         sources = result.get("sources", [])
     except Exception as exc:
@@ -139,9 +139,7 @@ async def send_message_stream(
     )
     history = cast(list[dict[str, Any]], list(reversed(hist.data)))
 
-    db.table("messages").insert(
-        {"chat_id": chat_id, "role": "user", "content": body.message}
-    ).execute()
+    db.table("messages").insert({"chat_id": chat_id, "role": "user", "content": body.message}).execute()
 
     initial_state = {
         "project_id": chat["project_id"],

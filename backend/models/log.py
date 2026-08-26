@@ -15,5 +15,6 @@ class LoginLogListResponse(BaseModel):
     logs: list[LoginLogOut]
     total: int
 
+
 class MessageResponse(BaseModel):
     message: str

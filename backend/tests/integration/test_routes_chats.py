@@ -79,9 +79,7 @@ class TestCreateChat:
         db.add_result(data=[project_row()])
         db.add_result(data=[{"id": "chat-1", "name": "Research Notes"}])
         db.add_result(data=[chat_row(name="Research Notes (2)")])
-        resp = client.post(
-            "/projects/proj-1/chats", json={"name": "Research Notes"}, headers=user_headers
-        )
+        resp = client.post("/projects/proj-1/chats", json={"name": "Research Notes"}, headers=user_headers)
         assert resp.status_code == 201
         assert resp.json()["name"] == "Research Notes (2)"
 
@@ -151,10 +149,12 @@ class TestGetMessages:
     def test_returns_messages_oldest_first(self, app, user_headers):
         client, db = app
         db.add_result(data=[chat_row()])  # ownership check
-        db.add_result(data=[
-            message_row("msg-2", role="assistant", content="Hi there!"),
-            message_row("msg-1", role="user", content="Hello"),
-        ])
+        db.add_result(
+            data=[
+                message_row("msg-2", role="assistant", content="Hi there!"),
+                message_row("msg-1", role="user", content="Hello"),
+            ]
+        )
         resp = client.get("/chats/chat-1/messages", headers=user_headers)
         assert resp.status_code == 200
         messages = resp.json()
@@ -201,13 +201,16 @@ class TestGetMessages:
 
 
 def _queue_send(db, history=None, daily_token_limit=None, tokens_used_today=None):
-    db.add_result(data=[chat_row()])                                   # 1. ownership
-    db.add_result(data=[{"daily_token_limit": daily_token_limit}]       # 2. quota limit
-                   if daily_token_limit is not None else [])
-    db.add_result(data=tokens_used_today or [])                         # 3. quota used
-    db.add_result(data=history or [])                                  # 4. history fetch
-    db.add_result(data=[{}])                                            # 5. insert user msg
-    db.add_result(data=[{}])                                            # 7. insert assistant reply
+    db.add_result(data=[chat_row()])  # 1. ownership
+    db.add_result(
+        data=[{"daily_token_limit": daily_token_limit}]  # 2. quota limit
+        if daily_token_limit is not None
+        else []
+    )
+    db.add_result(data=tokens_used_today or [])  # 3. quota used
+    db.add_result(data=history or [])  # 4. history fetch
+    db.add_result(data=[{}])  # 5. insert user msg
+    db.add_result(data=[{}])  # 7. insert assistant reply
 
 
 class TestSendMessage:
@@ -223,8 +226,7 @@ class TestSendMessage:
     """
 
     def _queue_send(self, db, history=None, daily_token_limit=None, tokens_used_today=None):
-        _queue_send(db, history=history, daily_token_limit=daily_token_limit,
-                    tokens_used_today=tokens_used_today)
+        _queue_send(db, history=history, daily_token_limit=daily_token_limit, tokens_used_today=tokens_used_today)
 
     def test_success_returns_ai_reply(self, app, user_headers):
         client, db = app
@@ -343,9 +345,9 @@ class TestQuotaEnforcement:
 
     def test_message_returns_429_when_quota_exceeded(self, app, user_headers):
         client, db = app
-        db.add_result(data=[chat_row()])                         # ownership
-        db.add_result(data=[{"daily_token_limit": 100}])          # quota limit = 100
-        db.add_result(data=[{"total_tokens": 150}])               # 150 used >= 100
+        db.add_result(data=[chat_row()])  # ownership
+        db.add_result(data=[{"daily_token_limit": 100}])  # quota limit = 100
+        db.add_result(data=[{"total_tokens": 150}])  # 150 used >= 100
         resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 429
         detail = resp.json()["detail"]
@@ -361,9 +363,9 @@ class TestQuotaEnforcement:
 
     def test_message_stream_emits_error_event_when_quota_exceeded(self, app, user_headers):
         client, db = app
-        db.add_result(data=[chat_row()])                         # ownership
-        db.add_result(data=[{"daily_token_limit": 100}])          # quota limit = 100
-        db.add_result(data=[{"total_tokens": 100}])               # exactly at the limit
+        db.add_result(data=[chat_row()])  # ownership
+        db.add_result(data=[{"daily_token_limit": 100}])  # quota limit = 100
+        db.add_result(data=[{"total_tokens": 100}])  # exactly at the limit
         resp = client.post("/chats/chat-1/message/stream", json={"message": "Hello"}, headers=user_headers)
         assert resp.status_code == 200
         assert '"type": "error"' in resp.text
@@ -380,16 +382,12 @@ class TestQuotaEnforcement:
         """Admins (and superadmins) are exempt from the daily quota entirely —
         this exercises the real route, not just the isolated quota service."""
         client, db = app
-        admin_headers_same_owner = {
-            "Authorization": f"Bearer {make_token(role='admin')}"
-        }
-        db.add_result(data=[chat_row()])       # 1. ownership
-        db.add_result(data=[])                 # 2. history fetch
-        db.add_result(data=[{}])               # 3. insert user msg
-        db.add_result(data=[{}])               # 4. insert assistant reply
-        resp = client.post(
-            "/chats/chat-1/message", json={"message": "Hello"}, headers=admin_headers_same_owner
-        )
+        admin_headers_same_owner = {"Authorization": f"Bearer {make_token(role='admin')}"}
+        db.add_result(data=[chat_row()])  # 1. ownership
+        db.add_result(data=[])  # 2. history fetch
+        db.add_result(data=[{}])  # 3. insert user msg
+        db.add_result(data=[{}])  # 4. insert assistant reply
+        resp = client.post("/chats/chat-1/message", json={"message": "Hello"}, headers=admin_headers_same_owner)
         assert resp.status_code == 200
 
 
@@ -397,12 +395,12 @@ class TestSendMessageStream:
     """POST /chats/{chat_id}/message/stream — Server-Sent Events variant."""
 
     def _queue_stream(self, db, history=None):
-        db.add_result(data=[chat_row()])           # ownership
-        db.add_result(data=[])                      # quota limit (default)
-        db.add_result(data=[])                      # quota used (0 tokens)
-        db.add_result(data=history or [])           # history fetch
-        db.add_result(data=[{}])                     # insert user msg
-        db.add_result(data=[{}])                     # insert assistant reply (after stream completes)
+        db.add_result(data=[chat_row()])  # ownership
+        db.add_result(data=[])  # quota limit (default)
+        db.add_result(data=[])  # quota used (0 tokens)
+        db.add_result(data=history or [])  # history fetch
+        db.add_result(data=[{}])  # insert user msg
+        db.add_result(data=[{}])  # insert assistant reply (after stream completes)
 
     def test_stream_returns_200_and_sse_content_type(self, app, user_headers):
         client, db = app
@@ -424,11 +422,11 @@ class TestSendMessageStream:
         """Citations produced by generate_node should reach the SSE done event."""
         client, db = app
         db.rag_graph.answer = "Revenue grew 12% [1]."
-        db.rag_graph.sources = [
-            {"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}
-        ]
+        db.rag_graph.sources = [{"index": 1, "source_name": "q3-report.pdf", "collection_id": "c1", "item_id": "i1"}]
         self._queue_stream(db)
-        resp = client.post("/chats/chat-1/message/stream", json={"message": "How did revenue grow?"}, headers=user_headers)
+        resp = client.post(
+            "/chats/chat-1/message/stream", json={"message": "How did revenue grow?"}, headers=user_headers
+        )
         body = resp.text
         assert '"type": "done"' in body
         assert "q3-report.pdf" in body

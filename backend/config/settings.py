@@ -54,13 +54,10 @@ class Settings(BaseSettings):
     mistral_model: str = mistral_model
     force_mistral: bool = force_mistral.lower() == "true"
 
-
-
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse the comma-separated CORS_ORIGINS string into a clean list."""
         return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
-    
 
 
 @lru_cache(maxsize=1)

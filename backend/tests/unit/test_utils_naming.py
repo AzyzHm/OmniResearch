@@ -27,10 +27,7 @@ class TestNextUniqueName:
     def test_default_new_chat_names_get_numbered(self):
         assert next_unique_name("New Chat", []) == "New Chat"
         assert next_unique_name("New Chat", ["New Chat"]) == "New Chat (2)"
-        assert (
-            next_unique_name("New Chat", ["New Chat", "New Chat (2)"])
-            == "New Chat (3)"
-        )
+        assert next_unique_name("New Chat", ["New Chat", "New Chat (2)"]) == "New Chat (3)"
 
     def test_empty_existing_names_iterable(self):
         assert next_unique_name("Anything", []) == "Anything"

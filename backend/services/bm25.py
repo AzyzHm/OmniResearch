@@ -44,7 +44,10 @@ def sparse_vector_from_metadata(meta: dict) -> tuple[list[int], list[float]]:
 
 
 def sparse_dot(
-    q_indices: list[int], q_values: list[float], d_indices: list[int], d_values: list[float],
+    q_indices: list[int],
+    q_values: list[float],
+    d_indices: list[int],
+    d_values: list[float],
 ) -> float:
     """
     Sparse dot product between a query BM25 vector and a document BM25

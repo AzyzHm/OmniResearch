@@ -57,22 +57,14 @@ async def create_note_item(
     message = _own_message_in_project(body.message_id, note["project_id"])
     db = get_supabase()
 
-    existing = (
-        db.table("note_items")
-        .select("id")
-        .eq("note_id", note_id)
-        .eq("message_id", body.message_id)
-        .execute()
-    )
+    existing = db.table("note_items").select("id").eq("note_id", note_id).eq("message_id", body.message_id).execute()
     if existing.data:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This message is already saved to this note.",
         )
 
-    result = db.table("note_items").insert(
-        {"note_id": note_id, "message_id": body.message_id}
-    ).execute()
+    result = db.table("note_items").insert({"note_id": note_id, "message_id": body.message_id}).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to save message to note.")
 

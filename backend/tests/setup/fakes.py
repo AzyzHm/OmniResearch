@@ -6,12 +6,14 @@ class FakeResult:
 
 class FakeQuery:
     """Fluent query builder whose .execute() pops the next queued result."""
+
     def __init__(self, result: FakeResult):
         self._result = result
 
     def __getattr__(self, name):
         def _method(*args, **kwargs):
             return self
+
         return _method
 
     def execute(self) -> FakeResult:
@@ -24,6 +26,7 @@ class FakeRAGGraph:
     `.sources`, or `.raise_exc` before making a request to control the
     outcome of POST /chats/{id}/message and /message/stream.
     """
+
     def __init__(self, answer="Mocked AI reply", sources=None, raise_exc=None):
         self.answer = answer
         self.sources = sources if sources is not None else []
@@ -48,6 +51,7 @@ class FakeDB:
     """FIFO queue of results. Each route call to db.table(...).execute()
     pops the next queued FakeResult, so tests must queue results in the
     exact order the route under test will consume them."""
+
     def __init__(self):
         self._queue: list[FakeResult] = []
         self._default = FakeResult(data=[], count=0)
@@ -72,5 +76,6 @@ class NoOpSweepDB:
     same queue it would silently eat the first result every test queues,
     corrupting unrelated assertions instead of failing loudly.
     """
+
     def table(self, _name: str) -> FakeQuery:
         return FakeQuery(FakeResult(data=[]))

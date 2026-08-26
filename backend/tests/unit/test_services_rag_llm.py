@@ -3,6 +3,7 @@ import services.rag_llm as rag_llm
 
 class _FakeGemini:
     """Records every call and returns a pre-set canned response."""
+
     def __init__(self, response="DIRECT"):
         self.response = response
         self.calls = []

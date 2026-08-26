@@ -91,5 +91,7 @@ def delete_item_chunks(collection_id: str, item_id: str) -> None:
     except Exception as exc:
         logger.error(
             "Failed to delete chunks for item %s in collection %s: %s",
-            item_id, collection_id, exc,
+            item_id,
+            collection_id,
+            exc,
         )

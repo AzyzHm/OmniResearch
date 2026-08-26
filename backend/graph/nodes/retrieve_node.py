@@ -20,7 +20,6 @@ def retrieve_node(state: RAGState) -> dict:
     mode = state.get("retrieval_mode", "semantic")
     existing_context = state.get("context_chunks", [])
 
-
     query = state.get("missing_query") or state.get("refined_query") or state["query"]
     logger.info("retrieve_node: attempt %d, mode = %s, query = %r", attempts + 1, mode, query)
 

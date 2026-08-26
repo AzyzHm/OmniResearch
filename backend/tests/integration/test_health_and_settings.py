@@ -22,6 +22,7 @@ class TestSettings:
     def test_cors_origins_parsed_correctly(self):
         get_settings.cache_clear()
         import os
+
         os.environ["CORS_ORIGINS"] = "http://localhost:8501,http://127.0.0.1:8501"
         s = get_settings()
         assert isinstance(s.cors_origins_list, list)

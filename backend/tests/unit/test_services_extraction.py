@@ -78,21 +78,15 @@ class TestExtractPdf:
         assert extract_pdf(pdf_bytes) == "Page one text\n\nPage two text"
 
     def test_result_is_stripped_of_surrounding_whitespace(self, monkeypatch):
-        monkeypatch.setattr(
-            extraction, "PdfReader", lambda _stream: _FakeReader(["  leading and trailing  "])
-        )
+        monkeypatch.setattr(extraction, "PdfReader", lambda _stream: _FakeReader(["  leading and trailing  "]))
         assert extract_pdf(b"irrelevant") == "leading and trailing"
 
     def test_page_with_no_extractable_text_falls_back_to_empty_string(self, monkeypatch):
-        monkeypatch.setattr(
-            extraction, "PdfReader", lambda _stream: _FakeReader([None, "Real text"])
-        )
+        monkeypatch.setattr(extraction, "PdfReader", lambda _stream: _FakeReader([None, "Real text"]))
         assert extract_pdf(b"irrelevant") == "Real text"
 
     def test_blank_page_between_real_pages_leaves_empty_gap(self, monkeypatch):
-        monkeypatch.setattr(
-            extraction, "PdfReader", lambda _stream: _FakeReader(["First", None, "Third"])
-        )
+        monkeypatch.setattr(extraction, "PdfReader", lambda _stream: _FakeReader(["First", None, "Third"]))
         assert extract_pdf(b"irrelevant") == "First\n\n\n\nThird"
 
     def test_all_pages_empty_returns_empty_string(self, monkeypatch):
@@ -116,9 +110,7 @@ class TestCountPdfPages:
     def test_counts_pages_even_when_text_is_unextractable(self, monkeypatch):
         """Page count comes from the reader's page list, independent of
         whether any text could be extracted from those pages."""
-        monkeypatch.setattr(
-            extraction, "PdfReader", lambda _stream: _FakeReader([None, None])
-        )
+        monkeypatch.setattr(extraction, "PdfReader", lambda _stream: _FakeReader([None, None]))
         assert count_pdf_pages(b"irrelevant") == 2
 
 

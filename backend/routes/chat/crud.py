@@ -52,9 +52,7 @@ async def create_chat(
     db = get_supabase()
     existing_names = _existing_chat_names(project_id)
     unique_name = next_unique_name(body.name, existing_names)
-    result = db.table("chats").insert(
-        {"project_id": project_id, "name": unique_name}
-    ).execute()
+    result = db.table("chats").insert({"project_id": project_id, "name": unique_name}).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create chat.")
     row: Any = result.data[0]
@@ -71,12 +69,7 @@ async def rename_chat(
     db = get_supabase()
     existing_names = _existing_chat_names(chat["project_id"], exclude_id=chat_id)
     unique_name = next_unique_name(body.name, existing_names)
-    result = (
-        db.table("chats")
-        .update({"name": unique_name})
-        .eq("id", chat_id)
-        .execute()
-    )
+    result = db.table("chats").update({"name": unique_name}).eq("id", chat_id).execute()
     row: Any = result.data[0]
     return row
 

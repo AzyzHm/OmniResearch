@@ -424,14 +424,15 @@ Built with LangGraph. Given a user query, the recent chat history, and a chosen 
 class _RAGStateRequired(TypedDict):
     project_id: str
     chat_id: str
-    user_id: str              # for usage attribution
-    query: str                # original message
-    history: list[dict]       # prior messages, excludes the new query
-    retrieval_mode: str       # "semantic" | "keyword" | "hybrid"
+    user_id: str  # for usage attribution
+    query: str  # original message
+    history: list[dict]  # prior messages, excludes the new query
+    retrieval_mode: str  # "semantic" | "keyword" | "hybrid"
+
 
 class RAGState(_RAGStateRequired, total=False):
     refined_query: str
-    missing_query: str        # validator's "what's missing" follow-up query, set on a retry
+    missing_query: str  # validator's "what's missing" follow-up query, set on a retry
     needs_retrieval: bool
     retrieved_pool: list[dict]
     context_chunks: list[dict]

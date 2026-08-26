@@ -58,9 +58,6 @@ def rerank(query: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
     pairs = [(query, chunk["content"]) for chunk in chunks]
     scores = model.predict(pairs)
 
-    scored = [
-        {**chunk, "rerank_score": float(score)}
-        for chunk, score in zip(chunks, scores, strict=True)
-    ]
+    scored = [{**chunk, "rerank_score": float(score)} for chunk, score in zip(chunks, scores, strict=True)]
     scored.sort(key=lambda c: c["rerank_score"], reverse=True)
     return scored[:top_k]

@@ -16,14 +16,21 @@ os.environ["TAVILY_API_KEY"] = "fake-tavily-key"
 os.environ["EXA_API_KEY"] = "fake-exa-key"
 
 for _mod in [
-    "chromadb", "chromadb.config", "chromadb.base_types",
-    "chromadb.utils", "chromadb.utils.embedding_functions",
-    "google", "google.genai",
+    "chromadb",
+    "chromadb.config",
+    "chromadb.base_types",
+    "chromadb.utils",
+    "chromadb.utils.embedding_functions",
+    "google",
+    "google.genai",
     "supabase",
     "ollama",
     "exa_py",
     "tavily",
-    "torch", "torch.cuda", "torch.backends", "torch.backends.mps",
+    "torch",
+    "torch.cuda",
+    "torch.backends",
+    "torch.backends.mps",
     "sentence_transformers",
 ]:
     sys.modules.setdefault(_mod, MagicMock())

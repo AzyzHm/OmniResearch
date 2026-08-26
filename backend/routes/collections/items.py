@@ -95,13 +95,7 @@ async def get_item_content(
     """
     _own_collection(collection_id, current_user["sub"])
     db = get_supabase()
-    result = (
-        db.table("collection_items")
-        .select("*")
-        .eq("id", item_id)
-        .eq("collection_id", collection_id)
-        .execute()
-    )
+    result = db.table("collection_items").select("*").eq("id", item_id).eq("collection_id", collection_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found.")
     item: Any = result.data[0]

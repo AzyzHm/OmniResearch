@@ -31,9 +31,7 @@ def _format_context(chunks: list[dict[str, Any]]) -> str:
 
 def _ask(prompt: str, temperature: float = 0.0, user_id: str | None = None) -> str:
     """One-shot LLM call for meta-tasks (routing/refining/validating) — no chat history threading."""
-    response = get_gemini_response(
-        [{"role": "user", "content": prompt}], temperature=temperature, user_id=user_id
-    )
+    response = get_gemini_response([{"role": "user", "content": prompt}], temperature=temperature, user_id=user_id)
     return response.strip()
 
 
@@ -66,7 +64,6 @@ def validate_context(
         return True, None
 
     if upper.startswith("INSUFFICIENT"):
-
         _, _, missing = answer.partition(":")
         missing = missing.strip()
         return False, (missing or query)

@@ -37,11 +37,13 @@ def search_exa(query: str, num_results: int) -> list[dict]:
     for r in getattr(response, "results", None) or []:
         highlights = getattr(r, "highlights", None) or []
         content = "\n\n".join(h for h in highlights if h).strip()
-        results.append({
-            "url": getattr(r, "url", "") or "",
-            "title": getattr(r, "title", "") or "",
-            "content": content,
-        })
+        results.append(
+            {
+                "url": getattr(r, "url", "") or "",
+                "title": getattr(r, "title", "") or "",
+                "content": content,
+            }
+        )
     return results
 
 

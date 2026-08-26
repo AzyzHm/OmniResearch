@@ -42,7 +42,7 @@ async def get_logs(
         query = query.ilike("username", f"%{username}%")
 
     result = query.execute()
-    logs  = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
+    logs = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
 
     count_query = db.table("login_logs").select("id", count="exact").in_("user_id", scoped_ids)
     if username:

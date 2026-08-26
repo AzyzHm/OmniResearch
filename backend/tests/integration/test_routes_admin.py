@@ -2,7 +2,6 @@ from tests.setup.factories import user_row
 
 
 class TestAdminRoutes:
-
     def test_list_users_requires_admin(self, app, user_headers):
         client, _ = app
         resp = client.get("/admin/users", headers=user_headers)
@@ -40,10 +39,12 @@ class TestAdminRoutes:
 
     def test_list_users_superadmin_excludes_self(self, app, superadmin_headers):
         client, db = app
-        db.add_result(data=[
-            user_row("u1", "alice", role="user"),
-            user_row("superadmin-001", "root", role="superadmin"),
-        ])
+        db.add_result(
+            data=[
+                user_row("u1", "alice", role="user"),
+                user_row("superadmin-001", "root", role="superadmin"),
+            ]
+        )
         resp = client.get("/admin/users", headers=superadmin_headers)
         assert resp.status_code == 200
         ids = [u["id"] for u in resp.json()["users"]]
@@ -70,7 +71,6 @@ class TestAdminRoutes:
         db.add_result(data=[])
         resp = client.put("/admin/users/ghost/approve", headers=admin_headers)
         assert resp.status_code == 404
-
 
     def test_change_role_to_admin(self, app, superadmin_headers):
         client, db = app
@@ -154,11 +154,16 @@ class TestAdminRoutes:
 
     def test_get_logs(self, app, admin_headers):
         client, db = app
-        log = {"id": "log-1", "user_id": "u1", "username": "alice",
-                "login_time": "2025-01-01T00:00:00+00:00", "ip_address": "127.0.0.1"}
+        log = {
+            "id": "log-1",
+            "user_id": "u1",
+            "username": "alice",
+            "login_time": "2025-01-01T00:00:00+00:00",
+            "ip_address": "127.0.0.1",
+        }
         db.add_result(data=[{"id": "u1"}])  # scoped user-ids query
-        db.add_result(data=[log])            # logs query
-        db.add_result(data=[], count=1)      # count query
+        db.add_result(data=[log])  # logs query
+        db.add_result(data=[], count=1)  # count query
         resp = client.get("/admin/logs", headers=admin_headers)
         assert resp.status_code == 200
         body = resp.json()
@@ -182,12 +187,11 @@ class TestAdminRoutes:
         resp = client.get("/admin/logs", headers=admin_headers)
         assert resp.status_code == 200
 
-
     def test_get_stats(self, app, admin_headers):
         client, db = app
         db.add_result(data=[user_row("u1", "alice", role="user", is_approved=True)])  # scoped users
-        db.add_result(data=[], count=3)     # login_logs count
-        db.add_result(data=[])              # recent logins
+        db.add_result(data=[], count=3)  # login_logs count
+        db.add_result(data=[])  # recent logins
         resp = client.get("/admin/stats", headers=admin_headers)
         assert resp.status_code == 200
         body = resp.json()
@@ -206,10 +210,12 @@ class TestAdminRoutes:
 
     def test_get_stats_superadmin_sees_admin_breakdown(self, app, superadmin_headers):
         client, db = app
-        db.add_result(data=[
-            user_row("u1", "alice", role="user"),
-            user_row("u2", "bob", role="admin"),
-        ])
+        db.add_result(
+            data=[
+                user_row("u1", "alice", role="user"),
+                user_row("u2", "bob", role="admin"),
+            ]
+        )
         db.add_result(data=[], count=5)
         db.add_result(data=[])
         resp = client.get("/admin/stats", headers=superadmin_headers)

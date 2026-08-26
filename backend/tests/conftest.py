@@ -39,6 +39,7 @@ def app():
     get_settings.cache_clear()
 
     from main import app as _app
+
     with TestClient(_app, raise_server_exceptions=True) as client:
         yield client, fake_db
 

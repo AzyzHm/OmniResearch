@@ -129,21 +129,28 @@ class TestChatModels:
 
     def test_message_request_rejects_invalid_retrieval_mode(self):
         with pytest.raises(ValidationError):
-            ChatMessageRequest(message="Hello", retrieval_mode="bm25") # type: ignore
+            ChatMessageRequest(message="Hello", retrieval_mode="bm25")  # type: ignore
 
 
 class TestUserOut:
     def test_daily_token_limit_defaults_when_omitted(self):
         u = UserOut(
-            id="u1", username="alice", role="user", is_approved=True,
-            created_at="2025-01-01T00:00:00+00:00", # type: ignore
+            id="u1",
+            username="alice",
+            role="user",
+            is_approved=True,
+            created_at="2025-01-01T00:00:00+00:00",  # type: ignore
         )
         assert u.daily_token_limit == 80_000
 
     def test_daily_token_limit_accepts_explicit_value(self):
         u = UserOut(
-            id="u1", username="alice", role="user", is_approved=True,
-            created_at="2025-01-01T00:00:00+00:00", daily_token_limit=5000, # type: ignore
+            id="u1",
+            username="alice",
+            role="user",
+            is_approved=True,
+            created_at="2025-01-01T00:00:00+00:00",
+            daily_token_limit=5000,  # type: ignore
         )
         assert u.daily_token_limit == 5000
 

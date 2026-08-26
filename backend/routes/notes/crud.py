@@ -44,9 +44,7 @@ async def create_note(
     existing_names = _existing_note_names(project_id)
     unique_name = next_unique_name(body.name, existing_names)
 
-    result = db.table("notes").insert(
-        {"project_id": project_id, "name": unique_name}
-    ).execute()
+    result = db.table("notes").insert({"project_id": project_id, "name": unique_name}).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create note.")
 
@@ -64,12 +62,7 @@ async def rename_note(
     db = get_supabase()
     existing_names = _existing_note_names(note["project_id"], exclude_id=note_id)
     unique_name = next_unique_name(body.name, existing_names)
-    result = (
-        db.table("notes")
-        .update({"name": unique_name})
-        .eq("id", note_id)
-        .execute()
-    )
+    result = db.table("notes").update({"name": unique_name}).eq("id", note_id).execute()
     row: Any = result.data[0]
     return row
 

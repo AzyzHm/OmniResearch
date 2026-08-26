@@ -19,7 +19,11 @@ async def list_users(
     pending_only: bool = Query(False, description="Return only unapproved accounts"),
 ):
     db = get_supabase()
-    query = db.table("users").select("id, username, role, is_approved, created_at, daily_token_limit").order("created_at", desc=True)
+    query = (
+        db.table("users")
+        .select("id, username, role, is_approved, created_at, daily_token_limit")
+        .order("created_at", desc=True)
+    )
     if pending_only:
         query = query.eq("is_approved", False)
     result = query.execute()
@@ -49,7 +53,7 @@ async def approve_user(user_id: str, _: dict = Depends(require_admin)):
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    user : Any = result.data[0]
+    user: Any = result.data[0]
     if user["is_approved"]:
         return MessageResponse(message=f"User '{user['username']}' is already approved.")
 
@@ -104,7 +108,7 @@ async def delete_user(user_id: str, current_admin: dict = Depends(require_admin)
             detail="You cannot delete your own account.",
         )
 
-    result : Any = db.table("users").select("id, username, role").eq("id", user_id).execute()
+    result: Any = db.table("users").select("id, username, role").eq("id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 

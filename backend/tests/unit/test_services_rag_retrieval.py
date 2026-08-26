@@ -11,6 +11,7 @@ class _FakeSparseVector:
 class _FakeChromaCollection:
     """Stand-in for a Chroma collection supporting .get() (plain fetch) and
     .query() (vector search), each returning canned results."""
+
     def __init__(self, get_result=None, query_result=None):
         self._get_result = get_result or {"documents": [], "metadatas": []}
         self._query_result = query_result or {"documents": [[]], "metadatas": [[]], "distances": [[]]}
@@ -25,6 +26,7 @@ class _FakeChromaCollection:
         self.query_calls.append(kwargs)
         return self._query_result
 
+
 class TestGetActiveItemsByCollection:
     def test_no_collections_returns_empty_dict(self, monkeypatch):
         db = FakeDB()
@@ -35,11 +37,13 @@ class TestGetActiveItemsByCollection:
     def test_groups_items_by_collection_id(self, monkeypatch):
         db = FakeDB()
         db.add_result(data=[{"id": "col-1"}, {"id": "col-2"}])
-        db.add_result(data=[
-            {"id": "item-1", "collection_id": "col-1"},
-            {"id": "item-2", "collection_id": "col-1"},
-            {"id": "item-3", "collection_id": "col-2"},
-        ])
+        db.add_result(
+            data=[
+                {"id": "item-1", "collection_id": "col-1"},
+                {"id": "item-2", "collection_id": "col-1"},
+                {"id": "item-3", "collection_id": "col-2"},
+            ]
+        )
         monkeypatch.setattr(rag_retrieval, "get_supabase", lambda: db)
 
         result = rag_retrieval.get_active_items_by_collection("proj-1")
@@ -64,6 +68,7 @@ class TestGetActiveItemsByCollection:
         rag_retrieval.get_active_items_by_collection("proj-1")
         assert calls == ["collections"]
 
+
 class TestFetchAllActiveChunks:
     def test_no_active_items_returns_empty(self, monkeypatch):
         monkeypatch.setattr(rag_retrieval, "get_active_items_by_collection", lambda pid: {})
@@ -71,14 +76,23 @@ class TestFetchAllActiveChunks:
 
     def test_builds_chunks_with_bm25_metadata(self, monkeypatch):
         monkeypatch.setattr(
-            rag_retrieval, "get_active_items_by_collection",
+            rag_retrieval,
+            "get_active_items_by_collection",
             lambda pid: {"col-1": ["item-1"]},
         )
-        fake_collection = _FakeChromaCollection(get_result={
-            "documents": ["chunk text"],
-            "metadatas": [{"source_name": "doc.pdf", "item_id": "item-1",
-                            "bm25_indices": "[1, 2]", "bm25_values": "[0.5, 0.5]"}],
-        })
+        fake_collection = _FakeChromaCollection(
+            get_result={
+                "documents": ["chunk text"],
+                "metadatas": [
+                    {
+                        "source_name": "doc.pdf",
+                        "item_id": "item-1",
+                        "bm25_indices": "[1, 2]",
+                        "bm25_values": "[0.5, 0.5]",
+                    }
+                ],
+            }
+        )
         monkeypatch.setattr(rag_retrieval, "get_chroma_collection", lambda cid: fake_collection)
 
         chunks = rag_retrieval._fetch_all_active_chunks("proj-1")
@@ -91,12 +105,16 @@ class TestFetchAllActiveChunks:
 
     def test_missing_source_name_defaults_to_unknown(self, monkeypatch):
         monkeypatch.setattr(
-            rag_retrieval, "get_active_items_by_collection",
+            rag_retrieval,
+            "get_active_items_by_collection",
             lambda pid: {"col-1": ["item-1"]},
         )
-        fake_collection = _FakeChromaCollection(get_result={
-            "documents": ["chunk text"], "metadatas": [{}],
-        })
+        fake_collection = _FakeChromaCollection(
+            get_result={
+                "documents": ["chunk text"],
+                "metadatas": [{}],
+            }
+        )
         monkeypatch.setattr(rag_retrieval, "get_chroma_collection", lambda cid: fake_collection)
         chunks = rag_retrieval._fetch_all_active_chunks("proj-1")
         assert chunks[0]["source_name"] == "unknown source"
@@ -105,12 +123,16 @@ class TestFetchAllActiveChunks:
         """If a chroma collection can't be opened (e.g. it was deleted), that
         collection's chunks are silently skipped rather than failing retrieval."""
         monkeypatch.setattr(
-            rag_retrieval, "get_active_items_by_collection",
+            rag_retrieval,
+            "get_active_items_by_collection",
             lambda pid: {"col-1": ["item-1"], "col-2": ["item-2"]},
         )
-        good_collection = _FakeChromaCollection(get_result={
-            "documents": ["ok"], "metadatas": [{"item_id": "item-2"}],
-        })
+        good_collection = _FakeChromaCollection(
+            get_result={
+                "documents": ["ok"],
+                "metadatas": [{"item_id": "item-2"}],
+            }
+        )
 
         def _get_chroma(cid):
             if cid == "col-1":
@@ -122,6 +144,7 @@ class TestFetchAllActiveChunks:
         assert len(chunks) == 1
         assert chunks[0]["content"] == "ok"
 
+
 class TestRetrievePoolSemantic:
     def test_no_active_items_returns_empty(self, monkeypatch):
         monkeypatch.setattr(rag_retrieval, "get_active_items_by_collection", lambda pid: {})
@@ -129,15 +152,18 @@ class TestRetrievePoolSemantic:
 
     def test_sorts_by_distance_ascending_and_truncates_to_pool_size(self, monkeypatch):
         monkeypatch.setattr(
-            rag_retrieval, "get_active_items_by_collection",
+            rag_retrieval,
+            "get_active_items_by_collection",
             lambda pid: {"col-1": ["item-1", "item-2", "item-3"]},
         )
         monkeypatch.setattr(rag_retrieval, "embed_texts", lambda texts: [[0.1, 0.2]])
-        fake_collection = _FakeChromaCollection(query_result={
-            "documents": [["far", "near", "middle"]],
-            "metadatas": [[{"item_id": "1"}, {"item_id": "2"}, {"item_id": "3"}]],
-            "distances": [[0.9, 0.1, 0.5]],
-        })
+        fake_collection = _FakeChromaCollection(
+            query_result={
+                "documents": [["far", "near", "middle"]],
+                "metadatas": [[{"item_id": "1"}, {"item_id": "2"}, {"item_id": "3"}]],
+                "distances": [[0.9, 0.1, 0.5]],
+            }
+        )
         monkeypatch.setattr(rag_retrieval, "get_chroma_collection", lambda cid: fake_collection)
 
         pool = rag_retrieval._retrieve_pool_semantic("proj-1", "q", pool_size=2)
@@ -147,17 +173,20 @@ class TestRetrievePoolSemantic:
 
     def test_embeds_query_exactly_once(self, monkeypatch):
         monkeypatch.setattr(
-            rag_retrieval, "get_active_items_by_collection",
+            rag_retrieval,
+            "get_active_items_by_collection",
             lambda pid: {"col-1": ["item-1"], "col-2": ["item-2"]},
         )
         embed_calls = []
         monkeypatch.setattr(
-            rag_retrieval, "embed_texts",
+            rag_retrieval,
+            "embed_texts",
             lambda texts: embed_calls.append(texts) or [[0.1, 0.2]],
         )
         monkeypatch.setattr(rag_retrieval, "get_chroma_collection", lambda cid: _FakeChromaCollection())
         rag_retrieval._retrieve_pool_semantic("proj-1", "my query", pool_size=5)
         assert embed_calls == [["my query"]]
+
 
 class TestRetrievePoolKeyword:
     def test_no_chunks_returns_empty(self, monkeypatch):
@@ -166,10 +195,22 @@ class TestRetrievePoolKeyword:
 
     def test_filters_out_zero_score_chunks(self, monkeypatch):
         chunks = [
-            {"content": "matches", "source_name": "s", "collection_id": "c", "item_id": "i1",
-             "_bm25_indices": [1], "_bm25_values": [1.0]},
-            {"content": "no overlap", "source_name": "s", "collection_id": "c", "item_id": "i2",
-             "_bm25_indices": [99], "_bm25_values": [1.0]},
+            {
+                "content": "matches",
+                "source_name": "s",
+                "collection_id": "c",
+                "item_id": "i1",
+                "_bm25_indices": [1],
+                "_bm25_values": [1.0],
+            },
+            {
+                "content": "no overlap",
+                "source_name": "s",
+                "collection_id": "c",
+                "item_id": "i2",
+                "_bm25_indices": [99],
+                "_bm25_values": [1.0],
+            },
         ]
         monkeypatch.setattr(rag_retrieval, "_fetch_all_active_chunks", lambda pid: chunks)
         monkeypatch.setattr(rag_retrieval, "bm25_sparse_vector", lambda q: _FakeSparseVector([1], [1.0]))
@@ -181,10 +222,22 @@ class TestRetrievePoolKeyword:
 
     def test_higher_score_sorts_first(self, monkeypatch):
         chunks = [
-            {"content": "weak match", "source_name": "s", "collection_id": "c", "item_id": "i1",
-             "_bm25_indices": [1], "_bm25_values": [0.1]},
-            {"content": "strong match", "source_name": "s", "collection_id": "c", "item_id": "i2",
-             "_bm25_indices": [1], "_bm25_values": [0.9]},
+            {
+                "content": "weak match",
+                "source_name": "s",
+                "collection_id": "c",
+                "item_id": "i1",
+                "_bm25_indices": [1],
+                "_bm25_values": [0.1],
+            },
+            {
+                "content": "strong match",
+                "source_name": "s",
+                "collection_id": "c",
+                "item_id": "i2",
+                "_bm25_indices": [1],
+                "_bm25_values": [0.9],
+            },
         ]
         monkeypatch.setattr(rag_retrieval, "_fetch_all_active_chunks", lambda pid: chunks)
         monkeypatch.setattr(rag_retrieval, "bm25_sparse_vector", lambda q: _FakeSparseVector([1], [1.0]))
@@ -194,8 +247,14 @@ class TestRetrievePoolKeyword:
 
     def test_truncates_to_pool_size(self, monkeypatch):
         chunks = [
-            {"content": str(i), "source_name": "s", "collection_id": "c", "item_id": str(i),
-             "_bm25_indices": [1], "_bm25_values": [float(i)]}
+            {
+                "content": str(i),
+                "source_name": "s",
+                "collection_id": "c",
+                "item_id": str(i),
+                "_bm25_indices": [1],
+                "_bm25_values": [float(i)],
+            }
             for i in range(5)
         ]
         monkeypatch.setattr(rag_retrieval, "_fetch_all_active_chunks", lambda pid: chunks)
@@ -203,6 +262,7 @@ class TestRetrievePoolKeyword:
 
         pool = rag_retrieval._retrieve_pool_keyword("proj-1", "q", pool_size=2)
         assert len(pool) == 2
+
 
 class TestRetrievePoolHybrid:
     def test_calls_both_semantic_and_keyword_with_double_pool_size(self, monkeypatch):
@@ -226,11 +286,13 @@ class TestRetrievePoolHybrid:
         semantic_only = {"content": "semantic only", "collection_id": "c", "item_id": "2"}
 
         monkeypatch.setattr(
-            rag_retrieval, "_retrieve_pool_semantic",
+            rag_retrieval,
+            "_retrieve_pool_semantic",
             lambda pid, q, size: [shared_chunk, semantic_only],
         )
         monkeypatch.setattr(
-            rag_retrieval, "_retrieve_pool_keyword",
+            rag_retrieval,
+            "_retrieve_pool_keyword",
             lambda pid, q, size: [shared_chunk],
         )
 
@@ -241,24 +303,29 @@ class TestRetrievePoolHybrid:
     def test_deduplicates_the_same_chunk_across_rankings(self, monkeypatch):
         shared_chunk = {"content": "shared", "collection_id": "c", "item_id": "1"}
         monkeypatch.setattr(
-            rag_retrieval, "_retrieve_pool_semantic", lambda pid, q, size: [shared_chunk],
+            rag_retrieval,
+            "_retrieve_pool_semantic",
+            lambda pid, q, size: [shared_chunk],
         )
         monkeypatch.setattr(
-            rag_retrieval, "_retrieve_pool_keyword", lambda pid, q, size: [dict(shared_chunk)],
+            rag_retrieval,
+            "_retrieve_pool_keyword",
+            lambda pid, q, size: [dict(shared_chunk)],
         )
         pool = rag_retrieval._retrieve_pool_hybrid("proj-1", "q", pool_size=10)
         assert len(pool) == 1
 
     def test_truncates_to_pool_size(self, monkeypatch):
-        semantic_chunks = [
-            {"content": str(i), "collection_id": "c", "item_id": str(i)} for i in range(10)
-        ]
+        semantic_chunks = [{"content": str(i), "collection_id": "c", "item_id": str(i)} for i in range(10)]
         monkeypatch.setattr(
-            rag_retrieval, "_retrieve_pool_semantic", lambda pid, q, size: semantic_chunks,
+            rag_retrieval,
+            "_retrieve_pool_semantic",
+            lambda pid, q, size: semantic_chunks,
         )
         monkeypatch.setattr(rag_retrieval, "_retrieve_pool_keyword", lambda pid, q, size: [])
         pool = rag_retrieval._retrieve_pool_hybrid("proj-1", "q", pool_size=3)
         assert len(pool) == 3
+
 
 class TestRetrievePoolDispatcher:
     def test_semantic_mode_calls_semantic_strategy(self, monkeypatch):

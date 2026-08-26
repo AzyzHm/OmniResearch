@@ -13,7 +13,8 @@ class TestUploadCollectionFile:
         bucket = fake_db.storage.from_.return_value
         fake_db.storage.from_.assert_called_once_with("collection-files")
         bucket.upload.assert_called_once_with(
-            "col-1/item-1/report.pdf", b"raw",
+            "col-1/item-1/report.pdf",
+            b"raw",
             {"content-type": "application/pdf", "upsert": "true"},
         )
 
@@ -48,9 +49,7 @@ class TestDeleteCollectionFile:
 
         file_storage.delete_collection_file("col-1/item-1/report.pdf")
 
-        fake_db.storage.from_.return_value.remove.assert_called_once_with(
-            ["col-1/item-1/report.pdf"]
-        )
+        fake_db.storage.from_.return_value.remove.assert_called_once_with(["col-1/item-1/report.pdf"])
 
     def test_swallows_errors_so_item_deletion_never_blocks(self, monkeypatch, capsys):
         fake_db = MagicMock()

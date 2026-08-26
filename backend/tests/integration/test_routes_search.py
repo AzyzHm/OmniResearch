@@ -5,7 +5,8 @@ class TestSearchWebRoute:
     def test_success_returns_results(self, app, user_headers, monkeypatch):
         client, db = app
         monkeypatch.setattr(
-            r_search, "search_web",
+            r_search,
+            "search_web",
             lambda **kw: [{"url": "https://example.com", "title": "Example", "content": "Some content"}],
         )
         resp = client.post(
@@ -68,7 +69,8 @@ class TestSearchWebRoute:
 
         recorded = []
         monkeypatch.setattr(
-            r_search, "record_search_usage",
+            r_search,
+            "record_search_usage",
             lambda **kw: recorded.append(kw),
         )
         resp = client.post(

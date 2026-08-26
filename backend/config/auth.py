@@ -30,12 +30,15 @@ def verify_password(plain: str, hashed: str) -> bool:
 _bearer = HTTPBearer(auto_error=False)
 
 
-def create_access_token(user_id: str, username: str, role: str, expires_delta: timedelta | None = None,) -> str:
-    """ Return a JWT access token for the given user ID, username, and role. """
+def create_access_token(
+    user_id: str,
+    username: str,
+    role: str,
+    expires_delta: timedelta | None = None,
+) -> str:
+    """Return a JWT access token for the given user ID, username, and role."""
     settings = get_settings()
-    expire = datetime.now(UTC) + (
-        expires_delta or timedelta(minutes=settings.jwt_expire_minutes)
-    )
+    expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=settings.jwt_expire_minutes))
     payload = {
         "sub": user_id,
         "username": username,
@@ -59,7 +62,7 @@ def _decode_token(token: str) -> dict:
 
 def _extract_token(
     credentials: HTTPAuthorizationCredentials | None,
-    request: Request = None  # type: ignore[assignment]
+    request: Request = None,  # type: ignore[assignment]
 ) -> str:
     """Prefer the Authorization header if present, otherwise fall back to
     the httpOnly access_token cookie set by /auth/login."""
@@ -78,7 +81,7 @@ def _extract_token(
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    request: Request = None  # type: ignore[assignment]
+    request: Request = None,  # type: ignore[assignment]
 ) -> dict:
     """Return token payload for any authenticated user."""
     token = _extract_token(credentials, request)
@@ -88,15 +91,17 @@ def get_current_user(
 def _require_role(*allowed_roles: str, message: str):
     """Factory for role-gated dependencies. require_admin and
     require_superadmin below are just two instances of this"""
+
     def dependency(
         credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-        request: Request = None  # type: ignore[assignment]
+        request: Request = None,  # type: ignore[assignment]
     ) -> dict:
         token = _extract_token(credentials, request)
         payload = _decode_token(token)
         if payload.get("role") not in allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=message)
         return payload
+
     return dependency
 
 

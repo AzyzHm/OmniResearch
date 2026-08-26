@@ -49,13 +49,7 @@ def get_tokens_used_today(user_id: str) -> int:
     """Sum total_tokens from llm_usage for this user since UTC midnight."""
     db = get_supabase()
     start = _start_of_today_utc().isoformat()
-    result = (
-        db.table("llm_usage")
-        .select("total_tokens")
-        .eq("user_id", user_id)
-        .gte("created_at", start)
-        .execute()
-    )
+    result = db.table("llm_usage").select("total_tokens").eq("user_id", user_id).gte("created_at", start).execute()
     rows = cast(list[dict[str, Any]], result.data) or []
     return sum((row.get("total_tokens") or 0) for row in rows)
 

@@ -8,13 +8,7 @@ from database.db import get_supabase
 def _verify_project_owner(project_id: str, user_id: str) -> None:
     """Raise 404 if the project doesn't belong to the user."""
     db = get_supabase()
-    result = (
-        db.table("projects")
-        .select("id")
-        .eq("id", project_id)
-        .eq("user_id", user_id)
-        .execute()
-    )
+    result = db.table("projects").select("id").eq("id", project_id).eq("user_id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found.")
 
@@ -22,12 +16,7 @@ def _verify_project_owner(project_id: str, user_id: str) -> None:
 def _own_note(note_id: str, user_id: str) -> dict:
     """Fetch a note and verify ownership through its project. Returns the note row."""
     db = get_supabase()
-    result = (
-        db.table("notes")
-        .select("*, projects(user_id)")
-        .eq("id", note_id)
-        .execute()
-    )
+    result = db.table("notes").select("*, projects(user_id)").eq("id", note_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found.")
     row: Any = result.data[0]
@@ -54,12 +43,7 @@ def _own_message_in_project(message_id: str, project_id: str) -> dict:
     project's) chat into this note. Returns the message row with chat_id.
     """
     db = get_supabase()
-    result = (
-        db.table("messages")
-        .select("*, chats(project_id)")
-        .eq("id", message_id)
-        .execute()
-    )
+    result = db.table("messages").select("*, chats(project_id)").eq("id", message_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found.")
     row: Any = result.data[0]

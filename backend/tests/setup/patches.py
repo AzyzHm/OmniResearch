@@ -30,11 +30,25 @@ def patch_all_get_supabase(fake_db: FakeDB):
     import services.ingestion_recovery as r_ingestion_recovery
 
     modules = [
-        r_auth, r_projects, db_mod,
-        r_admin_users, r_admin_logs, r_admin_stats, r_admin_usage, r_admin_quota,
-        r_chat_shared, r_chat_crud, r_chat_messages, r_chat_send,
-        r_collections_shared, r_collections_crud, r_collections_ingest, r_collections_items,
-        r_notes_shared, r_notes_crud, r_notes_items,
+        r_auth,
+        r_projects,
+        db_mod,
+        r_admin_users,
+        r_admin_logs,
+        r_admin_stats,
+        r_admin_usage,
+        r_admin_quota,
+        r_chat_shared,
+        r_chat_crud,
+        r_chat_messages,
+        r_chat_send,
+        r_collections_shared,
+        r_collections_crud,
+        r_collections_ingest,
+        r_collections_items,
+        r_notes_shared,
+        r_notes_crud,
+        r_notes_items,
     ]
     originals = {m: m.get_supabase for m in modules}
     originals[r_ingestion_recovery] = r_ingestion_recovery.get_supabase

@@ -54,14 +54,18 @@ class TestGetTokensUsedToday:
     def test_none_data_from_db_treated_as_empty(self, monkeypatch):
         class _NoneDataResult:
             data = None
+
         class _NoneDataQuery:
             def __getattr__(self, name):
                 return lambda *a, **kw: self
+
             def execute(self):
                 return _NoneDataResult()
+
         class _NoneDataDB:
             def table(self, _name):
                 return _NoneDataQuery()
+
         monkeypatch.setattr(quota, "get_supabase", lambda: _NoneDataDB())
         assert quota.get_tokens_used_today("u1") == 0
 

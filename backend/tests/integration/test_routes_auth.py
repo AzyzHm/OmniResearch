@@ -4,7 +4,7 @@ from config.auth import hash_password
 class TestRegister:
     def test_register_success(self, app):
         client, db = app
-        db.add_result(data=[])     
+        db.add_result(data=[])
         db.add_result(data=[{}])
         resp = client.post("/auth/register", json={"username": "newuser", "password": "password1"})
         assert resp.status_code == 201
@@ -36,9 +36,11 @@ class TestRegister:
 class TestLogin:
     def _user(self, password="password1", role="user", is_approved=True):
         return {
-            "id": "user-123", "username": "alice",
+            "id": "user-123",
+            "username": "alice",
             "password": hash_password(password),
-            "role": role, "is_approved": is_approved,
+            "role": role,
+            "is_approved": is_approved,
         }
 
     def test_login_success(self, app):

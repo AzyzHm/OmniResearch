@@ -22,8 +22,7 @@ def backfill_collection(collection_id: str) -> int:
 
     sparse_vectors = bm25_sparse_vectors(documents)
     updated_metadatas = [
-        {**(meta or {}), **sparse_vector_to_metadata(sv)}
-        for meta, sv in zip(metadatas, sparse_vectors, strict=True)
+        {**(meta or {}), **sparse_vector_to_metadata(sv)} for meta, sv in zip(metadatas, sparse_vectors, strict=True)
     ]
 
     collection.update(ids=ids, metadatas=updated_metadatas)

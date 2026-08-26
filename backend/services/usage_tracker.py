@@ -22,14 +22,16 @@ def record_llm_usage(
         return
     try:
         db = get_supabase()
-        db.table("llm_usage").insert({
-            "user_id": user_id,
-            "provider": provider,
-            "model": model,
-            "prompt_tokens": prompt_tokens or 0,
-            "completion_tokens": completion_tokens or 0,
-            "total_tokens": total_tokens or 0,
-        }).execute()
+        db.table("llm_usage").insert(
+            {
+                "user_id": user_id,
+                "provider": provider,
+                "model": model,
+                "prompt_tokens": prompt_tokens or 0,
+                "completion_tokens": completion_tokens or 0,
+                "total_tokens": total_tokens or 0,
+            }
+        ).execute()
     except Exception as exc:
         logger.error("Failed to record LLM usage: %s", exc)
 
@@ -52,12 +54,14 @@ def record_search_usage(
     credits = 2 if engine == "tavily" and search_depth == "advanced" else 1
     try:
         db = get_supabase()
-        db.table("search_usage").insert({
-            "user_id": user_id,
-            "engine": engine,
-            "num_results": num_results or 0,
-            "search_depth": search_depth,
-            "credits": credits,
-        }).execute()
+        db.table("search_usage").insert(
+            {
+                "user_id": user_id,
+                "engine": engine,
+                "num_results": num_results or 0,
+                "search_depth": search_depth,
+                "credits": credits,
+            }
+        ).execute()
     except Exception as exc:
         logger.error("Failed to record search usage: %s", exc)

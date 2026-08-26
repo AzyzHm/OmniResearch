@@ -19,12 +19,34 @@ class TestUploadItems:
         _patch_pipeline(monkeypatch)
         client, db = app
         db.add_result(data=[collection_row()])
-        db.add_result(data=[{"id": "item-1", "collection_id": "col-1", "name": "a.pdf",
-                              "source_type": "pdf", "is_active": True, "status": "processing",
-                              "chunk_count": 0, "created_at": "2026-01-01T00:00:00Z"}])
-        db.add_result(data=[{"id": "item-2", "collection_id": "col-1", "name": "b.txt",
-                              "source_type": "txt", "is_active": True, "status": "processing",
-                              "chunk_count": 0, "created_at": "2026-01-01T00:00:00Z"}])
+        db.add_result(
+            data=[
+                {
+                    "id": "item-1",
+                    "collection_id": "col-1",
+                    "name": "a.pdf",
+                    "source_type": "pdf",
+                    "is_active": True,
+                    "status": "processing",
+                    "chunk_count": 0,
+                    "created_at": "2026-01-01T00:00:00Z",
+                }
+            ]
+        )
+        db.add_result(
+            data=[
+                {
+                    "id": "item-2",
+                    "collection_id": "col-1",
+                    "name": "b.txt",
+                    "source_type": "txt",
+                    "is_active": True,
+                    "status": "processing",
+                    "chunk_count": 0,
+                    "created_at": "2026-01-01T00:00:00Z",
+                }
+            ]
+        )
 
         resp = client.post(
             "/collections/col-1/items",
@@ -77,10 +99,20 @@ class TestAddUrlItem:
         client, db = app
         db.add_result(data=[collection_row()])
         db.add_result(data=[])
-        db.add_result(data=[{"id": "item-3", "collection_id": "col-1",
-                              "name": "https://example.com/article", "source_type": "url",
-                              "is_active": True, "status": "processing", "chunk_count": 0,
-                              "created_at": "2026-01-01T00:00:00Z"}])
+        db.add_result(
+            data=[
+                {
+                    "id": "item-3",
+                    "collection_id": "col-1",
+                    "name": "https://example.com/article",
+                    "source_type": "url",
+                    "is_active": True,
+                    "status": "processing",
+                    "chunk_count": 0,
+                    "created_at": "2026-01-01T00:00:00Z",
+                }
+            ]
+        )
 
         resp = client.post(
             "/collections/col-1/items/url",
@@ -110,10 +142,20 @@ class TestAddSearchResultItems:
         client, db = app
         db.add_result(data=[collection_row()])
         db.add_result(data=[])
-        db.add_result(data=[{"id": "item-4", "collection_id": "col-1",
-                              "name": "https://example.com/1", "source_type": "url",
-                              "is_active": True, "status": "processing", "chunk_count": 0,
-                              "created_at": "2026-01-01T00:00:00Z"}])
+        db.add_result(
+            data=[
+                {
+                    "id": "item-4",
+                    "collection_id": "col-1",
+                    "name": "https://example.com/1",
+                    "source_type": "url",
+                    "is_active": True,
+                    "status": "processing",
+                    "chunk_count": 0,
+                    "created_at": "2026-01-01T00:00:00Z",
+                }
+            ]
+        )
 
         resp = client.post(
             "/collections/col-1/items/from-search",

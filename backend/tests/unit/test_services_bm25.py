@@ -3,6 +3,7 @@ import services.bm25 as bm25
 
 class _FakeSparseVector:
     """Stand-in for chromadb's SparseVector — just needs .indices/.values."""
+
     def __init__(self, indices, values):
         self.indices = indices
         self.values = values
@@ -10,6 +11,7 @@ class _FakeSparseVector:
 
 class _FakeEmbeddingFunction:
     """Records every call and returns one canned SparseVector per input text."""
+
     def __init__(self, vectors=None):
         self.calls = []
         self._vectors = vectors
@@ -54,20 +56,20 @@ class TestBm25SparseVectors:
 class TestSparseVectorMetadataRoundTrip:
     def test_round_trip_preserves_indices_and_values(self):
         sv = _FakeSparseVector([3, 7, 12], [0.1, 0.2, 0.7])
-        meta = bm25.sparse_vector_to_metadata(sv) # type: ignore
+        meta = bm25.sparse_vector_to_metadata(sv)  # type: ignore
         indices, values = bm25.sparse_vector_from_metadata(meta)
         assert indices == [3, 7, 12]
         assert values == [0.1, 0.2, 0.7]
 
     def test_metadata_values_are_json_strings(self):
         sv = _FakeSparseVector([1], [0.9])
-        meta = bm25.sparse_vector_to_metadata(sv) # type: ignore
+        meta = bm25.sparse_vector_to_metadata(sv)  # type: ignore
         assert isinstance(meta["bm25_indices"], str)
         assert isinstance(meta["bm25_values"], str)
 
     def test_empty_sparse_vector_round_trips_to_empty_lists(self):
         sv = _FakeSparseVector([], [])
-        meta = bm25.sparse_vector_to_metadata(sv) # type: ignore
+        meta = bm25.sparse_vector_to_metadata(sv)  # type: ignore
         assert bm25.sparse_vector_from_metadata(meta) == ([], [])
 
     def test_missing_metadata_fields_default_to_empty(self):

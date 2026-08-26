@@ -6,6 +6,7 @@ from tests.setup.fakes import FakeDB
 
 class _RaisingDB:
     """A fake DB whose .table() always raises, to test the best-effort swallow."""
+
     def table(self, _name):
         raise ConnectionError("DB is unreachable")
 
@@ -36,13 +37,16 @@ class TestRecoverStuckProcessingItems:
             def update(self, payload):
                 captured.update(payload)
                 return self
+
             def eq(self, *args, **kwargs):
                 return self
+
             def execute(self):
                 return type("R", (), {"data": [{"id": "item-1"}]})()
 
         monkeypatch.setattr(
-            ingestion_recovery, "get_supabase",
+            ingestion_recovery,
+            "get_supabase",
             lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})(),
         )
         ingestion_recovery.recover_stuck_processing_items()
@@ -56,14 +60,17 @@ class TestRecoverStuckProcessingItems:
         class _CapturingQuery:
             def update(self, payload):
                 return self
+
             def eq(self, field, value):
                 eq_calls.append((field, value))
                 return self
+
             def execute(self):
                 return type("R", (), {"data": []})()
 
         monkeypatch.setattr(
-            ingestion_recovery, "get_supabase",
+            ingestion_recovery,
+            "get_supabase",
             lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})(),
         )
         ingestion_recovery.recover_stuck_processing_items()

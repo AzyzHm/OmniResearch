@@ -4,6 +4,7 @@ import services.reranker as reranker
 class _FakeCrossEncoder:
     """Stand-in for sentence_transformers.CrossEncoder — scores pairs by a
     lookup table keyed on the chunk content, defaulting to 0.0."""
+
     def __init__(self, scores_by_content: dict):
         self._scores = scores_by_content
         self.predict_calls = []
@@ -26,15 +27,21 @@ class TestRerank:
             {"content": "high relevance"},
             {"content": "medium relevance"},
         ]
-        fake_model = _FakeCrossEncoder({
-            "low relevance": 0.1, "high relevance": 0.9, "medium relevance": 0.5,
-        })
+        fake_model = _FakeCrossEncoder(
+            {
+                "low relevance": 0.1,
+                "high relevance": 0.9,
+                "medium relevance": 0.5,
+            }
+        )
         monkeypatch.setattr(reranker, "_get_model", lambda: fake_model)
 
         result = reranker.rerank("query", chunks, top_k=5)
 
         assert [c["content"] for c in result] == [
-            "high relevance", "medium relevance", "low relevance",
+            "high relevance",
+            "medium relevance",
+            "low relevance",
         ]
 
     def test_attaches_rerank_score_field(self, monkeypatch):

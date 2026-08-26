@@ -4,6 +4,7 @@ from tests.setup.fakes import FakeDB
 
 class _RaisingDB:
     """A fake DB whose .table() always raises, to test the try/except swallow."""
+
     def table(self, _name):
         raise ConnectionError("DB is unreachable")
 
@@ -15,24 +16,36 @@ class TestRecordLLMUsage:
         monkeypatch.setattr(usage_tracker, "get_supabase", lambda: db)
 
         usage_tracker.record_llm_usage(
-            user_id="u1", provider="gemini", model="gemini-2.5-flash",
-            prompt_tokens=10, completion_tokens=5, total_tokens=15,
+            user_id="u1",
+            provider="gemini",
+            model="gemini-2.5-flash",
+            prompt_tokens=10,
+            completion_tokens=5,
+            total_tokens=15,
         )
 
     def test_noop_when_user_id_is_none(self, monkeypatch):
         called = []
         monkeypatch.setattr(usage_tracker, "get_supabase", lambda: called.append(True))
         usage_tracker.record_llm_usage(
-            user_id=None, provider="gemini", model="x",
-            prompt_tokens=1, completion_tokens=1, total_tokens=2,
+            user_id=None,
+            provider="gemini",
+            model="x",
+            prompt_tokens=1,
+            completion_tokens=1,
+            total_tokens=2,
         )
         assert not called
 
     def test_swallows_db_errors_silently(self, monkeypatch):
         monkeypatch.setattr(usage_tracker, "get_supabase", lambda: _RaisingDB())
         usage_tracker.record_llm_usage(
-            user_id="u1", provider="gemini", model="x",
-            prompt_tokens=1, completion_tokens=1, total_tokens=2,
+            user_id="u1",
+            provider="gemini",
+            model="x",
+            prompt_tokens=1,
+            completion_tokens=1,
+            total_tokens=2,
         )
 
     def test_none_token_counts_default_to_zero(self, monkeypatch):
@@ -44,13 +57,20 @@ class TestRecordLLMUsage:
             def insert(self, payload):
                 captured.update(payload)
                 return self
+
             def execute(self):
                 return None
 
-        monkeypatch.setattr(usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})())
+        monkeypatch.setattr(
+            usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})()
+        )
         usage_tracker.record_llm_usage(
-            user_id="u1", provider="gemini", model="x",
-            prompt_tokens=None, completion_tokens=None, total_tokens=None, # type: ignore
+            user_id="u1",
+            provider="gemini",
+            model="x",
+            prompt_tokens=None,
+            completion_tokens=None,
+            total_tokens=None,  # type: ignore
         )
         assert captured["prompt_tokens"] == 0
         assert captured["completion_tokens"] == 0
@@ -75,10 +95,13 @@ class TestRecordSearchUsage:
             def insert(self, payload):
                 captured.update(payload)
                 return self
+
             def execute(self):
                 return None
 
-        monkeypatch.setattr(usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})())
+        monkeypatch.setattr(
+            usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})()
+        )
         usage_tracker.record_search_usage(user_id="u1", engine="tavily", num_results=10, search_depth="advanced")
         assert captured["credits"] == 2
 
@@ -89,10 +112,13 @@ class TestRecordSearchUsage:
             def insert(self, payload):
                 captured.update(payload)
                 return self
+
             def execute(self):
                 return None
 
-        monkeypatch.setattr(usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})())
+        monkeypatch.setattr(
+            usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})()
+        )
         usage_tracker.record_search_usage(user_id="u1", engine="tavily", num_results=10, search_depth="basic")
         assert captured["credits"] == 1
 
@@ -103,9 +129,12 @@ class TestRecordSearchUsage:
             def insert(self, payload):
                 captured.update(payload)
                 return self
+
             def execute(self):
                 return None
 
-        monkeypatch.setattr(usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})())
+        monkeypatch.setattr(
+            usage_tracker, "get_supabase", lambda: type("D", (), {"table": lambda self, n: _CapturingQuery()})()
+        )
         usage_tracker.record_search_usage(user_id="u1", engine="exa", num_results=10, search_depth=None)
         assert captured["credits"] == 1

@@ -3,18 +3,32 @@ from unittest.mock import MagicMock
 from tests.setup.factories import collection_row
 
 ITEM_PDF = {
-    "id": "item-1", "collection_id": "col-1", "name": "report.pdf",
-    "source_type": "pdf", "is_active": True, "status": "ready",
-    "chunk_count": 4, "page_count": 12, "word_count": None,
-    "storage_path": "col-1/item-1/report.pdf", "error_message": None,
+    "id": "item-1",
+    "collection_id": "col-1",
+    "name": "report.pdf",
+    "source_type": "pdf",
+    "is_active": True,
+    "status": "ready",
+    "chunk_count": 4,
+    "page_count": 12,
+    "word_count": None,
+    "storage_path": "col-1/item-1/report.pdf",
+    "error_message": None,
     "created_at": "2026-01-01T00:00:00Z",
 }
 
 ITEM_URL = {
-    "id": "item-2", "collection_id": "col-1", "name": "https://example.com",
-    "source_type": "url", "is_active": True, "status": "ready",
-    "chunk_count": 2, "page_count": None, "word_count": None,
-    "storage_path": None, "error_message": None,
+    "id": "item-2",
+    "collection_id": "col-1",
+    "name": "https://example.com",
+    "source_type": "url",
+    "is_active": True,
+    "status": "ready",
+    "chunk_count": 2,
+    "page_count": None,
+    "word_count": None,
+    "storage_path": None,
+    "error_message": None,
     "created_at": "2026-01-01T00:00:00Z",
 }
 
@@ -45,8 +59,13 @@ class TestGetItemContent:
 
         client, db = app
         db.add_result(data=[collection_row()])
-        item = {**ITEM_PDF, "id": "item-3", "name": "notes.txt", "source_type": "txt",
-                "storage_path": "col-1/item-3/notes.txt"}
+        item = {
+            **ITEM_PDF,
+            "id": "item-3",
+            "name": "notes.txt",
+            "source_type": "txt",
+            "storage_path": "col-1/item-3/notes.txt",
+        }
         db.add_result(data=[item])
 
         resp = client.get("/collections/col-1/items/item-3/content", headers=user_headers)
@@ -115,9 +134,7 @@ class TestDeleteItem:
         import routes.collections.items as items_mod
 
         delete_calls = []
-        monkeypatch.setattr(
-            items_mod, "delete_collection_file", lambda path: delete_calls.append(path)
-        )
+        monkeypatch.setattr(items_mod, "delete_collection_file", lambda path: delete_calls.append(path))
 
         client, db = app
         db.add_result(data=[collection_row()])
