@@ -1,8 +1,10 @@
 import logging
 from functools import lru_cache
+
 from chromadb import PersistentClient
 from chromadb.config import Settings as ChromaSettings
 from chromadb.errors import NotFoundError
+
 from config.settings import get_settings
 from services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
 
@@ -10,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
-def get_chroma() -> PersistentClient: # type: ignore
+def get_chroma() -> PersistentClient:
     """Return a cached ChromaDB persistent client."""
     settings = get_settings()
     return PersistentClient(

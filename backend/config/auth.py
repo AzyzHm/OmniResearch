@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from config.settings import get_settings
@@ -31,10 +30,10 @@ def verify_password(plain: str, hashed: str) -> bool:
 _bearer = HTTPBearer(auto_error=False)
 
 
-def create_access_token(user_id: str, username: str, role: str, expires_delta: Optional[timedelta] = None,) -> str:
+def create_access_token(user_id: str, username: str, role: str, expires_delta: timedelta | None = None,) -> str:
     """ Return a JWT access token for the given user ID, username, and role. """
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + (
+    expire = datetime.now(UTC) + (
         expires_delta or timedelta(minutes=settings.jwt_expire_minutes)
     )
     payload = {
@@ -50,16 +49,16 @@ def _decode_token(token: str) -> dict:
     settings = get_settings()
     try:
         return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-    except JWTError:
+    except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token.",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from exc
 
 
 def _extract_token(
-    credentials: Optional[HTTPAuthorizationCredentials],
+    credentials: HTTPAuthorizationCredentials | None,
     request: Request = None  # type: ignore[assignment]
 ) -> str:
     """Prefer the Authorization header if present, otherwise fall back to
@@ -78,7 +77,7 @@ def _extract_token(
 
 
 def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     request: Request = None  # type: ignore[assignment]
 ) -> dict:
     """Return token payload for any authenticated user."""
@@ -90,7 +89,7 @@ def _require_role(*allowed_roles: str, message: str):
     """Factory for role-gated dependencies. require_admin and
     require_superadmin below are just two instances of this"""
     def dependency(
-        credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+        credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
         request: Request = None  # type: ignore[assignment]
     ) -> dict:
         token = _extract_token(credentials, request)

@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import requests
 from google import genai
@@ -85,7 +85,7 @@ def _call_mistral(messages: list[dict[str, Any]], temperature: float) -> tuple[s
 def get_gemini_response(
     messages: list[dict[str, Any]],
     temperature: float = 0.7,
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
 ) -> str:
     """
     Call Gemini with a flat message list and return the response text.
