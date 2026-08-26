@@ -7,7 +7,7 @@ This Privacy Policy explains what information OmniResearch (the "Service") colle
 
 ## 2. Information We Collect
 
-**Account information:** username and password. Passwords are hashed (Argon2id) before storage — the Service never stores or has access to your plaintext password.
+**Account information:** username and password. Passwords are hashed (Argon2id) before storage, the Service never stores or has access to your plaintext password.
 
 **Login activity:** each login is logged with your username, the timestamp, and your IP address. This is used for security monitoring and is visible to administrators.
 
@@ -30,16 +30,16 @@ We do not sell your information, and we do not use it for advertising.
 
 Providing the Service requires sharing some data with third parties:
 
-- **Supabase** — hosts the Service's relational database (account records, project/chat metadata, login logs, usage statistics).
-- **Google (Gemini)** and **Mistral AI** — process the content of your questions and relevant excerpts of Your Content to generate AI responses.
-- **Tavily** and **Exa** — process your search queries if you use the web search feature, and return results which may be added to your project.
+- **Supabase**: hosts the Service's relational database (account records, project/chat metadata, login logs, usage statistics).
+- **Google (Gemini)** and **Mistral AI**: process the content of your questions and relevant excerpts of Your Content to generate AI responses.
+- **Tavily** and **Exa**: process your search queries if you use the web search feature, and return results which may be added to your project.
 
 Each of these providers handles data under their own privacy policy, which we encourage you to review if you have concerns about a specific provider. The Service does not send your login password to any of these third parties.
 
 ## 5. Data Storage and Security
 
 - Passwords are hashed using Argon2id, a modern, memory-hard hashing algorithm designed to resist brute-force attacks.
-- Session authentication uses a JSON Web Token stored in an **httpOnly cookie**, which is not readable by JavaScript running on the page — this reduces exposure to cross-site scripting (XSS) attacks.
+- Session authentication uses a JSON Web Token stored in an **httpOnly cookie**, which is not readable by JavaScript running on the page, this reduces exposure to cross-site scripting (XSS) attacks.
 - Document and text embeddings for retrieval are stored in a locally-hosted vector database, separate from the relational data stored in Supabase.
 
 No method of storage or transmission is 100% secure, and we can't guarantee absolute security of your information.

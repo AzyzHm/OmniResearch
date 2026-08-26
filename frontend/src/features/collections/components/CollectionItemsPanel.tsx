@@ -255,7 +255,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
 
       {!isLoading && items && items.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No items yet — add one above to get started.
+          No items yet, add one above to get started.
         </p>
       )}
 

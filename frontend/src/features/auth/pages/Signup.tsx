@@ -69,7 +69,7 @@ function Signup() {
           <CheckCircle2 className="size-6 text-teal" />
           <p className="mt-3 text-sm text-ink leading-relaxed">
             Your account has been created. An administrator needs to approve it before you can log
-            in — this is usually quick.
+            in.
           </p>
         </div>
         <p className="mt-6 text-sm text-muted-foreground text-center">

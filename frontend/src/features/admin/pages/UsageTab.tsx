@@ -132,8 +132,8 @@ function UsageTab() {
           </Button>
         </div>
         <p className="mb-4 text-xs text-muted-foreground">
-          Tracked in credits, not raw call counts — Tavily's "advanced" search depth costs 2 credits
-          per call; everything else (Tavily basic/fast/ultra-fast, all Exa calls) is 1 credit.
+          Tracked in credits, not raw call counts. Tavily's "advanced" search depth costs 2 credits
+          per call, everything else (Tavily basic/fast/ultra-fast, all Exa calls) is 1 credit.
         </p>
 
         {searchQuery.isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}

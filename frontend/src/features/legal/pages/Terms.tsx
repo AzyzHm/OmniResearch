@@ -29,7 +29,7 @@ An administrator may suspend or delete accounts that violate these Terms.
 
 ## 5. Your Content
 
-You retain ownership of the documents, links, and messages you submit ("Your Content"). By submitting Your Content, you grant OmniResearch a limited license to store, process, and transmit it as needed to provide the Service — including sending relevant excerpts to the third-party AI providers described below so they can generate a response.
+You retain ownership of the documents, links, and messages you submit ("Your Content"). By submitting Your Content, you grant OmniResearch a limited license to store, process, and transmit it as needed to provide the Service, including sending relevant excerpts to the third-party AI providers described below so they can generate a response.
 
 You're solely responsible for Your Content and for having the necessary rights to upload and use it through the Service.
 
@@ -37,9 +37,9 @@ You're solely responsible for Your Content and for having the necessary rights t
 
 To generate answers and, optionally, search the web on your behalf, the Service sends parts of Your Content and your questions to third-party providers, currently:
 
-- **Google (Gemini)** — primary language model
-- **Mistral AI** — fallback language model, used if Gemini is unavailable
-- **Tavily** and **Exa** — web search providers, only when you explicitly use the search feature
+- **Google (Gemini)**: primary language model
+- **Mistral AI**: fallback language model, used if Gemini is unavailable
+- **Tavily** and **Exa**: web search providers, only when you explicitly use the search feature
 
 These providers process this data under their own terms and privacy policies, which OmniResearch does not control. Don't submit content through the Service that you wouldn't be comfortable having processed by these third parties.
 
@@ -53,7 +53,7 @@ An administrator may suspend or delete your account at any time, including for v
 
 ## 9. Disclaimer of Warranties
 
-The Service is provided **"as is" and "as available,"** without warranties of any kind, express or implied. AI-generated answers may be incomplete, outdated, or incorrect — don't rely on them for medical, legal, financial, or other decisions requiring professional advice without independent verification.
+The Service is provided **"as is" and "as available,"** without warranties of any kind, express or implied. AI-generated answers may be incomplete, outdated, or incorrect, don't rely on them for medical, legal, financial, or other decisions requiring professional advice without independent verification.
 
 ## 10. Limitation of Liability
 
