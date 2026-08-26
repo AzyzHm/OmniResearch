@@ -125,7 +125,7 @@ The `dark` class is toggled on `<html>` by `ThemeContext`; the preference (`ligh
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend base URL. Set via `.env` (gitignored, copy `.env.example` to get started); `apiClient.ts` falls back to this same default if unset. Vite only reads env files from this project's own root. Any `VITE_`-prefixed variable is baked directly into the public client bundle, so backend secrets must never live in this file. |
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend base URL. Set via `.env` (gitignored, copy `.env.example` to get started) `apiClient.ts` falls back to this same default if unset. Vite only reads env files from this project's own root. Any `VITE_` prefixed variable is baked directly into the public client bundle, so backend secrets must never live in this file. |
 
 ---
 
@@ -149,7 +149,7 @@ npm run lint            # eslint .
 npm run test:watch      # vitest in watch mode
 ```
 
-The backend must be running separately (`uvicorn backend.main:app --reload --port 8000`) and must have `http://localhost:5173` listed in its `cors_origins` setting for requests from the dev server to succeed.
+The backend must be running separately (`uvicorn main:app --reload --port 8000`) and must have `http://localhost:5173` listed in its `cors_origins` setting for requests from the dev server to succeed.
 
 ---
 
@@ -223,8 +223,8 @@ npx vitest               # watch mode
 ```
 
 Notable tests, chosen because each one caught a real bug during development rather than being written for coverage's sake:
-- **`features/chat/api.test.ts`** — the SSE parser, including a frame deliberately split mid-JSON across a chunk boundary, and a regression test confirming `createChat` always sends a body, since the backend's required-body-but-optional-fields Pydantic pattern silently 422s on a missing body otherwise.
-- **`shared/lib/shortenUrl.test.ts`** — the URL-truncation helper.
-- **`features/chat/components/Chatmessagebubble.test.tsx`** — the citation footnote list (empty case, normal case, URL-vs-filename rendering, confirms user messages never show sources).
-- **`features/projects/pages/ProjectsList.test.tsx`** — a full render plus a real delete-confirm click flow, with the backend's follow-up refetch deliberately left hanging forever, to prove the deleted item disappears from the optimistic cache update alone rather than depending on that refetch ever resolving.
-- **`shared/context/ThemeContext.test.tsx`** — theme resolution across `light`/`dark`/`system`, persistence to `localStorage`, and live response to a simulated OS preference change.
+- **`features/chat/api.test.ts`**  the SSE parser, including a frame deliberately split mid-JSON across a chunk boundary, and a regression test confirming `createChat` always sends a body, since the backend's required-body-but-optional-fields Pydantic pattern silently 422s on a missing body otherwise.
+- **`shared/lib/shortenUrl.test.ts`**  the URL-truncation helper.
+- **`features/chat/components/Chatmessagebubble.test.tsx`** the citation footnote list (empty case, normal case, URL-vs-filename rendering, confirms user messages never show sources).
+- **`features/projects/pages/ProjectsList.test.tsx`** a full render plus a real delete-confirm click flow, with the backend's follow-up refetch deliberately left hanging forever, to prove the deleted item disappears from the optimistic cache update alone rather than depending on that refetch ever resolving.
+- **`shared/context/ThemeContext.test.tsx`** theme resolution across `light`/`dark`/`system`, persistence to `localStorage`, and live response to a simulated OS preference change.

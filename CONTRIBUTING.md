@@ -1,12 +1,12 @@
 # Contributing to OmniResearch
 
-Thanks for taking the time to contribute. OmniResearch is licensed under the [Apache License, Version 2.0](LICENSE); by submitting a contribution, you agree it will be licensed under those same terms. Please also read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+Thanks for taking the time to contribute. OmniResearch is licensed under the [Apache License, Version 2.0](LICENSE) by submitting a contribution, you agree it will be licensed under those same terms. Please also read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
 ## Reporting an Issue
 
 Before opening a new issue, please search existing issues to avoid duplicates.
 
-Please use the [**Bug / Feature / Docs** issue template](.github/ISSUE_TEMPLATE/bug_feature_docs.md) — it's applied automatically whenever you click "New Issue" in this repository, since it's the only template configured. It asks for:
+Please use the [**Bug / Feature / Docs** issue template](.github/ISSUE_TEMPLATE/bug_feature_docs.md), it's applied automatically whenever you click "New Issue" in this repository, since it's the only template configured. It asks for:
 
 - **Title:** `[Bug/Feature/Docs] Short, descriptive title`
 - **Description:** a clear description of the issue, bug, or feature request

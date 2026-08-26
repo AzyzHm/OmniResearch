@@ -43,7 +43,7 @@ The application allows users to seamlessly transition from keyword-based informa
 * **🧠 Agentic RAG:** Chat in natural language with your corpus. The AI agent decides for itself whether a question needs retrieval at all, refines the query using conversation context, retrieves and validates the evidence it finds, and retries with more context before formulating a contextualized, sourced answer. Responses can be streamed token-by-token in real time.
 
 
-* **🔀 Hybrid Retrieval & Reranking:** Choose between semantic (embedding), keyword (BM25), or hybrid retrieval , the latter fusing both rankings via Reciprocal Rank Fusion — followed by cross-encoder reranking of the pooled candidates for a final, precision-ordered context set.
+* **🔀 Hybrid Retrieval & Reranking:** Choose between semantic (embedding), keyword (BM25), or hybrid retrieval , the latter fusing both rankings via Reciprocal Rank Fusion followed by cross-encoder reranking of the pooled candidates for a final, precision-ordered context set.
 
 
 * **🚦 Per-User Token Quotas:** Configurable daily LLM token limits per user, enforced automatically before each chat request and adjustable by admins.
