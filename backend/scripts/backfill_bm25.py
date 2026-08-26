@@ -23,7 +23,7 @@ def backfill_collection(collection_id: str) -> int:
     sparse_vectors = bm25_sparse_vectors(documents)
     updated_metadatas = [
         {**(meta or {}), **sparse_vector_to_metadata(sv)}
-        for meta, sv in zip(metadatas, sparse_vectors)
+        for meta, sv in zip(metadatas, sparse_vectors, strict=True)
     ]
 
     collection.update(ids=ids, metadatas=updated_metadatas)
@@ -41,9 +41,9 @@ def main() -> None:
 
     total = 0
     for row in collections:
-        count = backfill_collection(row["id"]) # type: ignore
+        count = backfill_collection(row["id"])
         total += count
-        print(f"  {row['name']} ({row['id']}): {count} chunk(s) updated") # type: ignore
+        print(f"  {row['name']} ({row['id']}): {count} chunk(s) updated")
 
     print(f"\nDone — {total} chunk(s) backfilled with BM25 vectors across {len(collections)} collection(s).")
 

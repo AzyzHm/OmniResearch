@@ -1,4 +1,5 @@
 import os
+
 os.environ.setdefault("HF_HOME", "./rerankers")
 
 from sentence_transformers import CrossEncoder
