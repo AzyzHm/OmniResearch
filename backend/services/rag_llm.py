@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Any
 
 from config.models import get_gemini_response
 from config.prompts import (
@@ -29,7 +29,7 @@ def _format_context(chunks: list[dict[str, Any]]) -> str:
     return "\n\n".join(parts)
 
 
-def _ask(prompt: str, temperature: float = 0.0, user_id: Optional[str] = None) -> str:
+def _ask(prompt: str, temperature: float = 0.0, user_id: str | None = None) -> str:
     """One-shot LLM call for meta-tasks (routing/refining/validating) — no chat history threading."""
     response = get_gemini_response(
         [{"role": "user", "content": prompt}], temperature=temperature, user_id=user_id
@@ -37,21 +37,21 @@ def _ask(prompt: str, temperature: float = 0.0, user_id: Optional[str] = None) -
     return response.strip()
 
 
-def decide_retrieval(history: list[dict[str, Any]], query: str, user_id: Optional[str] = None) -> bool:
+def decide_retrieval(history: list[dict[str, Any]], query: str, user_id: str | None = None) -> bool:
     prompt = ROUTER_PROMPT.format(history_text=_format_history(history), query=query)
     answer = _ask(prompt, user_id=user_id).upper()
     return answer.startswith("RETRIEVE")
 
 
-def refine_query(history: list[dict[str, Any]], query: str, user_id: Optional[str] = None) -> str:
+def refine_query(history: list[dict[str, Any]], query: str, user_id: str | None = None) -> str:
     prompt = REFINE_QUERY_PROMPT.format(history_text=_format_history(history), query=query)
     refined = _ask(prompt, temperature=0.2, user_id=user_id)
     return refined or query
 
 
 def validate_context(
-    query: str, context_chunks: list[dict[str, Any]], user_id: Optional[str] = None
-) -> tuple[bool, Optional[str]]:
+    query: str, context_chunks: list[dict[str, Any]], user_id: str | None = None
+) -> tuple[bool, str | None]:
     """
     Returns (passed, missing_query). When insufficient, missing_query is a
     short, self-contained follow-up query describing what's still missing —
@@ -78,7 +78,7 @@ def generate_answer(
     history: list[dict[str, Any]],
     query: str,
     context_chunks: list[dict[str, Any]],
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
 ) -> str:
     """
     Final answer generation. The retrieved context + question are folded into
@@ -92,4 +92,4 @@ def generate_answer(
     )
     prompt = GENERATION_PROMPT.format(context_text=context_text, query=query)
     messages = list(history) + [{"role": "user", "content": prompt}]
-    return get_gemini_response(cast(list[dict[str, Any]], messages), temperature=0.7, user_id=user_id)
+    return get_gemini_response(messages, temperature=0.7, user_id=user_id)

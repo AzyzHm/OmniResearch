@@ -11,7 +11,7 @@ def search_tavily(query: str, num_results: int, search_depth: str) -> list[dict]
     client = TavilyClient(api_key=settings.tavily_api_key)
     response: Any = client.search(
         query=query,
-        search_depth=search_depth, #type: ignore
+        search_depth=search_depth,
         max_results=num_results,
     )
     return [

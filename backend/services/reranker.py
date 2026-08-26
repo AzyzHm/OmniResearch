@@ -60,7 +60,7 @@ def rerank(query: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
 
     scored = [
         {**chunk, "rerank_score": float(score)}
-        for chunk, score in zip(chunks, scores)
+        for chunk, score in zip(chunks, scores, strict=True)
     ]
     scored.sort(key=lambda c: c["rerank_score"], reverse=True)
     return scored[:top_k]

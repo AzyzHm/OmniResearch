@@ -53,5 +53,5 @@ def sparse_dot(
     """
     if not q_indices or not d_indices:
         return 0.0
-    q_map = dict(zip(q_indices, q_values))
-    return sum(q_map[idx] * val for idx, val in zip(d_indices, d_values) if idx in q_map)
+    q_map = dict(zip(q_indices, q_values, strict=True))
+    return sum(q_map[idx] * val for idx, val in zip(d_indices, d_values, strict=True) if idx in q_map)

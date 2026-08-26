@@ -64,7 +64,7 @@ def _fetch_all_active_chunks(project_id: str) -> list[dict[str, Any]]:
         documents = result.get("documents") or []
         metadatas = result.get("metadatas") or []
 
-        for doc, meta in zip(documents, metadatas):
+        for doc, meta in zip(documents, metadatas, strict=True):
             meta = meta or {}
             bm25_indices, bm25_values = sparse_vector_from_metadata(meta)
             chunks.append({
@@ -103,7 +103,7 @@ def _retrieve_pool_semantic(project_id: str, query: str, pool_size: int) -> list
         metadatas = (result.get("metadatas") or [[]])[0]
         distances = (result.get("distances") or [[]])[0]
 
-        for doc, meta, dist in zip(documents, metadatas, distances):
+        for doc, meta, dist in zip(documents, metadatas, distances, strict=True):
             meta = meta or {}
             pooled.append({
                 "content": doc,

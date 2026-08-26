@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from database.db import get_supabase
 
@@ -7,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def record_llm_usage(
-    user_id: Optional[str],
+    user_id: str | None,
     provider: str,
     model: str,
     prompt_tokens: int,
@@ -36,10 +35,10 @@ def record_llm_usage(
 
 
 def record_search_usage(
-    user_id: Optional[str],
+    user_id: str | None,
     engine: str,
     num_results: int,
-    search_depth: Optional[str] = None,
+    search_depth: str | None = None,
 ) -> None:
     """
     Log one web-search call for the usage-monitoring admin view. Best-effort.
