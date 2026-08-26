@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
@@ -9,7 +9,7 @@ class WebSearchRequest(BaseModel):
     engine: Literal["tavily", "exa"]
     query: str
     num_results: int = 10
-    search_depth: Optional[str] = "basic"  # tavily only
+    search_depth: str | None = "basic"  # tavily only
 
     @field_validator("query")
     @classmethod

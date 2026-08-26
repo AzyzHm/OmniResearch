@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator
 
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
@@ -40,4 +41,3 @@ class CurrentUserResponse(BaseModel):
     user_id: str
     username: str
     role: str
-

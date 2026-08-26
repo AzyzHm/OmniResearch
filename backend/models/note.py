@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -48,5 +47,5 @@ class NoteItemOut(BaseModel):
     chat_id: str
     role: str
     content: str
-    sources: Optional[list[Source]] = None
+    sources: list[Source] | None = None
     created_at: datetime
