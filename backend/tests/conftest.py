@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.setup import mock_modules
 from tests.setup.fakes import FakeDB
 from tests.setup.patches import patch_all_get_supabase
 from tests.setup.tokens import make_admin_token, make_superadmin_token, make_token
