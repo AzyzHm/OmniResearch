@@ -1,16 +1,13 @@
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from backend.config.settings import get_settings
-
-from backend.config.auth import create_access_token, hash_password, verify_password, get_current_user
-from backend.database.db import get_supabase
-from backend.models.auth import LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse
-from backend.models.log import MessageResponse
-
-from fastapi.security import HTTPAuthorizationCredentials
+from config.auth import create_access_token, get_current_user, hash_password, verify_password
+from config.settings import get_settings
+from database.db import get_supabase
+from models.auth import CurrentUserResponse, LoginRequest, RegisterRequest, TokenResponse
+from models.log import MessageResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -24,12 +21,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def register(payload: RegisterRequest):
     db = get_supabase()
 
-    existing = (
-        db.table("users")
-        .select("id")
-        .eq("username", payload.username)
-        .execute()
-    )
+    existing = db.table("users").select("id").eq("username", payload.username).execute()
     if existing.data:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -50,6 +42,7 @@ async def register(payload: RegisterRequest):
         message="Account created successfully. Please wait for an administrator to approve your account."
     )
 
+
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -59,10 +52,7 @@ async def login(payload: LoginRequest, request: Request, response: Response):
     db = get_supabase()
 
     result = (
-        db.table("users")
-        .select("id, username, password, role, is_approved")
-        .eq("username", payload.username)
-        .execute()
+        db.table("users").select("id, username, password, role, is_approved").eq("username", payload.username).execute()
     )
     if not result.data:
         raise HTTPException(
@@ -70,7 +60,7 @@ async def login(payload: LoginRequest, request: Request, response: Response):
             detail="Invalid username or password.",
         )
 
-    user : Any = result.data[0]
+    user: Any = result.data[0]
 
     if not verify_password(payload.password, user["password"]):
         raise HTTPException(
@@ -89,7 +79,7 @@ async def login(payload: LoginRequest, request: Request, response: Response):
         {
             "user_id": user["id"],
             "username": user["username"],
-            "login_time": datetime.now(timezone.utc).isoformat(),
+            "login_time": datetime.now(UTC).isoformat(),
             "ip_address": ip,
         }
     ).execute()
@@ -117,6 +107,7 @@ async def login(payload: LoginRequest, request: Request, response: Response):
         role=user["role"],
     )
 
+
 @router.post(
     "/logout",
     response_model=MessageResponse,
@@ -125,6 +116,7 @@ async def login(payload: LoginRequest, request: Request, response: Response):
 async def logout(response: Response):
     response.delete_cookie(key="access_token", path="/")
     return MessageResponse(message="Logged out successfully.")
+
 
 @router.get(
     "/me",

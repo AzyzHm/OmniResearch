@@ -1,5 +1,5 @@
-from backend.config.settings import get_settings
-from backend.database.db import get_supabase
+from config.settings import get_settings
+from database.db import get_supabase
 
 
 def upload_collection_file(path: str, data: bytes, content_type: str) -> None:
@@ -7,7 +7,9 @@ def upload_collection_file(path: str, data: bytes, content_type: str) -> None:
     db = get_supabase()
     settings = get_settings()
     db.storage.from_(settings.collection_files_bucket).upload(
-        path, data, {"content-type": content_type, "upsert": "true"},
+        path,
+        data,
+        {"content-type": content_type, "upsert": "true"},
     )
 
 

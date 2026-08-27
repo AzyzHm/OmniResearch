@@ -27,7 +27,7 @@ const pdfItem = { id: "item-2", name: "q3-report.pdf", source_type: "pdf" }
 
 function mockTextResponse(body: string) {
   globalThis.fetch = vi.fn(() =>
-    Promise.resolve(new Response(body, { status: 200 }))
+    Promise.resolve(new Response(body, { status: 200 })),
   ) as unknown as typeof fetch
 }
 
@@ -45,7 +45,7 @@ describe("ItemContentModal TXT highlighting", () => {
         item={txtItem}
         onOpenChange={() => {}}
         highlightText="Revenue grew 12% year over year."
-      />
+      />,
     )
 
     const mark = await waitFor(() => screen.getByText("Revenue grew 12% year over year."))
@@ -55,9 +55,7 @@ describe("ItemContentModal TXT highlighting", () => {
   it("renders the plain text with no <mark> when there's no highlightText", async () => {
     mockTextResponse("Just some file contents.")
 
-    render(
-      <ItemContentModal collectionId="c1" item={txtItem} onOpenChange={() => {}} />
-    )
+    render(<ItemContentModal collectionId="c1" item={txtItem} onOpenChange={() => {}} />)
 
     await waitFor(() => screen.getByText("Just some file contents."))
     expect(document.querySelector("mark")).not.toBeInTheDocument()
@@ -72,11 +70,11 @@ describe("ItemContentModal TXT highlighting", () => {
         item={txtItem}
         onOpenChange={() => {}}
         highlightText="This exact sentence is not in the file."
-      />
+      />,
     )
 
     await waitFor(() =>
-      screen.getByText("The file content has changed since this citation was generated.")
+      screen.getByText("The file content has changed since this citation was generated."),
     )
     expect(document.querySelector("mark")).not.toBeInTheDocument()
   })
@@ -90,7 +88,7 @@ describe("ItemContentModal PDF branch", () => {
         item={pdfItem}
         onOpenChange={() => {}}
         highlightText="Revenue grew 12% year over year."
-      />
+      />,
     )
 
     const preview = await screen.findByTestId("pdf-preview")

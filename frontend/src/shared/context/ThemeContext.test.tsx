@@ -2,13 +2,11 @@ import { render, screen, act } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, beforeEach, vi } from "vitest"
 
-import { ThemeProvider, useTheme } from "@/shared/context/ThemeContext"
+import { ThemeProvider } from "@/shared/context/ThemeContext"
+import { useTheme } from "@/shared/context/useTheme"
 
 const STORAGE_KEY = "omniresearch-theme"
 
-/** Minimal fake matchMedia supporting the one query this app uses, with a
- * mutable `matches` and a way to fire a synthetic 'change' event, so tests
- * can simulate the OS preference changing live. */
 function installMatchMediaMock(initialMatches: boolean) {
   let matches = initialMatches
   const listeners: Array<() => void> = []
@@ -55,11 +53,11 @@ describe("ThemeContext", () => {
   })
 
   it("defaults to system preference when nothing is stored", () => {
-    installMatchMediaMock(true) // OS prefers dark
+    installMatchMediaMock(true)
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
     expect(screen.getByTestId("theme")).toHaveTextContent("system")
     expect(screen.getByTestId("resolved")).toHaveTextContent("dark")
@@ -67,12 +65,12 @@ describe("ThemeContext", () => {
   })
 
   it("respects a stored explicit preference over the OS setting", () => {
-    installMatchMediaMock(true) // OS prefers dark, but stored says light
+    installMatchMediaMock(true)
     window.localStorage.setItem(STORAGE_KEY, "light")
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
     expect(screen.getByTestId("resolved")).toHaveTextContent("light")
     expect(document.documentElement.classList.contains("dark")).toBe(false)
@@ -84,7 +82,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
 
     await user.click(screen.getByRole("button", { name: "dark" }))
@@ -99,7 +97,7 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
     expect(screen.getByTestId("resolved")).toHaveTextContent("light")
 
@@ -117,13 +115,12 @@ describe("ThemeContext", () => {
     render(
       <ThemeProvider>
         <ThemeProbe />
-      </ThemeProvider>
+      </ThemeProvider>,
     )
 
     await user.click(screen.getByRole("button", { name: "light" }))
     expect(screen.getByTestId("resolved")).toHaveTextContent("light")
 
-    // OS switches to dark, but the user explicitly chose light — should stay light.
     act(() => {
       mock.setMatches(true)
     })

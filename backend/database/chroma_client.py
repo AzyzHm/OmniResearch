@@ -1,16 +1,19 @@
 import logging
 from functools import lru_cache
+
 from chromadb import PersistentClient
+from chromadb.api import ClientAPI
 from chromadb.config import Settings as ChromaSettings
 from chromadb.errors import NotFoundError
-from backend.config.settings import get_settings
-from backend.services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
+
+from config.settings import get_settings
+from services.bm25 import bm25_sparse_vectors, sparse_vector_to_metadata
 
 logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
-def get_chroma() -> PersistentClient: # type: ignore
+def get_chroma() -> ClientAPI:
     """Return a cached ChromaDB persistent client."""
     settings = get_settings()
     return PersistentClient(
@@ -89,5 +92,7 @@ def delete_item_chunks(collection_id: str, item_id: str) -> None:
     except Exception as exc:
         logger.error(
             "Failed to delete chunks for item %s in collection %s: %s",
-            item_id, collection_id, exc,
+            item_id,
+            collection_id,
+            exc,
         )

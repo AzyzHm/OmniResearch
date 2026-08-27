@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Any, cast
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.config.auth import get_current_user
-from backend.database.db import get_supabase
-from backend.models.project import ProjectCreate, ProjectOut, ProjectUpdate
-from backend.utils.naming import next_unique_name
+from config.auth import get_current_user
+from database.db import get_supabase
+from models.project import ProjectCreate, ProjectOut, ProjectUpdate
+from utils.naming import next_unique_name
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -12,13 +13,7 @@ router = APIRouter(prefix="/projects", tags=["Projects"])
 def _own_project(project_id: str, user_id: str) -> dict:
     """Fetch a project and verify it belongs to the current user."""
     db = get_supabase()
-    result = (
-        db.table("projects")
-        .select("*")
-        .eq("id", project_id)
-        .eq("user_id", user_id)
-        .execute()
-    )
+    result = db.table("projects").select("*").eq("id", project_id).eq("user_id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found.")
     row: Any = result.data[0]
@@ -32,7 +27,7 @@ def _existing_project_names(user_id: str, exclude_id: str | None = None) -> list
     if exclude_id is not None:
         query = query.neq("id", exclude_id)
     result = query.execute()
-    return [row["name"] for row in result.data]  # type: ignore
+    return [row["name"] for row in cast(list[dict[str, Any]], result.data)]
 
 
 @router.get("", response_model=list[ProjectOut])
@@ -40,13 +35,10 @@ async def list_projects(current_user: dict = Depends(get_current_user)):
     """Return all projects that belong to the authenticated user."""
     db = get_supabase()
     result = (
-        db.table("projects")
-        .select("*")
-        .eq("user_id", current_user["sub"])
-        .order("updated_at", desc=True)
-        .execute()
+        db.table("projects").select("*").eq("user_id", current_user["sub"]).order("updated_at", desc=True).execute()
     )
     return result.data
+
 
 @router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
 async def create_project(
@@ -56,13 +48,12 @@ async def create_project(
     db = get_supabase()
     existing_names = _existing_project_names(current_user["sub"])
     unique_name = next_unique_name(body.name, existing_names)
-    result = db.table("projects").insert(
-        {"user_id": current_user["sub"], "name": unique_name}
-    ).execute()
+    result = db.table("projects").insert({"user_id": current_user["sub"], "name": unique_name}).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create project.")
     row: Any = result.data[0]
     return row
+
 
 @router.put("/{project_id}", response_model=ProjectOut)
 async def rename_project(
@@ -74,12 +65,7 @@ async def rename_project(
     db = get_supabase()
     existing_names = _existing_project_names(current_user["sub"], exclude_id=project_id)
     unique_name = next_unique_name(body.name, existing_names)
-    result = (
-        db.table("projects")
-        .update({"name": unique_name})
-        .eq("id", project_id)
-        .execute()
-    )
+    result = db.table("projects").update({"name": unique_name}).eq("id", project_id).execute()
     row: Any = result.data[0]
     return row
 

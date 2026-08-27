@@ -1,13 +1,12 @@
 import logging
-from typing import Optional
 
-from backend.database.db import get_supabase
+from database.db import get_supabase
 
 logger = logging.getLogger(__name__)
 
 
 def record_llm_usage(
-    user_id: Optional[str],
+    user_id: str | None,
     provider: str,
     model: str,
     prompt_tokens: int,
@@ -23,23 +22,25 @@ def record_llm_usage(
         return
     try:
         db = get_supabase()
-        db.table("llm_usage").insert({
-            "user_id": user_id,
-            "provider": provider,
-            "model": model,
-            "prompt_tokens": prompt_tokens or 0,
-            "completion_tokens": completion_tokens or 0,
-            "total_tokens": total_tokens or 0,
-        }).execute()
+        db.table("llm_usage").insert(
+            {
+                "user_id": user_id,
+                "provider": provider,
+                "model": model,
+                "prompt_tokens": prompt_tokens or 0,
+                "completion_tokens": completion_tokens or 0,
+                "total_tokens": total_tokens or 0,
+            }
+        ).execute()
     except Exception as exc:
         logger.error("Failed to record LLM usage: %s", exc)
 
 
 def record_search_usage(
-    user_id: Optional[str],
+    user_id: str | None,
     engine: str,
     num_results: int,
-    search_depth: Optional[str] = None,
+    search_depth: str | None = None,
 ) -> None:
     """
     Log one web-search call for the usage-monitoring admin view. Best-effort.
@@ -53,12 +54,14 @@ def record_search_usage(
     credits = 2 if engine == "tavily" and search_depth == "advanced" else 1
     try:
         db = get_supabase()
-        db.table("search_usage").insert({
-            "user_id": user_id,
-            "engine": engine,
-            "num_results": num_results or 0,
-            "search_depth": search_depth,
-            "credits": credits,
-        }).execute()
+        db.table("search_usage").insert(
+            {
+                "user_id": user_id,
+                "engine": engine,
+                "num_results": num_results or 0,
+                "search_depth": search_depth,
+                "credits": credits,
+            }
+        ).execute()
     except Exception as exc:
         logger.error("Failed to record search usage: %s", exc)

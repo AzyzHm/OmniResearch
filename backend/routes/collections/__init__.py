@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from backend.routes.collections import crud, ingest, items
+from routes.collections import crud, ingest, items
 
 router = APIRouter(tags=["Collections"])
 

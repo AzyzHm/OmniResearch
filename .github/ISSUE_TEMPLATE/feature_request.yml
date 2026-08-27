@@ -1,0 +1,41 @@
+name: Feature Request
+description: Suggest an improvement or new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Checked for duplicates
+      options:
+        - label: I searched existing issues and didn't find one already open for this
+          required: true
+
+  - type: dropdown
+    attributes:
+      label: Area
+      description: Which part of OmniResearch does this affect?
+      options:
+        - Backend (FastAPI / ingestion / RAG pipeline)
+        - Frontend (React UI)
+        - Both / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Problem or motivation
+      description: What's missing or painful right now? What would this let you do?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Proposed solution
+      description: What would you like to see happen?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Alternatives considered (optional)
+      description: Any other approaches you thought about, and why you didn't prefer them.

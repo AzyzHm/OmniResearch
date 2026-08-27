@@ -2,24 +2,28 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 
-from backend.config.auth import get_current_user
-from backend.config.settings import get_settings
-from backend.database.chroma_client import add_item_chunks
-from backend.database.db import get_supabase
-from backend.models.collection import ALLOWED_UPLOAD_EXTENSIONS, EXT_TO_SOURCE_TYPE, CollectionItemOut
-from backend.models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
-from backend.routes.collections._shared import _existing_urls, _own_collection
-from backend.services.embeddings import embed_texts
-from backend.services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
-from backend.services.file_storage import upload_collection_file
-from backend.services.text_processing import chunk_text
-from backend.services.web_fetch import fetch_url_markdown
+from config.auth import get_current_user
+from config.settings import get_settings
+from database.chroma_client import add_item_chunks
+from database.db import get_supabase
+from models.collection import ALLOWED_UPLOAD_EXTENSIONS, EXT_TO_SOURCE_TYPE, CollectionItemOut
+from models.search import AddSearchResults, AddSearchResultsResponse, ManualUrlAdd
+from routes.collections._shared import _existing_urls, _own_collection
+from services.embeddings import embed_texts
+from services.extraction import count_pdf_pages, count_words, extract_pdf, extract_txt
+from services.file_storage import upload_collection_file
+from services.text_processing import chunk_text
+from services.web_fetch import fetch_url_markdown
 
 router = APIRouter()
 
 
 def _process_upload_item(
-    collection_id: str, item_id: str, filename: str, source_type: str, raw_bytes: bytes,
+    collection_id: str,
+    item_id: str,
+    filename: str,
+    source_type: str,
+    raw_bytes: bytes,
 ) -> None:
     """Background task: extract, chunk, embed, and store a single uploaded file."""
     db = get_supabase()
@@ -44,25 +48,30 @@ def _process_upload_item(
 
         storage_path = f"{collection_id}/{item_id}/{filename}"
         content_type = "application/pdf" if source_type == "pdf" else "text/plain"
+        stored_path: str | None = storage_path
         try:
             upload_collection_file(storage_path, raw_bytes, content_type)
         except Exception as exc:
             print(f"Warning: failed to store original file for item {item_id!r}: {exc}")
-            storage_path = None
+            stored_path = None
 
-        db.table("collection_items").update({
-            "status": "ready",
-            "chunk_count": len(chunks),
-            "page_count": page_count,
-            "word_count": word_count,
-            "storage_path": storage_path,
-        }).eq("id", item_id).execute()
+        db.table("collection_items").update(
+            {
+                "status": "ready",
+                "chunk_count": len(chunks),
+                "page_count": page_count,
+                "word_count": word_count,
+                "storage_path": stored_path,
+            }
+        ).eq("id", item_id).execute()
 
     except Exception as exc:
-        db.table("collection_items").update({
-            "status": "error",
-            "error_message": str(exc),
-        }).eq("id", item_id).execute()
+        db.table("collection_items").update(
+            {
+                "status": "error",
+                "error_message": str(exc),
+            }
+        ).eq("id", item_id).execute()
 
 
 def _process_url_item(collection_id: str, item_id: str, url: str) -> None:
@@ -78,16 +87,20 @@ def _process_url_item(collection_id: str, item_id: str, url: str) -> None:
         vectors = embed_texts(chunks)
         add_item_chunks(collection_id, item_id, chunks, vectors, source_name=url)
 
-        db.table("collection_items").update({
-            "status": "ready",
-            "chunk_count": len(chunks),
-        }).eq("id", item_id).execute()
+        db.table("collection_items").update(
+            {
+                "status": "ready",
+                "chunk_count": len(chunks),
+            }
+        ).eq("id", item_id).execute()
 
     except Exception as exc:
-        db.table("collection_items").update({
-            "status": "error",
-            "error_message": str(exc),
-        }).eq("id", item_id).execute()
+        db.table("collection_items").update(
+            {
+                "status": "error",
+                "error_message": str(exc),
+            }
+        ).eq("id", item_id).execute()
 
 
 def _process_search_result_item(collection_id: str, item_id: str, url: str, content: str) -> None:
@@ -104,16 +117,20 @@ def _process_search_result_item(collection_id: str, item_id: str, url: str, cont
         vectors = embed_texts(chunks)
         add_item_chunks(collection_id, item_id, chunks, vectors, source_name=url)
 
-        db.table("collection_items").update({
-            "status": "ready",
-            "chunk_count": len(chunks),
-        }).eq("id", item_id).execute()
+        db.table("collection_items").update(
+            {
+                "status": "ready",
+                "chunk_count": len(chunks),
+            }
+        ).eq("id", item_id).execute()
 
     except Exception as exc:
-        db.table("collection_items").update({
-            "status": "error",
-            "error_message": str(exc),
-        }).eq("id", item_id).execute()
+        db.table("collection_items").update(
+            {
+                "status": "error",
+                "error_message": str(exc),
+            }
+        ).eq("id", item_id).execute()
 
 
 @router.post("/collections/{collection_id}/items", response_model=list[CollectionItemOut])
@@ -135,10 +152,7 @@ async def upload_items(
     """
     _own_collection(collection_id, current_user["sub"])
 
-    invalid = [
-        f.filename for f in files
-        if not (f.filename or "").lower().endswith(ALLOWED_UPLOAD_EXTENSIONS)
-    ]
+    invalid = [f.filename for f in files if not (f.filename or "").lower().endswith(ALLOWED_UPLOAD_EXTENSIONS)]
     if invalid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -157,17 +171,28 @@ async def upload_items(
         source_type = EXT_TO_SOURCE_TYPE[ext]
         raw_bytes = await upload.read()
 
-        insert_result = db.table("collection_items").insert({
-            "collection_id": collection_id,
-            "name": filename,
-            "source_type": source_type,
-            "status": "processing",
-        }).execute()
+        insert_result = (
+            db.table("collection_items")
+            .insert(
+                {
+                    "collection_id": collection_id,
+                    "name": filename,
+                    "source_type": source_type,
+                    "status": "processing",
+                }
+            )
+            .execute()
+        )
         item_row: Any = insert_result.data[0]
         item_id = item_row["id"]
 
         background_tasks.add_task(
-            _process_upload_item, collection_id, item_id, filename, source_type, raw_bytes,
+            _process_upload_item,
+            collection_id,
+            item_id,
+            filename,
+            source_type,
+            raw_bytes,
         )
         results.append(item_row)
 
@@ -195,12 +220,18 @@ async def add_url_item(
 
     db = get_supabase()
 
-    insert_result = db.table("collection_items").insert({
-        "collection_id": collection_id,
-        "name": url,
-        "source_type": "url",
-        "status": "processing",
-    }).execute()
+    insert_result = (
+        db.table("collection_items")
+        .insert(
+            {
+                "collection_id": collection_id,
+                "name": url,
+                "source_type": "url",
+                "status": "processing",
+            }
+        )
+        .execute()
+    )
     item_row: Any = insert_result.data[0]
     item_id = item_row["id"]
 
@@ -244,17 +275,27 @@ async def add_search_result_items(
             continue
         existing.add(url)
 
-        insert_result = db.table("collection_items").insert({
-            "collection_id": collection_id,
-            "name": url,
-            "source_type": "url",
-            "status": "processing",
-        }).execute()
+        insert_result = (
+            db.table("collection_items")
+            .insert(
+                {
+                    "collection_id": collection_id,
+                    "name": url,
+                    "source_type": "url",
+                    "status": "processing",
+                }
+            )
+            .execute()
+        )
         item_row: Any = insert_result.data[0]
         item_id = item_row["id"]
 
         background_tasks.add_task(
-            _process_search_result_item, collection_id, item_id, url, result_item.content.strip(),
+            _process_search_result_item,
+            collection_id,
+            item_id,
+            url,
+            result_item.content.strip(),
         )
         added.append(item_row)
 

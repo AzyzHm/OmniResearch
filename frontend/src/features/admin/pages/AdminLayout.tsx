@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate, Link } from "react-router-dom"
 import { ArrowLeft, LogOut } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
-import { useAuth } from "@/features/auth/context/AuthContext"
+import { useAuth } from "@/features/auth/context/useAuth"
 import { cn } from "@/shared/lib/utils"
 import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"
@@ -77,7 +77,7 @@ function AdminLayout() {
                   "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
                     ? "bg-teal/10 text-teal"
-                    : "text-muted-foreground hover:bg-muted hover:text-ink"
+                    : "text-muted-foreground hover:bg-muted hover:text-ink",
                 )
               }
             >

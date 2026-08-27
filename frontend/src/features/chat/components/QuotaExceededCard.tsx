@@ -42,13 +42,11 @@ function QuotaExceededCard({ used, limit, resetAt }: QuotaExceededCardProps) {
     <div className="rounded-xl border border-amber/40 bg-amber/10 p-4">
       <div className="flex items-center gap-2">
         <Hourglass className="size-4 text-amber" />
-        <span className="text-sm font-semibold text-amber">
-          Daily token quota reached
-        </span>
+        <span className="text-sm font-semibold text-amber">Daily token quota reached</span>
       </div>
       <p className="mt-1.5 text-sm text-ink">
-        You&apos;ve used all of your daily tokens for today. You can send
-        messages again once your quota resets.
+        You&apos;ve used all of your daily tokens for today. You can send messages again once your
+        quota resets.
       </p>
 
       {pct !== null && (
@@ -57,8 +55,7 @@ function QuotaExceededCard({ used, limit, resetAt }: QuotaExceededCardProps) {
             <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
           </div>
           <p className="mt-1 font-mono text-xs text-muted-foreground">
-            {used?.toLocaleString()} / {limit?.toLocaleString()} tokens used
-            today
+            {used?.toLocaleString()} / {limit?.toLocaleString()} tokens used today
           </p>
         </div>
       )}

@@ -1,9 +1,9 @@
 from typing import Any, Literal, cast
 
-from backend.database.chroma_client import get_chroma_collection
-from backend.database.db import get_supabase
-from backend.services.bm25 import bm25_sparse_vector, sparse_dot, sparse_vector_from_metadata
-from backend.services.embeddings import embed_texts
+from database.chroma_client import get_chroma_collection
+from database.db import get_supabase
+from services.bm25 import bm25_sparse_vector, sparse_dot, sparse_vector_from_metadata
+from services.embeddings import embed_texts
 
 RetrievalMode = Literal["semantic", "keyword", "hybrid"]
 RRF_K = 60
@@ -13,9 +13,7 @@ def get_active_items_by_collection(project_id: str) -> dict[str, list[str]]:
     """Return {collection_id: [item_id, ...]} for every ready + active item in a project."""
     db = get_supabase()
 
-    collections_result = (
-        db.table("collections").select("id").eq("project_id", project_id).execute()
-    )
+    collections_result = db.table("collections").select("id").eq("project_id", project_id).execute()
     collection_rows = cast(list[dict[str, Any]], collections_result.data)
     collection_ids = [row["id"] for row in collection_rows]
     if not collection_ids:
@@ -64,17 +62,19 @@ def _fetch_all_active_chunks(project_id: str) -> list[dict[str, Any]]:
         documents = result.get("documents") or []
         metadatas = result.get("metadatas") or []
 
-        for doc, meta in zip(documents, metadatas):
+        for doc, meta in zip(documents, metadatas, strict=True):
             meta = meta or {}
             bm25_indices, bm25_values = sparse_vector_from_metadata(meta)
-            chunks.append({
-                "content": doc,
-                "source_name": meta.get("source_name", "unknown source"),
-                "collection_id": collection_id,
-                "item_id": meta.get("item_id"),
-                "_bm25_indices": bm25_indices,
-                "_bm25_values": bm25_values,
-            })
+            chunks.append(
+                {
+                    "content": doc,
+                    "source_name": meta.get("source_name", "unknown source"),
+                    "collection_id": collection_id,
+                    "item_id": meta.get("item_id"),
+                    "_bm25_indices": bm25_indices,
+                    "_bm25_values": bm25_values,
+                }
+            )
     return chunks
 
 
@@ -103,15 +103,17 @@ def _retrieve_pool_semantic(project_id: str, query: str, pool_size: int) -> list
         metadatas = (result.get("metadatas") or [[]])[0]
         distances = (result.get("distances") or [[]])[0]
 
-        for doc, meta, dist in zip(documents, metadatas, distances):
+        for doc, meta, dist in zip(documents, metadatas, distances, strict=True):
             meta = meta or {}
-            pooled.append({
-                "content": doc,
-                "source_name": meta.get("source_name", "unknown source"),
-                "collection_id": collection_id,
-                "item_id": meta.get("item_id"),
-                "distance": dist,  # lower = more relevant
-            })
+            pooled.append(
+                {
+                    "content": doc,
+                    "source_name": meta.get("source_name", "unknown source"),
+                    "collection_id": collection_id,
+                    "item_id": meta.get("item_id"),
+                    "distance": dist,  # lower = more relevant
+                }
+            )
 
     pooled.sort(key=lambda c: c["distance"])
     return pooled[:pool_size]
@@ -135,13 +137,15 @@ def _retrieve_pool_keyword(project_id: str, query: str, pool_size: int) -> list[
         score = sparse_dot(q_indices, q_values, chunk["_bm25_indices"], chunk["_bm25_values"])
         if score <= 0:
             continue
-        scored.append({
-            "content": chunk["content"],
-            "source_name": chunk["source_name"],
-            "collection_id": chunk["collection_id"],
-            "item_id": chunk["item_id"],
-            "distance": -score,
-        })
+        scored.append(
+            {
+                "content": chunk["content"],
+                "source_name": chunk["source_name"],
+                "collection_id": chunk["collection_id"],
+                "item_id": chunk["item_id"],
+                "distance": -score,
+            }
+        )
 
     scored.sort(key=lambda c: c["distance"])
     return scored[:pool_size]
@@ -177,7 +181,7 @@ def _retrieve_pool_hybrid(project_id: str, query: str, pool_size: int) -> list[d
     fused: list[dict[str, Any]] = []
     for key, score in rrf_scores.items():
         chunk = dict(chunk_by_key[key])
-        chunk["distance"] = -score 
+        chunk["distance"] = -score
         fused.append(chunk)
 
     fused.sort(key=lambda c: c["distance"])
