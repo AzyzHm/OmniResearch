@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -36,10 +37,10 @@ class CollectionItemOut(BaseModel):
     is_active: bool
     status: str
     chunk_count: int
-    page_count: int | None = None
-    word_count: int | None = None
-    storage_path: str | None = None
-    error_message: str | None = None
+    page_count: Optional[int] = None
+    word_count: Optional[int] = None
+    storage_path: Optional[str] = None
+    error_message: Optional[str] = None
     created_at: datetime
 
 

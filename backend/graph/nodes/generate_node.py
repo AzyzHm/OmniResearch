@@ -1,8 +1,8 @@
 import logging
 import re
 
-from graph.state import RAGState
-from services.rag_llm import generate_answer
+from backend.graph.state import RAGState
+from backend.services.rag_llm import generate_answer
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +34,13 @@ def _extract_cited_sources(answer: str, context_chunks: list[dict]) -> list[dict
     sources = []
     for n in cited_indices:
         chunk = context_chunks[n - 1]
-        sources.append(
-            {
-                "index": n,
-                "source_name": chunk.get("source_name", "unknown source"),
-                "collection_id": chunk.get("collection_id"),
-                "item_id": chunk.get("item_id"),
-                "content": chunk.get("content"),
-            }
-        )
+        sources.append({
+            "index": n,
+            "source_name": chunk.get("source_name", "unknown source"),
+            "collection_id": chunk.get("collection_id"),
+            "item_id": chunk.get("item_id"),
+            "content": chunk.get("content"),
+        })
     return sources
 
 

@@ -37,7 +37,7 @@ function renderWithProviders() {
   return render(
     <QueryClientProvider client={queryClient}>
       <Harness />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
 }
 
@@ -53,7 +53,7 @@ function mockCollectionFetch() {
         new Response(JSON.stringify(data), {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
+        })
       )
     }
 

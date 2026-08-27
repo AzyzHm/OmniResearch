@@ -18,10 +18,12 @@ function StatusBadge({ status }: { status: CollectionItem["status"] }) {
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[0.7rem] font-medium",
-        STATUS_STYLES[status] ?? "bg-muted text-muted-foreground",
+        STATUS_STYLES[status] ?? "bg-muted text-muted-foreground"
       )}
     >
-      {status === "processing" && <span className="size-1.5 animate-pulse rounded-full bg-amber" />}
+      {status === "processing" && (
+        <span className="size-1.5 animate-pulse rounded-full bg-amber" />
+      )}
       {STATUS_LABELS[status] ?? status}
     </span>
   )

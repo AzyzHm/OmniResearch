@@ -3,7 +3,7 @@ from typing import Any, cast
 
 import ollama
 
-from config.settings import get_settings
+from backend.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,9 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     settings = get_settings()
     response = ollama.embed(model=settings.embedding_model, input=texts)
 
-    embeddings = response["embeddings"] if isinstance(response, dict) else cast(Any, response).embeddings
+    if isinstance(response, dict):
+        embeddings = response["embeddings"]
+    else:
+        embeddings = cast(Any, response).embeddings
 
     return cast(list[list[float]], embeddings)

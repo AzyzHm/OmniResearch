@@ -20,11 +20,7 @@ const PROJECTS_QUERY_KEY = ["projects"]
 function ProjectsList() {
   const queryClient = useQueryClient()
 
-  const {
-    data: projects,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: projects, isLoading, isError } = useQuery({
     queryKey: PROJECTS_QUERY_KEY,
     queryFn: listProjects,
   })
@@ -57,7 +53,8 @@ function ProjectsList() {
   })
 
   const renameMutation = useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => renameProject(id, { name }),
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      renameProject(id, { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY })
       setRenameTarget(null)
@@ -79,12 +76,14 @@ function ProjectsList() {
     },
     onSuccess: (_data, id) => {
       queryClient.setQueryData<Project[]>(PROJECTS_QUERY_KEY, (old) =>
-        old ? old.filter((p) => p.id !== id) : old,
+        old ? old.filter((p) => p.id !== id) : old
       )
       queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY })
     },
     onError: (err) => {
-      setDeleteError(err instanceof ApiError ? err.message : "Couldn't delete the project.")
+      setDeleteError(
+        err instanceof ApiError ? err.message : "Couldn't delete the project."
+      )
     },
     onSettled: () => setDeletingId(null),
   })
@@ -95,7 +94,8 @@ function ProjectsList() {
         <div>
           <h1 className="font-display text-2xl font-medium text-ink">Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Organize your research into separate projects, each with its own collections and chats.
+            Organize your research into separate projects, each with its own
+            collections and chats.
           </p>
         </div>
 
@@ -126,7 +126,9 @@ function ProjectsList() {
         />
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading projects...</p>}
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">Loading projects...</p>
+      )}
 
       {isError && (
         <p className="text-sm text-destructive">
@@ -144,7 +146,8 @@ function ProjectsList() {
           <div>
             <p className="font-medium text-ink">No projects yet</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create your first project to start uploading documents and asking questions.
+              Create your first project to start uploading documents and asking
+              questions.
             </p>
           </div>
           <Button type="button" className="mt-2" onClick={openCreateDialog}>

@@ -21,11 +21,7 @@ function Harness() {
       <p data-testid="content-pane">
         {selected ? `Showing: ${selected.name}` : "No chat selected"}
       </p>
-      <ChatsSidebar
-        projectId="proj-1"
-        selectedChatId={selected?.id ?? null}
-        onSelect={setSelected}
-      />
+      <ChatsSidebar projectId="proj-1" selectedChatId={selected?.id ?? null} onSelect={setSelected} />
     </>
   )
 }
@@ -37,7 +33,7 @@ function renderWithProviders() {
   return render(
     <QueryClientProvider client={queryClient}>
       <Harness />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
 }
 
@@ -53,7 +49,7 @@ function mockChatFetch() {
         new Response(JSON.stringify(data), {
           status: 200,
           headers: { "content-type": "application/json" },
-        }),
+        })
       )
     }
 

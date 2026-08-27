@@ -23,7 +23,7 @@ function renderWithProviders() {
       <MemoryRouter>
         <ProjectsList />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
 }
 
@@ -47,7 +47,7 @@ describe("ProjectsList delete flow", () => {
             new Response(JSON.stringify([project]), {
               status: 200,
               headers: { "content-type": "application/json" },
-            }),
+            })
           )
         }
         return new Promise(() => {})
@@ -58,7 +58,7 @@ describe("ProjectsList delete flow", () => {
           new Response(null, {
             status: 204,
             headers: { "content-type": "application/json" },
-          }),
+          })
         )
       }
 

@@ -48,7 +48,9 @@ function ProjectFormDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{mode === "create" ? "New project" : "Rename project"}</DialogTitle>
+            <DialogTitle>
+              {mode === "create" ? "New project" : "Rename project"}
+            </DialogTitle>
             <DialogDescription>
               {mode === "create"
                 ? "Give your project a name. You can rename it later."
@@ -79,7 +81,11 @@ function ProjectFormDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || !name.trim()}>
-              {isSubmitting ? "Saving..." : mode === "create" ? "Create project" : "Save changes"}
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create project"
+                  : "Save changes"}
             </Button>
           </DialogFooter>
         </form>

@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from "vitest"
 
 import Workspace from "@/features/workspace/pages/Workspace"
 
-vi.mock("@/features/auth/context/useAuth", () => ({
+vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: vi.fn(),
 }))
 
@@ -12,7 +12,7 @@ vi.mock("@/shared/components/ThemeToggle", () => ({
   default: () => <button data-testid="theme-toggle">Theme</button>,
 }))
 
-import { useAuth } from "@/features/auth/context/useAuth"
+import { useAuth } from "@/features/auth/context/AuthContext"
 
 function renderWorkspace(role: string | undefined) {
   vi.mocked(useAuth).mockReturnValue({
@@ -21,12 +21,12 @@ function renderWorkspace(role: string | undefined) {
     isAuthenticated: !!role,
     refetchUser: vi.fn(),
     clearUser: vi.fn(),
-  })
+  } as any)
 
   return render(
     <MemoryRouter>
       <Workspace />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -59,6 +59,7 @@ describe("Workspace header — AdminSpace link", () => {
     const themeToggle = screen.getByTestId("theme-toggle")
 
     const position = adminLink.compareDocumentPosition(themeToggle)
+    // DOCUMENT_POSITION_FOLLOWING (4) means themeToggle comes after adminLink
     expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(header).toContainElement(adminLink)
   })

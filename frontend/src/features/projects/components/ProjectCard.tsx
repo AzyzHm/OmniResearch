@@ -88,8 +88,12 @@ function ProjectCard({ project, onRename, onDelete, isDeleting }: ProjectCardPro
       </div>
 
       <div>
-        <h3 className="font-display text-base font-medium text-ink">{project.name}</h3>
-        <p className="mt-0.5 font-mono text-xs text-muted-foreground">Updated {updatedLabel}</p>
+        <h3 className="font-display text-base font-medium text-ink">
+          {project.name}
+        </h3>
+        <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+          Updated {updatedLabel}
+        </p>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Navigate } from "react-router-dom"
 
-import { useAuth } from "@/features/auth/context/useAuth"
+import { useAuth } from "@/features/auth/context/AuthContext"
 
 function AdminRoute({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth()

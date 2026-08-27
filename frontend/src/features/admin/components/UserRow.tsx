@@ -83,7 +83,12 @@ function UserRow({
             ) : (
               <div className="flex items-center gap-1">
                 {!user.is_approved && (
-                  <Button type="button" size="xs" disabled={isMutating} onClick={onApprove}>
+                  <Button
+                    type="button"
+                    size="xs"
+                    disabled={isMutating}
+                    onClick={onApprove}
+                  >
                     Approve
                   </Button>
                 )}
@@ -93,7 +98,9 @@ function UserRow({
                     size="xs"
                     variant="outline"
                     disabled={isMutating}
-                    onClick={() => onChangeRole(user.role === "user" ? "admin" : "user")}
+                    onClick={() =>
+                      onChangeRole(user.role === "user" ? "admin" : "user")
+                    }
                   >
                     {user.role === "user" ? "Promote" : "Demote"}
                   </Button>

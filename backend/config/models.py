@@ -1,10 +1,10 @@
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import requests
 from google import genai
 
-from config.settings import get_settings
-from services.usage_tracker import record_llm_usage
+from backend.config.settings import get_settings
+from backend.services.usage_tracker import record_llm_usage
 
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 
@@ -85,7 +85,7 @@ def _call_mistral(messages: list[dict[str, Any]], temperature: float) -> tuple[s
 def get_gemini_response(
     messages: list[dict[str, Any]],
     temperature: float = 0.7,
-    user_id: str | None = None,
+    user_id: Optional[str] = None,
 ) -> str:
     """
     Call Gemini with a flat message list and return the response text.
@@ -127,5 +127,10 @@ def get_gemini_response(
             return text
         except Exception as mistral_exc:
             print(f"[LLM] Mistral fallback also failed: {mistral_exc}")
-            print(f"[LLM] Both providers exhausted — Gemini error: {gemini_exc} | Mistral error: {mistral_exc}")
-            raise RuntimeError("The base model quota has been reached. Please try again later.") from mistral_exc
+            print(
+                f"[LLM] Both providers exhausted — Gemini error: {gemini_exc} | "
+                f"Mistral error: {mistral_exc}"
+            )
+            raise RuntimeError(
+                "The base model quota has been reached. Please try again later."
+            ) from mistral_exc

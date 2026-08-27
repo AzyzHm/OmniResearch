@@ -1,10 +1,9 @@
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends
-from postgrest.types import CountMethod
 
-from config.auth import require_admin
-from database.db import get_supabase
+from backend.config.auth import require_admin
+from backend.database.db import get_supabase
 
 router = APIRouter()
 
@@ -23,15 +22,16 @@ async def get_stats(current_admin: dict = Depends(require_admin)):
     scoped_users = [u for u in cast(list[dict[str, Any]], users_result.data) if u["id"] != requester_id]
     scoped_user_ids = [u["id"] for u in scoped_users]
 
-    total_users = len([u for u in scoped_users if u["role"] == "user"])
-    admin_users = len([u for u in scoped_users if u["role"] == "admin"])
+    total_users   = len([u for u in scoped_users if u["role"] == "user"])
+    admin_users   = len([u for u in scoped_users if u["role"] == "admin"])
     pending_users = len([u for u in scoped_users if u["role"] == "user" and not u["is_approved"]])
 
     total_logins = 0
     recent_data: list[dict[str, Any]] = []
     if scoped_user_ids:
         logins_result: Any = (
-            db.table("login_logs").select("id", count=CountMethod.exact).in_("user_id", scoped_user_ids).execute()
+            db.table("login_logs").select("id", count="exact") # type: ignore
+            .in_("user_id", scoped_user_ids).execute()
         )
         total_logins = logins_result.count or 0
 

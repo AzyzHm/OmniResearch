@@ -1,14 +1,14 @@
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 
-from config.auth import get_current_user
-from database.chroma_client import delete_item_chunks
-from database.db import get_supabase
-from models.collection import BulkItemsUpdateRequest, CollectionItemOut, CollectionItemUpdate
-from routes.collections._shared import _own_collection
-from services.file_storage import delete_collection_file, download_collection_file
+from backend.config.auth import get_current_user
+from backend.database.chroma_client import delete_item_chunks
+from backend.database.db import get_supabase
+from backend.models.collection import BulkItemsUpdateRequest, CollectionItemOut, CollectionItemUpdate
+from backend.routes.collections._shared import _own_collection
+from backend.services.file_storage import delete_collection_file, download_collection_file
 
 router = APIRouter()
 
@@ -54,7 +54,7 @@ async def bulk_update_items(
             .execute()
         )
         if result.data:
-            results.append(cast(dict[str, Any], result.data[0]))
+            results.append(result.data[0]) # type: ignore
 
     return results
 
@@ -95,7 +95,13 @@ async def get_item_content(
     """
     _own_collection(collection_id, current_user["sub"])
     db = get_supabase()
-    result = db.table("collection_items").select("*").eq("id", item_id).eq("collection_id", collection_id).execute()
+    result = (
+        db.table("collection_items")
+        .select("*")
+        .eq("id", item_id)
+        .eq("collection_id", collection_id)
+        .execute()
+    )
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found.")
     item: Any = result.data[0]
@@ -113,11 +119,11 @@ async def get_item_content(
 
     try:
         raw_bytes = download_collection_file(item["storage_path"])
-    except Exception as exc:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Could not retrieve the file from storage.",
-        ) from exc
+        )
 
     media_type = "application/pdf" if item["source_type"] == "pdf" else "text/plain; charset=utf-8"
     return Response(
@@ -150,6 +156,6 @@ async def delete_item(
     delete_item_chunks(collection_id, item_id)
     db.table("collection_items").delete().eq("id", item_id).eq("collection_id", collection_id).execute()
 
-    storage_path = cast(dict[str, Any], existing.data[0]).get("storage_path") if existing.data else None
+    storage_path = existing.data[0].get("storage_path") if existing.data else None #type: ignore
     if storage_path:
-        delete_collection_file(cast(str, storage_path))
+        delete_collection_file(storage_path) #type: ignore

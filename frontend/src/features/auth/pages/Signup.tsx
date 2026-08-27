@@ -64,12 +64,15 @@ function Signup() {
 
   if (submitted) {
     return (
-      <AuthLayout title="Account created" subtitle="One more step before you can log in.">
+      <AuthLayout
+        title="Account created"
+        subtitle="One more step before you can log in."
+      >
         <div className="rounded-xl border border-border bg-surface p-5">
           <CheckCircle2 className="size-6 text-teal" />
           <p className="mt-3 text-sm text-ink leading-relaxed">
-            Your account has been created. An administrator needs to approve it before you can log
-            in.
+            Your account has been created. An administrator needs to approve
+            it before you can log in — this is usually quick.
           </p>
         </div>
         <p className="mt-6 text-sm text-muted-foreground text-center">
@@ -82,7 +85,10 @@ function Signup() {
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="Start organizing your research in one place.">
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start organizing your research in one place."
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="username">Username</Label>

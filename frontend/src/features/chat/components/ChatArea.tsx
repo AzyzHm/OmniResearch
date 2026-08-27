@@ -57,12 +57,16 @@ function ChatArea({ projectId, chatId, chatName }: ChatAreaProps) {
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading messages...</p>}
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">Loading messages...</p>
+        )}
 
         {!isLoading && messages && messages.length === 0 && !pendingUserEcho && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
             <MessageSquare className="size-6" />
-            <p className="text-sm">No messages yet. Type below to start the conversation.</p>
+            <p className="text-sm">
+              No messages yet. Type below to start the conversation.
+            </p>
           </div>
         )}
 
@@ -77,12 +81,16 @@ function ChatArea({ projectId, chatId, chatName }: ChatAreaProps) {
           />
         ))}
 
-        {pendingUserEcho && <ChatMessageBubble role="user" content={pendingUserEcho} />}
+        {pendingUserEcho && (
+          <ChatMessageBubble role="user" content={pendingUserEcho} />
+        )}
 
         {chatStream.isStreaming && (
           <ChatMessageBubble
             role="assistant"
-            content={chatStream.nodeName ? `_${nodeLabel(chatStream.nodeName)}_` : "_Thinking…_"}
+            content={
+              chatStream.nodeName ? `_${nodeLabel(chatStream.nodeName)}_` : "_Thinking…_"
+            }
           />
         )}
 

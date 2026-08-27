@@ -13,7 +13,7 @@ describe("CollectionFormDialog", () => {
         isSubmitting={false}
         error={null}
         onSubmit={() => {}}
-      />,
+      />
     )
 
     expect(screen.queryByText("Documents")).not.toBeInTheDocument()
@@ -32,7 +32,7 @@ describe("CollectionFormDialog", () => {
         isSubmitting={false}
         error={null}
         onSubmit={onSubmit}
-      />,
+      />
     )
 
     await user.type(screen.getByLabelText("Collection name"), "  Background Reading  ")
@@ -49,7 +49,7 @@ describe("CollectionFormDialog", () => {
         isSubmitting={false}
         error={null}
         onSubmit={() => {}}
-      />,
+      />
     )
 
     expect(screen.getByRole("button", { name: "Create collection" })).toBeDisabled()

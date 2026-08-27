@@ -3,7 +3,7 @@ from typing import Any
 from exa_py import Exa
 from tavily import TavilyClient
 
-from config.settings import get_settings
+from backend.config.settings import get_settings
 
 
 def search_tavily(query: str, num_results: int, search_depth: str) -> list[dict]:
@@ -11,7 +11,7 @@ def search_tavily(query: str, num_results: int, search_depth: str) -> list[dict]
     client = TavilyClient(api_key=settings.tavily_api_key)
     response: Any = client.search(
         query=query,
-        search_depth=search_depth,
+        search_depth=search_depth, #type: ignore
         max_results=num_results,
     )
     return [
@@ -37,13 +37,11 @@ def search_exa(query: str, num_results: int) -> list[dict]:
     for r in getattr(response, "results", None) or []:
         highlights = getattr(r, "highlights", None) or []
         content = "\n\n".join(h for h in highlights if h).strip()
-        results.append(
-            {
-                "url": getattr(r, "url", "") or "",
-                "title": getattr(r, "title", "") or "",
-                "content": content,
-            }
-        )
+        results.append({
+            "url": getattr(r, "url", "") or "",
+            "title": getattr(r, "title", "") or "",
+            "content": content,
+        })
     return results
 
 

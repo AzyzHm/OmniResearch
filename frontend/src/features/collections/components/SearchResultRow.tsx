@@ -7,11 +7,17 @@ interface SearchResultRowProps {
   onToggle: (checked: boolean) => void
 }
 
-function SearchResultRow({ result, selected, alreadyExists, onToggle }: SearchResultRowProps) {
+function SearchResultRow({
+  result,
+  selected,
+  alreadyExists,
+  onToggle,
+}: SearchResultRowProps) {
   const hasContent = Boolean(result.content?.trim())
   const disabled = alreadyExists || !hasContent
   const preview = result.content?.trim()
-    ? result.content.trim().slice(0, 130) + (result.content.trim().length > 130 ? "…" : "")
+    ? result.content.trim().slice(0, 130) +
+      (result.content.trim().length > 130 ? "…" : "")
     : null
 
   return (

@@ -17,8 +17,8 @@ describe("createChat", () => {
           name: "New Chat",
           created_at: "2026-01-01T00:00:00Z",
         }),
-        { status: 201, headers: { "content-type": "application/json" } },
-      ),
+        { status: 201, headers: { "content-type": "application/json" } }
+      )
     )
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
@@ -55,10 +55,13 @@ describe("streamChatMessage", () => {
 
     // Deliberately split frame2 across a chunk boundary, mid-JSON.
     const splitPoint = Math.floor(frame2.length / 2)
-    const chunks = [frame1 + frame2.slice(0, splitPoint), frame2.slice(splitPoint) + frame3]
+    const chunks = [
+      frame1 + frame2.slice(0, splitPoint),
+      frame2.slice(splitPoint) + frame3,
+    ]
 
     globalThis.fetch = vi.fn(() =>
-      Promise.resolve(makeStreamResponse(chunks)),
+      Promise.resolve(makeStreamResponse(chunks))
     ) as unknown as typeof fetch
 
     const events = []
@@ -74,11 +77,13 @@ describe("streamChatMessage", () => {
   })
 
   it("passes sources through in the done event unchanged", async () => {
-    const sources = [{ index: 1, source_name: "report.pdf", collection_id: "c1", item_id: "i1" }]
+    const sources = [
+      { index: 1, source_name: "report.pdf", collection_id: "c1", item_id: "i1" },
+    ]
     const frame = `data: ${JSON.stringify({ type: "done", answer: "Revenue grew [1].", sources })}\n\n`
 
     globalThis.fetch = vi.fn(() =>
-      Promise.resolve(makeStreamResponse([frame])),
+      Promise.resolve(makeStreamResponse([frame]))
     ) as unknown as typeof fetch
 
     const events = []
@@ -86,7 +91,9 @@ describe("streamChatMessage", () => {
       events.push(event)
     }
 
-    expect(events).toEqual([{ type: "done", answer: "Revenue grew [1].", sources }])
+    expect(events).toEqual([
+      { type: "done", answer: "Revenue grew [1].", sources },
+    ])
   })
 
   it("throws an ApiError when the request fails before streaming starts", async () => {
@@ -95,8 +102,8 @@ describe("streamChatMessage", () => {
         new Response(JSON.stringify({ detail: "Chat not found." }), {
           status: 404,
           headers: { "content-type": "application/json" },
-        }),
-      ),
+        })
+      )
     ) as unknown as typeof fetch
 
     await expect(async () => {

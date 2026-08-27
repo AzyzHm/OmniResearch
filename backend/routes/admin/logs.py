@@ -1,11 +1,10 @@
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Query
-from postgrest.types import CountMethod
 
-from config.auth import require_admin
-from database.db import get_supabase
-from models import LoginLogListResponse, LoginLogOut
+from backend.config.auth import require_admin
+from backend.database.db import get_supabase
+from backend.models import LoginLogListResponse, LoginLogOut
 
 router = APIRouter()
 
@@ -43,9 +42,9 @@ async def get_logs(
         query = query.ilike("username", f"%{username}%")
 
     result = query.execute()
-    logs = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
+    logs  = [LoginLogOut(**log) for log in cast(list[Any], result.data)]
 
-    count_query = db.table("login_logs").select("id", count=CountMethod.exact).in_("user_id", scoped_ids)
+    count_query = db.table("login_logs").select("id", count="exact").in_("user_id", scoped_ids) # type: ignore
     if username:
         count_query = count_query.ilike("username", f"%{username}%")
     count_result = count_query.execute()

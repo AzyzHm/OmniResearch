@@ -41,7 +41,10 @@ export function listCollectionItems(collectionId: string) {
 export function uploadCollectionFiles(collectionId: string, files: File[]) {
   const formData = new FormData()
   files.forEach((file) => formData.append("files", file))
-  return apiClient.upload<CollectionItem[]>(`/collections/${collectionId}/items`, formData)
+  return apiClient.upload<CollectionItem[]>(
+    `/collections/${collectionId}/items`,
+    formData
+  )
 }
 
 export function addCollectionUrl(collectionId: string, url: string) {
@@ -50,17 +53,25 @@ export function addCollectionUrl(collectionId: string, url: string) {
   })
 }
 
-export function updateCollectionItem(collectionId: string, itemId: string, isActive: boolean) {
-  return apiClient.patch<CollectionItem>(`/collections/${collectionId}/items/${itemId}`, {
-    is_active: isActive,
-  })
+export function updateCollectionItem(
+  collectionId: string,
+  itemId: string,
+  isActive: boolean
+) {
+  return apiClient.patch<CollectionItem>(
+    `/collections/${collectionId}/items/${itemId}`,
+    { is_active: isActive }
+  )
 }
 
 export function bulkUpdateCollectionItems(
   collectionId: string,
-  updates: { item_id: string; is_active: boolean }[],
+  updates: { item_id: string; is_active: boolean }[]
 ) {
-  return apiClient.patch<CollectionItem[]>(`/collections/${collectionId}/items/bulk`, { updates })
+  return apiClient.patch<CollectionItem[]>(
+    `/collections/${collectionId}/items/bulk`,
+    { updates }
+  )
 }
 
 export function deleteCollectionItem(collectionId: string, itemId: string) {
@@ -73,7 +84,7 @@ export function getCollectionItemContentUrl(collectionId: string, itemId: string
 
 export async function getCollectionItemContentText(
   collectionId: string,
-  itemId: string,
+  itemId: string
 ): Promise<string> {
   const response = await fetch(getCollectionItemContentUrl(collectionId, itemId), {
     credentials: "include",

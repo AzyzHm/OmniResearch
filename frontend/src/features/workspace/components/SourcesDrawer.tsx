@@ -14,7 +14,9 @@ interface SourcesDrawerProps {
 }
 
 function SourcesDrawer({ projectId, open, onClose }: SourcesDrawerProps) {
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(
+    null
+  )
 
   return (
     <>
@@ -23,14 +25,14 @@ function SourcesDrawer({ projectId, open, onClose }: SourcesDrawerProps) {
         aria-hidden={!open}
         className={cn(
           "fixed inset-0 z-40 bg-ink/30 backdrop-blur-[1px] transition-opacity duration-200",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
+          open ? "opacity-100" : "pointer-events-none opacity-0"
         )}
       />
 
       <aside
         className={cn(
           "fixed top-14 right-0 z-40 flex h-[calc(100vh-3.5rem)] w-full max-w-md flex-col border-l border-border bg-paper shadow-lg transition-transform duration-200",
-          open ? "translate-x-0" : "translate-x-full",
+          open ? "translate-x-0" : "translate-x-full"
         )}
         aria-hidden={!open}
       >

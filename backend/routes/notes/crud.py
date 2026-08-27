@@ -2,11 +2,11 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from config.auth import get_current_user
-from database.db import get_supabase
-from models.note import NoteCreate, NoteOut, NoteUpdate
-from routes.notes._shared import _existing_note_names, _own_note, _verify_project_owner
-from utils.naming import next_unique_name
+from backend.config.auth import get_current_user
+from backend.database.db import get_supabase
+from backend.models.note import NoteCreate, NoteOut, NoteUpdate
+from backend.routes.notes._shared import _existing_note_names, _own_note, _verify_project_owner
+from backend.utils.naming import next_unique_name
 
 router = APIRouter()
 
@@ -44,7 +44,9 @@ async def create_note(
     existing_names = _existing_note_names(project_id)
     unique_name = next_unique_name(body.name, existing_names)
 
-    result = db.table("notes").insert({"project_id": project_id, "name": unique_name}).execute()
+    result = db.table("notes").insert(
+        {"project_id": project_id, "name": unique_name}
+    ).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create note.")
 
@@ -62,7 +64,12 @@ async def rename_note(
     db = get_supabase()
     existing_names = _existing_note_names(note["project_id"], exclude_id=note_id)
     unique_name = next_unique_name(body.name, existing_names)
-    result = db.table("notes").update({"name": unique_name}).eq("id", note_id).execute()
+    result = (
+        db.table("notes")
+        .update({"name": unique_name})
+        .eq("id", note_id)
+        .execute()
+    )
     row: Any = result.data[0]
     return row
 

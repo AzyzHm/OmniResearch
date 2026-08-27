@@ -49,7 +49,9 @@ function SearchModal({
   const [searchDepth, setSearchDepth] = useState<TavilySearchDepth>("basic")
 
   const [latestResults, setLatestResults] = useState<WebSearchResult[]>([])
-  const [selectedItems, setSelectedItems] = useState<Record<string, WebSearchResult>>({})
+  const [selectedItems, setSelectedItems] = useState<Record<string, WebSearchResult>>(
+    {}
+  )
 
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -121,7 +123,9 @@ function SearchModal({
   }
 
   const latestUrls = new Set(latestResults.map((r) => r.url))
-  const carriedOver = Object.values(selectedItems).filter((r) => !latestUrls.has(r.url))
+  const carriedOver = Object.values(selectedItems).filter(
+    (r) => !latestUrls.has(r.url)
+  )
   const selectedCount = Object.keys(selectedItems).length
 
   return (
@@ -130,7 +134,8 @@ function SearchModal({
         <DialogHeader>
           <DialogTitle>Search the web</DialogTitle>
           <DialogDescription>
-            Find pages with Tavily or Exa, then add the ones you want as sources.
+            Find pages with Tavily or Exa, then add the ones you want as
+            sources.
           </DialogDescription>
         </DialogHeader>
 
@@ -161,7 +166,7 @@ function SearchModal({
                       "rounded-full px-2.5 py-1 font-mono text-[0.7rem] font-medium transition-colors",
                       engine === e.value
                         ? "bg-teal/15 text-teal"
-                        : "text-muted-foreground hover:bg-muted",
+                        : "text-muted-foreground hover:bg-muted"
                     )}
                   >
                     {e.label}
@@ -196,7 +201,7 @@ function SearchModal({
                         "rounded-full px-2 py-1 font-mono text-[0.7rem] font-medium transition-colors",
                         searchDepth === d
                           ? "bg-teal/15 text-teal"
-                          : "text-muted-foreground hover:bg-muted",
+                          : "text-muted-foreground hover:bg-muted"
                       )}
                     >
                       {d}
@@ -205,16 +210,22 @@ function SearchModal({
                 </div>
               </div>
             ) : (
-              <span className="text-xs text-muted-foreground">Depth: N/A for Exa</span>
+              <span className="text-xs text-muted-foreground">
+                Depth: N/A for Exa
+              </span>
             )}
           </div>
         </form>
 
-        {searchError && <p className="mt-2 text-sm text-destructive">{searchError}</p>}
+        {searchError && (
+          <p className="mt-2 text-sm text-destructive">{searchError}</p>
+        )}
 
         <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-border p-2">
           {latestResults.length === 0 && carriedOver.length === 0 && (
-            <p className="p-2 text-sm text-muted-foreground">No searches yet. Run one above.</p>
+            <p className="p-2 text-sm text-muted-foreground">
+              No searches yet. Run one above.
+            </p>
           )}
 
           {latestResults.length > 0 && (
@@ -224,10 +235,20 @@ function SearchModal({
                   {latestResults.length} result(s) — check the ones to add
                 </p>
                 <div className="flex gap-1">
-                  <Button type="button" size="xs" variant="outline" onClick={selectAllEligible}>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    onClick={selectAllEligible}
+                  >
                     Select all
                   </Button>
-                  <Button type="button" size="xs" variant="outline" onClick={deselectAllLatest}>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    onClick={deselectAllLatest}
+                  >
                     Deselect all
                   </Button>
                 </div>

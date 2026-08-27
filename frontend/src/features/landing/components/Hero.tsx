@@ -12,7 +12,8 @@ function Hero() {
           backgroundImage:
             "radial-gradient(color-mix(in srgb, var(--color-ink) 12%, transparent) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
-          maskImage: "radial-gradient(ellipse 55% 45% at 50% 15%, black 30%, transparent 85%)",
+          maskImage:
+            "radial-gradient(ellipse 55% 45% at 50% 15%, black 30%, transparent 85%)",
         }}
       />
 
@@ -34,11 +35,14 @@ function Hero() {
           </span>
 
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-[1.08] text-ink mt-6">
-            Every answer, <span className="italic text-teal">traced back</span> to a source.
+            Every answer,{" "}
+            <span className="italic text-teal">traced back</span> to a
+            source.
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-md">
-            Upload documents, add links, or pull in web research. Then ask questions and get answers
-            grounded in what you gave it, not guesswork.
+            Upload documents, add links, or pull in web research. Then ask
+            questions and get answers grounded in what you gave it, not
+            guesswork.
           </p>
           <div className="mt-8 flex items-center gap-5">
             <Link to="/signup">
@@ -70,7 +74,8 @@ function Hero() {
       <div
         className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
         style={{
-          background: "linear-gradient(to bottom, transparent, var(--color-surface))",
+          background:
+            "linear-gradient(to bottom, transparent, var(--color-surface))",
         }}
       />
     </section>

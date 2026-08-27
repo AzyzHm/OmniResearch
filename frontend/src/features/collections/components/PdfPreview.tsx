@@ -4,11 +4,7 @@ import "react-pdf/dist/Page/TextLayer.css"
 import pdfWorkerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url"
 
 import { getCollectionItemContentUrl } from "@/features/collections/api"
-import {
-  computeItemHighlights,
-  escapeHtml,
-  type TextLayerItemLike,
-} from "@/features/collections/lib/textHighlight"
+import { computeItemHighlights, escapeHtml, type TextLayerItemLike } from "@/features/collections/lib/textHighlight"
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc
 
@@ -23,9 +19,9 @@ function PdfPreview({ collectionId, itemId, highlightText }: PdfPreviewProps) {
   const [error, setError] = useState<string | null>(null)
   const [numPages, setNumPages] = useState(0)
   const [containerWidth, setContainerWidth] = useState(0)
-  const [highlightsByPage, setHighlightsByPage] = useState<
-    Map<number, Map<number, [number, number]>>
-  >(new Map())
+  const [highlightsByPage, setHighlightsByPage] = useState<Map<number, Map<number, [number, number]>>>(
+    new Map()
+  )
 
   const containerRef = useRef<HTMLDivElement | null>(null)
   const foundMatchRef = useRef(false)
@@ -61,10 +57,7 @@ function PdfPreview({ collectionId, itemId, highlightText }: PdfPreviewProps) {
 
   function handleGetTextSuccess(pageNumber: number, textContent: TextContent) {
     if (!highlightText || foundMatchRef.current) return
-    const highlights = computeItemHighlights(
-      textContent.items as TextLayerItemLike[],
-      highlightText,
-    )
+    const highlights = computeItemHighlights(textContent.items as TextLayerItemLike[], highlightText)
     if (!highlights) return
     foundMatchRef.current = true
     setHighlightsByPage((prev) => {
@@ -115,9 +108,7 @@ function PdfPreview({ collectionId, itemId, highlightText }: PdfPreviewProps) {
               renderAnnotationLayer={false}
               onGetTextSuccess={(textContent) => handleGetTextSuccess(pageNumber, textContent)}
               onRenderTextLayerSuccess={() => handleTextLayerRendered(pageNumber)}
-              customTextRenderer={({ itemIndex, str }) =>
-                renderPageText(pageNumber, itemIndex, str)
-              }
+              customTextRenderer={({ itemIndex, str }) => renderPageText(pageNumber, itemIndex, str)}
             />
           ))}
         </Document>

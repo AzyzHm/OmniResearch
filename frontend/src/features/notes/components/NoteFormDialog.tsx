@@ -43,8 +43,8 @@ function NoteFormDialog({
           <DialogHeader>
             <DialogTitle>New note</DialogTitle>
             <DialogDescription>
-              Notes collect messages you save from your chats, along with their sources, for this
-              project.
+              Notes collect messages you save from your chats, along with
+              their sources, for this project.
             </DialogDescription>
           </DialogHeader>
 

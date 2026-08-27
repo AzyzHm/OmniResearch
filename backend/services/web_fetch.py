@@ -1,6 +1,6 @@
 import requests
 
-from config.settings import get_settings
+from backend.config.settings import get_settings
 
 
 def fetch_url_markdown(url: str) -> str:
