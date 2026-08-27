@@ -26,7 +26,7 @@ function renderDialog(onSaved = vi.fn()) {
         messageId="msg-1"
         onSaved={onSaved}
       />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   )
   return { ...utils, onSaved }
 }
@@ -45,7 +45,7 @@ describe("SaveToNoteDialog", () => {
           new Response(JSON.stringify([note]), {
             status: 200,
             headers: { "content-type": "application/json" },
-          })
+          }),
         )
       }
       if (method === "POST" && url.endsWith("/notes/note-1/items")) {
@@ -60,8 +60,8 @@ describe("SaveToNoteDialog", () => {
               content: "Hi",
               created_at: "2026-01-01T00:00:00Z",
             }),
-            { status: 201, headers: { "content-type": "application/json" } }
-          )
+            { status: 201, headers: { "content-type": "application/json" } },
+          ),
         )
       }
       return Promise.reject(new Error(`Unhandled fetch: ${method} ${url}`))
@@ -84,15 +84,15 @@ describe("SaveToNoteDialog", () => {
           new Response(JSON.stringify([note]), {
             status: 200,
             headers: { "content-type": "application/json" },
-          })
+          }),
         )
       }
       if (method === "POST" && url.endsWith("/notes/note-1/items")) {
         return Promise.resolve(
-          new Response(
-            JSON.stringify({ detail: "This message is already saved to this note." }),
-            { status: 409, headers: { "content-type": "application/json" } }
-          )
+          new Response(JSON.stringify({ detail: "This message is already saved to this note." }), {
+            status: 409,
+            headers: { "content-type": "application/json" },
+          }),
         )
       }
       return Promise.reject(new Error(`Unhandled fetch: ${method} ${url}`))
@@ -114,7 +114,7 @@ describe("SaveToNoteDialog", () => {
           new Response(JSON.stringify([]), {
             status: 200,
             headers: { "content-type": "application/json" },
-          })
+          }),
         )
       }
       if (method === "POST" && url.endsWith("/projects/proj-1/notes")) {
@@ -122,7 +122,7 @@ describe("SaveToNoteDialog", () => {
           new Response(JSON.stringify({ ...note, name: "New Note" }), {
             status: 201,
             headers: { "content-type": "application/json" },
-          })
+          }),
         )
       }
       if (method === "POST" && url.endsWith("/notes/note-1/items")) {
@@ -137,8 +137,8 @@ describe("SaveToNoteDialog", () => {
               content: "Hi",
               created_at: "2026-01-01T00:00:00Z",
             }),
-            { status: 201, headers: { "content-type": "application/json" } }
-          )
+            { status: 201, headers: { "content-type": "application/json" } },
+          ),
         )
       }
       return Promise.reject(new Error(`Unhandled fetch: ${method} ${url}`))

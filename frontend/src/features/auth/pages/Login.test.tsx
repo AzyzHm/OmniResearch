@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from "vitest"
 
 import Login from "@/features/auth/pages/Login"
 
-vi.mock("@/features/auth/context/AuthContext", () => ({
+vi.mock("@/features/auth/context/useAuth", () => ({
   useAuth: () => ({ refetchUser: vi.fn() }),
 }))
 
@@ -19,7 +19,7 @@ function renderLogin() {
       <MemoryRouter>
         <Login />
       </MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   )
 }
 

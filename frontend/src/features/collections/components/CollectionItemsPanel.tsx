@@ -93,14 +93,12 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
     },
     onSuccess: (_data, itemId) => {
       queryClient.setQueryData<CollectionItem[]>(queryKey, (old) =>
-        old ? old.filter((i) => i.id !== itemId) : old
+        old ? old.filter((i) => i.id !== itemId) : old,
       )
       queryClient.invalidateQueries({ queryKey })
     },
     onError: (err) => {
-      setDeleteItemError(
-        err instanceof ApiError ? err.message : "Couldn't delete the item."
-      )
+      setDeleteItemError(err instanceof ApiError ? err.message : "Couldn't delete the item.")
     },
     onSettled: () => {
       setDeletingId(null)
@@ -171,9 +169,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
     <div className="flex-1 overflow-y-auto px-4 py-4">
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h2 className="font-display text-lg font-medium text-ink">
-            {collection.name}
-          </h2>
+          <h2 className="font-display text-lg font-medium text-ink">{collection.name}</h2>
           <p className="text-sm text-muted-foreground">
             {items?.length ?? 0} item{items?.length === 1 ? "" : "s"}
           </p>
@@ -219,9 +215,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
             <Upload className="size-3.5" data-icon="inline-start" />
             {uploadMutation.isPending ? "Uploading..." : "Upload files"}
           </Button>
-          <span className="text-xs text-muted-foreground">
-            Accepts {UPLOAD_ACCEPT} files
-          </span>
+          <span className="text-xs text-muted-foreground">Accepts {UPLOAD_ACCEPT} files</span>
         </div>
 
         <div className="border-t border-border/60 pt-4">
@@ -234,11 +228,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
               disabled={addUrlMutation.isPending}
               className="min-w-0 flex-1"
             />
-            <Button
-              type="submit"
-              size="sm"
-              disabled={addUrlMutation.isPending || !urlValue.trim()}
-            >
+            <Button type="submit" size="sm" disabled={addUrlMutation.isPending || !urlValue.trim()}>
               {addUrlMutation.isPending ? "Adding..." : "Add URL"}
             </Button>
             <Button
@@ -259,16 +249,12 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
 
       {urlError && <p className="mb-4 text-sm text-destructive">{urlError}</p>}
       {uploadError && <p className="mb-4 text-sm text-destructive">{uploadError}</p>}
-      {deleteItemError && (
-        <p className="mb-4 text-sm text-destructive">{deleteItemError}</p>
-      )}
+      {deleteItemError && <p className="mb-4 text-sm text-destructive">{deleteItemError}</p>}
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading items...</p>}
 
       {!isLoading && items && items.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No items yet — add one above to get started.
-        </p>
+        <p className="text-sm text-muted-foreground">No items yet, add one above to get started.</p>
       )}
 
       {!isLoading && items && items.length > 0 && (
@@ -298,9 +284,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                       title={item.name}
                       className="flex w-full min-w-0 items-center gap-1 text-teal hover:underline"
                     >
-                      <span className="min-w-0 truncate">
-                        {shortenUrl(item.name)}
-                      </span>
+                      <span className="min-w-0 truncate">{shortenUrl(item.name)}</span>
                       <ExternalLink className="size-3 shrink-0" />
                     </a>
                   ) : item.status === "ready" && item.storage_path ? (
@@ -320,9 +304,7 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
                     </p>
                   )}
                   {item.status === "error" && item.error_message && (
-                    <p className="truncate text-xs text-destructive">
-                      {item.error_message}
-                    </p>
+                    <p className="truncate text-xs text-destructive">{item.error_message}</p>
                   )}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -380,7 +362,9 @@ function CollectionItemsPanel({ collection }: CollectionItemsPanelProps) {
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
         collectionId={collection.id}
-        existingUrls={new Set((items ?? []).filter((i) => i.source_type === "url").map((i) => i.name))}
+        existingUrls={
+          new Set((items ?? []).filter((i) => i.source_type === "url").map((i) => i.name))
+        }
         onAdded={() => queryClient.invalidateQueries({ queryKey })}
       />
     </div>

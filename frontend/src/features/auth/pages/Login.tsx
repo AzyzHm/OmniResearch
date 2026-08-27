@@ -7,7 +7,7 @@ import PasswordInput from "@/shared/components/PasswordInput"
 import { Label } from "@/shared/components/ui/label"
 import { login } from "@/features/auth/api"
 import { ApiError } from "@/shared/lib/apiClient"
-import { useAuth } from "@/features/auth/context/AuthContext"
+import { useAuth } from "@/features/auth/context/useAuth"
 
 function Login() {
   const navigate = useNavigate()
@@ -43,10 +43,7 @@ function Login() {
   }
 
   return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Log in to pick up where you left off."
-    >
+    <AuthLayout title="Welcome back" subtitle="Log in to pick up where you left off.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="username">Username</Label>

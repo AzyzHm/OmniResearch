@@ -2,12 +2,7 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { NotebookText, Plus } from "lucide-react"
 
-import {
-  createNote,
-  listNotes,
-  saveMessageToNote,
-  type Note,
-} from "@/features/notes/api"
+import { createNote, listNotes, saveMessageToNote, type Note } from "@/features/notes/api"
 import { ApiError } from "@/shared/lib/apiClient"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -116,14 +111,10 @@ function SaveToNoteDialog({
 
         <div className="flex flex-col gap-4">
           <div className="flex max-h-64 flex-col gap-1.5 overflow-y-auto">
-            {isLoading && (
-              <p className="px-1 text-sm text-muted-foreground">Loading notes...</p>
-            )}
+            {isLoading && <p className="px-1 text-sm text-muted-foreground">Loading notes...</p>}
 
             {!isLoading && notes?.length === 0 && !showNewNoteInput && (
-              <p className="px-1 text-sm text-muted-foreground">
-                No notes yet. Create one below.
-              </p>
+              <p className="px-1 text-sm text-muted-foreground">No notes yet. Create one below.</p>
             )}
 
             {notes?.map((note) => {
@@ -139,9 +130,7 @@ function SaveToNoteDialog({
                 >
                   <NotebookText className="size-3.5" data-icon="inline-start" />
                   <span className="flex-1 truncate text-left">{note.name}</span>
-                  {justSaved && (
-                    <span className="shrink-0 text-xs text-teal">Saved ✓</span>
-                  )}
+                  {justSaved && <span className="shrink-0 text-xs text-teal">Saved ✓</span>}
                 </Button>
               )
             })}

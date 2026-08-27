@@ -11,7 +11,7 @@ describe("Signup — password visibility toggles", () => {
     render(
       <MemoryRouter>
         <Signup />
-      </MemoryRouter>
+      </MemoryRouter>,
     )
 
     const password = document.getElementById("password") as HTMLInputElement

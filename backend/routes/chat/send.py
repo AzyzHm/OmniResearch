@@ -4,13 +4,13 @@ from typing import Any, cast
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
-from backend.config.auth import get_current_user
-from backend.config.settings import get_settings
-from backend.database.db import get_supabase
-from backend.graph.graph import get_rag_graph
-from backend.models.chat import ChatMessageRequest, ChatMessageResponse
-from backend.routes.chat._shared import _own_chat
-from backend.services.quota import DailyQuotaExceeded, enforce_daily_quota
+from config.auth import get_current_user
+from config.settings import get_settings
+from database.db import get_supabase
+from graph.graph import get_rag_graph
+from models.chat import ChatMessageRequest, ChatMessageResponse
+from routes.chat._shared import _own_chat
+from services.quota import DailyQuotaExceeded, enforce_daily_quota
 
 router = APIRouter()
 
@@ -44,7 +44,7 @@ async def send_message(
                 "limit": exc.limit,
                 "reset_at": exc.reset_at.isoformat(),
             },
-        )
+        ) from exc
 
     hist = (
         db.table("messages")
@@ -56,25 +56,25 @@ async def send_message(
     )
     history = cast(list[dict[str, Any]], list(reversed(hist.data)))
 
-    db.table("messages").insert(
-        {"chat_id": chat_id, "role": "user", "content": body.message}
-    ).execute()
+    db.table("messages").insert({"chat_id": chat_id, "role": "user", "content": body.message}).execute()
 
     try:
         graph = get_rag_graph()
-        result = graph.invoke({
-            "project_id": chat["project_id"],
-            "chat_id": chat_id,
-            "user_id": current_user["sub"],
-            "query": body.message,
-            "history": history,
-            "retrieval_mode": body.retrieval_mode,
-            "retrieval_attempts": 0,
-            "needs_retrieval": False,
-            "validation_passed": False,
-            "context_chunks": [],
-            "retrieved_pool": [],
-        })
+        result = graph.invoke(
+            {
+                "project_id": chat["project_id"],
+                "chat_id": chat_id,
+                "user_id": current_user["sub"],
+                "query": body.message,
+                "history": history,
+                "retrieval_mode": body.retrieval_mode,
+                "retrieval_attempts": 0,
+                "needs_retrieval": False,
+                "validation_passed": False,
+                "context_chunks": [],
+                "retrieved_pool": [],
+            }
+        )
         reply = result.get("answer") or "⚠️ The model did not return a response."
         sources = result.get("sources", [])
     except Exception as exc:
@@ -82,7 +82,7 @@ async def send_message(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
-        )
+        ) from exc
 
     db.table("messages").insert(
         {"chat_id": chat_id, "role": "assistant", "content": reply, "sources": sources}
@@ -139,9 +139,7 @@ async def send_message_stream(
     )
     history = cast(list[dict[str, Any]], list(reversed(hist.data)))
 
-    db.table("messages").insert(
-        {"chat_id": chat_id, "role": "user", "content": body.message}
-    ).execute()
+    db.table("messages").insert({"chat_id": chat_id, "role": "user", "content": body.message}).execute()
 
     initial_state = {
         "project_id": chat["project_id"],
@@ -162,7 +160,7 @@ async def send_message_stream(
         answer = "⚠️ The model did not return a response."
         sources = []
         try:
-            for update in graph.stream(initial_state, stream_mode="updates"): # type: ignore
+            for update in graph.stream(initial_state, stream_mode="updates"):
                 node_name = next(iter(update))
                 node_output = update[node_name] or {}
                 print(f"[RAG] stream: {node_name} finished")

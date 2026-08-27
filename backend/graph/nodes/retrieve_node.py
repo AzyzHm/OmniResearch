@@ -1,9 +1,9 @@
 import logging
 from typing import cast
 
-from backend.config.settings import get_settings
-from backend.graph.state import RAGState
-from backend.services.rag_retrieval import RetrievalMode, retrieve_pool
+from config.settings import get_settings
+from graph.state import RAGState
+from services.rag_retrieval import RetrievalMode, retrieve_pool
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ def retrieve_node(state: RAGState) -> dict:
     attempts = state.get("retrieval_attempts", 0)
     mode = state.get("retrieval_mode", "semantic")
     existing_context = state.get("context_chunks", [])
-
 
     query = state.get("missing_query") or state.get("refined_query") or state["query"]
     logger.info("retrieve_node: attempt %d, mode = %s, query = %r", attempts + 1, mode, query)

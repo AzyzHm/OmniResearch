@@ -2,8 +2,8 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends
 
-from backend.config.auth import require_admin
-from backend.database.db import get_supabase
+from config.auth import require_admin
+from database.db import get_supabase
 
 router = APIRouter()
 
@@ -29,13 +29,19 @@ async def get_llm_usage(_: dict = Depends(require_admin)):
     per_user: dict[str, dict[str, Any]] = {}
     for row in cast(list[dict[str, Any]], usage_result.data):
         uid = row["user_id"]
-        bucket = per_user.setdefault(uid, {
-            "user_id": uid,
-            "username": username_by_id.get(uid, "Unknown"),
-            "gemini_calls": 0, "gemini_tokens": 0,
-            "mistral_calls": 0, "mistral_tokens": 0,
-            "total_calls": 0, "total_tokens": 0,
-        })
+        bucket = per_user.setdefault(
+            uid,
+            {
+                "user_id": uid,
+                "username": username_by_id.get(uid, "Unknown"),
+                "gemini_calls": 0,
+                "gemini_tokens": 0,
+                "mistral_calls": 0,
+                "mistral_tokens": 0,
+                "total_calls": 0,
+                "total_tokens": 0,
+            },
+        )
         provider = row["provider"]
         tokens = row.get("total_tokens", 0) or 0
         bucket[f"{provider}_calls"] += 1
@@ -68,13 +74,19 @@ async def get_search_usage(_: dict = Depends(require_admin)):
     per_user: dict[str, dict[str, Any]] = {}
     for row in cast(list[dict[str, Any]], usage_result.data):
         uid = row["user_id"]
-        bucket = per_user.setdefault(uid, {
-            "user_id": uid,
-            "username": username_by_id.get(uid, "Unknown"),
-            "tavily_calls": 0, "tavily_credits": 0,
-            "exa_calls": 0, "exa_credits": 0,
-            "total_calls": 0, "total_credits": 0,
-        })
+        bucket = per_user.setdefault(
+            uid,
+            {
+                "user_id": uid,
+                "username": username_by_id.get(uid, "Unknown"),
+                "tavily_calls": 0,
+                "tavily_credits": 0,
+                "exa_calls": 0,
+                "exa_credits": 0,
+                "total_calls": 0,
+                "total_credits": 0,
+            },
+        )
         engine = row["engine"]
         credits = row.get("credits", 1) or 1
         bucket[f"{engine}_calls"] += 1

@@ -39,21 +39,21 @@ This was originally a Streamlit application. It has since been fully migrated to
 
 ## Tech Stack
 
-| Concern | Technology |
-|---|---|
-| Build tool | Vite |
-| Framework | React 19 + TypeScript |
-| Routing | `react-router-dom` (`<BrowserRouter>`) |
-| Styling | Tailwind CSS v4 (`@theme` token system, no `tailwind.config.js`) |
-| Component primitives | shadcn/ui on Base UI (not Radix) |
-| Data fetching / caching | `@tanstack/react-query` |
-| Markdown rendering | `react-markdown` with `remark-gfm` (assistant chat replies) |
-| PDF rendering | `react-pdf` / `pdfjs-dist` (source preview) |
-| Charts | `recharts` (admin panel only, lazy-loaded) |
-| Icons | `lucide-react` |
-| HTTP client | Native `fetch`, hand-rolled wrapper (no axios) |
-| Testing | `vitest` + `@testing-library/react` + `jsdom` |
-| Linting | ESLint (`eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`) |
+| Concern                 | Technology                                                          |
+| ----------------------- | ------------------------------------------------------------------- |
+| Build tool              | Vite                                                                |
+| Framework               | React 19 + TypeScript                                               |
+| Routing                 | `react-router-dom` (`<BrowserRouter>`)                              |
+| Styling                 | Tailwind CSS v4 (`@theme` token system, no `tailwind.config.js`)    |
+| Component primitives    | shadcn/ui on Base UI (not Radix)                                    |
+| Data fetching / caching | `@tanstack/react-query`                                             |
+| Markdown rendering      | `react-markdown` with `remark-gfm` (assistant chat replies)         |
+| PDF rendering           | `react-pdf` / `pdfjs-dist` (source preview)                         |
+| Charts                  | `recharts` (admin panel only, lazy-loaded)                          |
+| Icons                   | `lucide-react`                                                      |
+| HTTP client             | Native `fetch`, hand-rolled wrapper (no axios)                      |
+| Testing                 | `vitest` + `@testing-library/react` + `jsdom`                       |
+| Linting                 | ESLint (`eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`) |
 
 ---
 
@@ -74,7 +74,9 @@ src/
 │   │   ├── AssistantBot.tsx     # Landing/marketing illustration
 │   │   └── RagPipelineIllustration.tsx
 │   ├── context/
-│   │   └── ThemeContext.tsx     # Theme preference, resolution, persistence
+│   │   ├── ThemeContext.tsx     # ThemeProvider, resolution, persistence
+│   │   ├── theme-context.ts     # Context object + type, split out for react-refresh
+│   │   └── useTheme.ts          # useTheme() hook, split out for react-refresh
 │   ├── lib/
 │   │   ├── apiClient.ts         # fetch wrapper: ApiError, credentials, no-store cache
 │   │   ├── shortenUrl.ts        # URL truncation for compact table/citation display
@@ -104,14 +106,14 @@ The `@/` path alias points at `src/`, so imports look like `@/features/chat/api`
 
 Palette, typography, and section-rhythm decisions from the original landing-page design work. Reproduce these values verbatim if extending the UI, don't reinvent them. Every token has both a light and a dark value, resolved through `ThemeContext`.
 
-| Token | Light | Dark | Usage |
-|---|---|---|---|
-| `--color-paper` | `#F1F3F0` | `#14171A` | Main page background |
-| `--color-ink` | `#1C2321` | `#E7EAE7` | Primary text, dark surfaces |
-| `--color-amber` | `#C9902F` | `#D9A548` | Accent, warnings, quota UI |
-| `--color-teal` | `#2F6F62` | `#4C9285` | Secondary accent, links, citations, primary actions |
-| `--color-surface` | `#FFFFFF` | `#1C2023` | Card / elevated surfaces |
-| `--color-sand` | `#EAE1CF` | `#262A20` | Light warm neutral (section backgrounds) |
+| Token             | Light     | Dark      | Usage                                               |
+| ----------------- | --------- | --------- | --------------------------------------------------- |
+| `--color-paper`   | `#F1F3F0` | `#14171A` | Main page background                                |
+| `--color-ink`     | `#1C2321` | `#E7EAE7` | Primary text, dark surfaces                         |
+| `--color-amber`   | `#C9902F` | `#D9A548` | Accent, warnings, quota UI                          |
+| `--color-teal`    | `#2F6F62` | `#4C9285` | Secondary accent, links, citations, primary actions |
+| `--color-surface` | `#FFFFFF` | `#1C2023` | Card / elevated surfaces                            |
+| `--color-sand`    | `#EAE1CF` | `#262A20` | Light warm neutral (section backgrounds)            |
 
 **Fonts:** Fraunces (display/headings), Inter (body), IBM Plex Mono (labels, citation markers, tags), loaded via Google Fonts `<link>` tags in `index.html`, not npm packages.
 
@@ -123,9 +125,9 @@ The `dark` class is toggled on `<html>` by `ThemeContext`; the preference (`ligh
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend base URL. Set via `.env` (gitignored, copy `.env.example` to get started); `apiClient.ts` falls back to this same default if unset. Vite only reads env files from this project's own root. Any `VITE_`-prefixed variable is baked directly into the public client bundle, so backend secrets must never live in this file. |
+| Variable            | Default                 | Purpose                                                                                                                                                                                                                                                                                                                            |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend base URL. Set via `.env` (gitignored, copy `.env.example` to get started) `apiClient.ts` falls back to this same default if unset. Vite only reads env files from this project's own root. Any `VITE_` prefixed variable is baked directly into the public client bundle, so backend secrets must never live in this file. |
 
 ---
 
@@ -149,7 +151,7 @@ npm run lint            # eslint .
 npm run test:watch      # vitest in watch mode
 ```
 
-The backend must be running separately (`uvicorn backend.main:app --reload --port 8000`) and must have `http://localhost:5173` listed in its `cors_origins` setting for requests from the dev server to succeed.
+The backend must be running separately (`uvicorn main:app --reload --port 8000`) and must have `http://localhost:5173` listed in its `cors_origins` setting for requests from the dev server to succeed.
 
 ---
 
@@ -158,6 +160,7 @@ The backend must be running separately (`uvicorn backend.main:app --reload --por
 `App.tsx` defines all routes. Every page except `Landing` is behind `React.lazy()`, wrapped in a single `<Suspense>` boundary. `Landing` is the critical first-paint/demo page and stays in the main bundle; everything else (auth pages, the entire workspace, and especially the admin panel, which pulls in `recharts`) only downloads once a person actually navigates there.
 
 Route guards:
+
 - **`ProtectedRoute`** (`features/auth/routes/`) redirects to `/login` if not authenticated. Checks `AuthContext`, which itself resolves via `GET /auth/me`.
 - **`AdminRoute`** does the same, plus requires `role` to be `admin` or `superadmin`, redirecting other authenticated users to `/app`.
 
@@ -223,8 +226,9 @@ npx vitest               # watch mode
 ```
 
 Notable tests, chosen because each one caught a real bug during development rather than being written for coverage's sake:
-- **`features/chat/api.test.ts`** — the SSE parser, including a frame deliberately split mid-JSON across a chunk boundary, and a regression test confirming `createChat` always sends a body, since the backend's required-body-but-optional-fields Pydantic pattern silently 422s on a missing body otherwise.
-- **`shared/lib/shortenUrl.test.ts`** — the URL-truncation helper.
-- **`features/chat/components/Chatmessagebubble.test.tsx`** — the citation footnote list (empty case, normal case, URL-vs-filename rendering, confirms user messages never show sources).
-- **`features/projects/pages/ProjectsList.test.tsx`** — a full render plus a real delete-confirm click flow, with the backend's follow-up refetch deliberately left hanging forever, to prove the deleted item disappears from the optimistic cache update alone rather than depending on that refetch ever resolving.
-- **`shared/context/ThemeContext.test.tsx`** — theme resolution across `light`/`dark`/`system`, persistence to `localStorage`, and live response to a simulated OS preference change.
+
+- **`features/chat/api.test.ts`** the SSE parser, including a frame deliberately split mid-JSON across a chunk boundary, and a regression test confirming `createChat` always sends a body, since the backend's required-body-but-optional-fields Pydantic pattern silently 422s on a missing body otherwise.
+- **`shared/lib/shortenUrl.test.ts`** the URL-truncation helper.
+- **`features/chat/components/Chatmessagebubble.test.tsx`** the citation footnote list (empty case, normal case, URL-vs-filename rendering, confirms user messages never show sources).
+- **`features/projects/pages/ProjectsList.test.tsx`** a full render plus a real delete-confirm click flow, with the backend's follow-up refetch deliberately left hanging forever, to prove the deleted item disappears from the optimistic cache update alone rather than depending on that refetch ever resolving.
+- **`shared/context/ThemeContext.test.tsx`** theme resolution across `light`/`dark`/`system`, persistence to `localStorage`, and live response to a simulated OS preference change.

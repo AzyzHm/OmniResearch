@@ -1,0 +1,67 @@
+name: Bug Report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Checked for duplicates
+      options:
+        - label: I searched existing issues and didn't find one already open for this
+          required: true
+
+  - type: dropdown
+    attributes:
+      label: Area
+      description: Which part of OmniResearch does this affect?
+      options:
+        - Backend (FastAPI / ingestion / RAG pipeline)
+        - Frontend (React UI)
+        - Both / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: A clear description of what's wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: The exact steps needed to see the problem.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: OS / browser
+      placeholder: "e.g. Windows 11, Chrome 128"
+
+  - type: input
+    attributes:
+      label: Version or commit
+      placeholder: "e.g. restructure @ abc1234"
+
+  - type: textarea
+    attributes:
+      label: Proposed fix (optional)
+      description: If you know how to fix this or have a proposed approach, share it here.

@@ -52,10 +52,9 @@ export function getStats() {
 }
 
 export function listUsers(pendingOnly = false) {
-  return apiClient
-    .get<{ users: AdminUser[]; total: number }>(
-      `/admin/users${pendingOnly ? "?pending_only=true" : ""}`
-    )
+  return apiClient.get<{ users: AdminUser[]; total: number }>(
+    `/admin/users${pendingOnly ? "?pending_only=true" : ""}`,
+  )
 }
 
 export function approveUser(userId: string) {
@@ -63,9 +62,7 @@ export function approveUser(userId: string) {
 }
 
 export function changeUserRole(userId: string, newRole: "admin" | "user") {
-  return apiClient.put<{ message: string }>(
-    `/admin/users/${userId}/role?new_role=${newRole}`
-  )
+  return apiClient.put<{ message: string }>(`/admin/users/${userId}/role?new_role=${newRole}`)
 }
 
 export function deleteUser(userId: string) {
@@ -81,9 +78,7 @@ export function updateTokenLimit(userId: string, dailyTokenLimit: number) {
 export function getLogs(limit = 100, offset = 0, username?: string) {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
   if (username) params.set("username", username)
-  return apiClient.get<{ logs: LoginLog[]; total: number }>(
-    `/admin/logs?${params.toString()}`
-  )
+  return apiClient.get<{ logs: LoginLog[]; total: number }>(`/admin/logs?${params.toString()}`)
 }
 
 export function getLlmUsage() {

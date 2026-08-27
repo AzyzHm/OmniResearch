@@ -17,10 +17,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const isFormData = options.body instanceof FormData
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -34,9 +31,7 @@ async function request<T>(
   })
 
   const hasNoBody = response.status === 204 || response.status === 304
-  const isJson =
-    !hasNoBody &&
-    response.headers.get("content-type")?.includes("application/json")
+  const isJson = !hasNoBody && response.headers.get("content-type")?.includes("application/json")
 
   let body: unknown
   if (isJson) {
@@ -48,10 +43,7 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      (body as { detail?: unknown } | undefined)?.detail
-    )
+    throw new ApiError(response.status, (body as { detail?: unknown } | undefined)?.detail)
   }
 
   return body as T

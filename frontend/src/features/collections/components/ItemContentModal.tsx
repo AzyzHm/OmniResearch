@@ -100,7 +100,12 @@ function ItemContentBody({ collectionId, item, highlightText }: ItemContentBodyP
   return null
 }
 
-function ItemContentModal({ collectionId, item, onOpenChange, highlightText }: ItemContentModalProps) {
+function ItemContentModal({
+  collectionId,
+  item,
+  onOpenChange,
+  highlightText,
+}: ItemContentModalProps) {
   const open = item !== null
 
   return (

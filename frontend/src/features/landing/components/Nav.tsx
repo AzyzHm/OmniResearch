@@ -40,7 +40,10 @@ function Nav() {
       }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
-        <Link to="/" className="flex min-w-0 items-center gap-2 font-display italic text-lg sm:text-xl text-ink">
+        <Link
+          to="/"
+          className="flex min-w-0 items-center gap-2 font-display italic text-lg sm:text-xl text-ink"
+        >
           <img src={appLogo} alt="" className="size-6 shrink-0" />
           <span className="truncate">OmniResearch</span>
         </Link>

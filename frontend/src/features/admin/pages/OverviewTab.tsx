@@ -4,7 +4,11 @@ import { getStats } from "@/features/admin/api"
 import MetricCard from "@/features/admin/components/MetricCard"
 
 function OverviewTab() {
-  const { data: stats, isLoading, isError } = useQuery({
+  const {
+    data: stats,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: getStats,
   })
@@ -21,9 +25,7 @@ function OverviewTab() {
 
   return (
     <div>
-      <div
-        className={`grid gap-4 ${isSuperadminView ? "grid-cols-4" : "grid-cols-3"}`}
-      >
+      <div className={`grid gap-4 ${isSuperadminView ? "grid-cols-4" : "grid-cols-3"}`}>
         <MetricCard label="Total Users" value={stats.total_users} color="teal" />
         {isSuperadminView && (
           <MetricCard label="Total Admins" value={stats.admin_users!} color="amber" />
@@ -38,9 +40,7 @@ function OverviewTab() {
       </div>
 
       <div className="mt-8">
-        <h2 className="mb-3 font-display text-base font-medium text-ink">
-          Recent Login Activity
-        </h2>
+        <h2 className="mb-3 font-display text-base font-medium text-ink">Recent Login Activity</h2>
         {stats.recent_logins.length === 0 ? (
           <p className="text-sm text-muted-foreground">No login activity yet.</p>
         ) : (

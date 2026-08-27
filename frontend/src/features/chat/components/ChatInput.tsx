@@ -36,7 +36,7 @@ function ChatInput({ disabled, onSend }: ChatInputProps) {
               "rounded-full px-2.5 py-1 font-mono text-[0.7rem] font-medium transition-colors",
               retrievalMode === mode.value
                 ? "bg-teal/15 text-teal"
-                : "text-muted-foreground hover:bg-muted"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
             {mode.label}

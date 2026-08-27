@@ -1,13 +1,13 @@
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional, cast
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
-from backend.database.db import get_supabase
+from database.db import get_supabase
 
 DEFAULT_DAILY_TOKEN_LIMIT = 80_000
 
 
 def _start_of_today_utc() -> datetime:
-    return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def _start_of_tomorrow_utc() -> datetime:
@@ -23,7 +23,7 @@ class DailyQuotaExceeded(Exception):
         self.limit = limit
         self.reset_at = reset_at
 
-        remaining = reset_at - datetime.now(timezone.utc)
+        remaining = reset_at - datetime.now(UTC)
         total_minutes = max(int(remaining.total_seconds() // 60), 0)
         hours, minutes = divmod(total_minutes, 60)
         self.user_message = (
@@ -49,18 +49,12 @@ def get_tokens_used_today(user_id: str) -> int:
     """Sum total_tokens from llm_usage for this user since UTC midnight."""
     db = get_supabase()
     start = _start_of_today_utc().isoformat()
-    result = (
-        db.table("llm_usage")
-        .select("total_tokens")
-        .eq("user_id", user_id)
-        .gte("created_at", start)
-        .execute()
-    )
+    result = db.table("llm_usage").select("total_tokens").eq("user_id", user_id).gte("created_at", start).execute()
     rows = cast(list[dict[str, Any]], result.data) or []
     return sum((row.get("total_tokens") or 0) for row in rows)
 
 
-def enforce_daily_quota(user_id: Optional[str], role: Optional[str] = None) -> None:
+def enforce_daily_quota(user_id: str | None, role: str | None = None) -> None:
     """
     Raise DailyQuotaExceeded if this user has hit their daily token limit.
 

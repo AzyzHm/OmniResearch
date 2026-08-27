@@ -70,7 +70,7 @@ backend/
 │   ├── settings.py              # pydantic-settings; all env vars
 │   ├── auth.py                  # Argon2 + JWT helpers, get_current_user / require_admin / require_superadmin
 │   ├── env.py                   # legacy manual dotenv loader (still referenced by settings.py)
-│   ├── models.py                # get_gemini_response() — Gemini call + Mistral fallback + usage logging
+│   ├── models.py                # get_gemini_response(): Gemini call + Mistral fallback + usage logging
 │   └── prompts.py               # every RAG prompt template, centralized
 ├── database/
 │   ├── db.py                    # Supabase client singleton (service role key)
@@ -81,10 +81,10 @@ backend/
 │   ├── auth.py                  # register, login, logout, /auth/me
 │   ├── projects.py              # project CRUD
 │   ├── search.py                # web search endpoint
-│   ├── admin/                   # package — see below
-│   ├── chat/                    # package — see below
-│   ├── collections/             # package — see below
-│   └── notes/                   # package — see below
+│   ├── admin/              
+│   ├── chat/
+│   ├── collections/
+│   └── notes/
 ├── services/                    # business logic used by routes and graph nodes
 │   ├── extraction.py            # txt/pdf → raw text, page/word counting
 │   ├── text_processing.py       # chunk_text()
@@ -106,10 +106,17 @@ backend/
 │       ├── router_node.py  refine_query_node.py  retrieve_node.py  rerank_node.py
 │       └── validation_node.py  generate_node.py
 ├── utils/
-│   └── naming.py                # next_unique_name() — auto-suffixes duplicate collection/note names
+│   └── naming.py                # next_unique_name() auto-suffixes duplicate collection/note names
 ├── scripts/
-│   └── backfill_bm25.py         # one-off: adds BM25 vectors to chunks stored before that feature existed
-└── tests/                       # pytest suite — see Testing
+│   ├── backfill_bm25.py         # one-off: adds BM25 vectors to chunks stored before that feature existed
+│   └── setup/
+│       ├── reranker_downloader.py   # one-time reranker model cache, see Getting Started
+│       ├── gen_password_hash.py     # Argon2 hash generator, for the bootstrap superadmin row
+│       └── secret_generator.py      # random JWT_SECRET generator
+└── tests/
+    ├── unit/                    # 17 files, no HTTP layer, call functions directly
+    ├── integration/             # 12 files, via app fixture + TestClient
+    └── setup/                   # shared fixtures/fakes imported by conftest.py, see Testing
 ```
 
 **`routes/admin/`** (prefix `/admin`, tags `Administration`):
@@ -127,10 +134,10 @@ admin/
 ```
 chat/
 ├── __init__.py    # aggregates the sub-routers below
-├── _shared.py     # _verify_project_owner, _own_chat — shared ownership checks
+├── _shared.py     # _verify_project_owner, _own_chat: shared ownership checks
 ├── crud.py        # list/create/rename/delete chats
 ├── messages.py    # message history retrieval
-└── send.py        # /message and /message/stream — invokes the RAG graph
+└── send.py        # /message and /message/stream invokes the RAG graph
 ```
 
 **`routes/collections/`** (tags `Collections`):
@@ -140,7 +147,7 @@ collections/
 ├── _shared.py     # _verify_project_owner, _own_collection, _existing_urls
 ├── crud.py        # list/create/delete collections
 ├── items.py       # list/toggle/bulk-toggle/delete items, original-file preview endpoint
-└── ingest.py       # file upload, manual URL add, from-search bulk add — plus their background task processors
+└── ingest.py      # file upload, manual URL add, from-search bulk add plus their background task processors
 ```
 
 **`routes/notes/`** (tags `Notes`):
@@ -152,18 +159,18 @@ notes/
 └── items.py       # save a message to a note, list saved items, remove a saved item
 ```
 
-Each package's `__init__.py` creates the actual prefixed `APIRouter` and calls `include_router()` on every sub-router; every sub-router itself is a bare `APIRouter()` with no prefix of its own. `backend/routes/__init__.py` imports `router` from each package the same way it would from a plain module, so nothing about how these are wired into `main.py` differs from a single-file router.
+Each package's `__init__.py` creates the actual prefixed `APIRouter` and calls `include_router()` on every sub-router; every sub-router itself is a bare `APIRouter()` with no prefix of its own. `routes/__init__.py` imports `router` from each package the same way it would from a plain module, so nothing about how these are wired into `main.py` differs from a single-file router.
 
 ---
 
 ## Environment Variables
 
-All read via `backend/config/settings.py` (most sourced from `backend/config/env.py`, a couple defined directly on the `Settings` class with plain defaults).
+All read via `config/settings.py` (most sourced from `config/env.py`, a couple defined directly on the `Settings` class with plain defaults).
 
 ```env
 # Supabase
 SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJ...          # must be the service_role key, NOT anon — see "Row Level Security"
+SUPABASE_SERVICE_KEY=eyJ...          # must be the service_role key, NOT anon!
 
 # JWT
 JWT_SECRET=<32+ random hex chars>
@@ -173,14 +180,14 @@ JWT_EXPIRE_MINUTES=60
 # CORS (defaults to the Vite dev server if unset)
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
-# Cookie security (defaults to false; set true in production, behind HTTPS)
+# Cookie security (defaults to false, set true in production, behind HTTPS)
 COOKIE_SECURE=false
 
 # Gemini (primary LLM)
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
 
-# Mistral (fallback LLM — used automatically if Gemini fails, e.g. quota exhaustion)
+# Mistral (fallback LLM, used automatically if Gemini fails)
 MISTRAL_API_KEY=...
 MISTRAL_MODEL=mistral-small-2506
 FORCE_MISTRAL=false                  # set true to force Mistral-only, for testing the fallback path
@@ -213,11 +220,11 @@ TAVILY_API_KEY=...
 EXA_API_KEY=...
 ```
 
-An `.env.example` at the repository root lists the values that must actually be filled in; `CORS_ORIGINS` and `COOKIE_SECURE` are not in it because their code defaults already work for local development.
+`backend/.env.example` lists the values that must actually be filled in; `CORS_ORIGINS` and `COOKIE_SECURE` are not in it because their code defaults already work for local development.
 
-**Ollama** must be running locally with `embeddinggemma` pulled (`ollama pull embeddinggemma`) before starting the backend — `warm_up_embedding_model()` runs at startup and logs a warning, not a crash, if Ollama isn't reachable yet.
+**Ollama** must be running locally with `embeddinggemma` pulled (`ollama pull embeddinggemma`) before starting the backend `warm_up_embedding_model()` runs at startup and logs a warning, not a crash, if Ollama isn't reachable yet.
 
-**Reranker model**: `HF_HOME`/`HF_HUB_OFFLINE` are read directly by `transformers`/`huggingface_hub` from the process environment, not routed through `Settings` at all, since those libraries already know how to find them on their own. `backend/config/env.py` calls `load_dotenv()` at import time, before `backend/services/reranker.py` is ever imported, so anything set in `.env` is already in `os.environ` by the time the reranker's imports run.
+**Reranker model**: `HF_HOME`/`HF_HUB_OFFLINE` are read directly by `transformers`/`huggingface_hub` from the process environment, not routed through `Settings` at all, since those libraries already know how to find them on their own. `config/env.py` calls `load_dotenv()` at import time, before `services/reranker.py` is ever imported, so anything set in `.env` is already in `os.environ` by the time the reranker's imports run.
 
 **Import order in `main.py`**: the reranker (`torch`/`sentence-transformers`) is imported before the route modules , which pull in the Gemini SDK (`google-genai`) and its native dependencies (`grpc`/`protobuf`). Importing the Gemini SDK's native deps before torch causes a native DLL collision on Windows (`0xC0000005` access violation, no Python traceback) (the same for the ingestion service). Loading torch first avoids it, and a comment in `main.py` documents this explicitly so the import blocks aren't reordered without re-testing. A dedicated test (`test_main_import_order.py`) asserts the order in `main.py`'s source directly.
 
@@ -225,17 +232,17 @@ An `.env.example` at the repository root lists the values that must actually be 
 
 ## Getting Started
 
-Steps to run the backend from a clean clone (from the repository root):
+Steps to run the backend from a clean clone. `backend/` is the working root for all of these, so `cd backend` first:
 
 ```bash
 # 1. Create a Supabase project (https://supabase.com), then apply the schema.
-#    supabase_schema.sql (repository root) creates every table, index, and
-#    trigger; enables RLS on the tables listed under "Row Level Security"
-#    below; creates the "collection-files" storage bucket used for original
+#    backend/supabase_schema.sql creates every table, index, and
+#    trigger, enables RLS on the tables listed under "Row Level Security"
+#    below, creates the "collection-files" storage bucket used for original
 #    file previews; and inserts one bootstrap superadmin row with
 #    REPLACE_WITH_USERNAME / REPLACE_WITH_ARGON2_HASH placeholders that must
 #    be swapped for a real username and a real Argon2 hash before running it
-#    (or updated afterward via SQL) — there is no other way to create the
+#    (or updated afterward via SQL), there is no other way to create the
 #    first account, since registration alone never grants superadmin.
 #    Run it via the Supabase SQL editor, or the CLI:
 supabase db execute -f supabase_schema.sql
@@ -243,14 +250,16 @@ supabase db execute -f supabase_schema.sql
 # 2. Copy .env.example to .env and fill in SUPABASE_URL / SUPABASE_SERVICE_KEY
 #    (the service_role key, see "Row Level Security") plus the LLM/search keys.
 
-pip install -r requirements.txt --break-system-packages   # if needed, e.g. on Debian/Ubuntu
 
 # torch is deliberately excluded from requirements.txt, since the CUDA build
 # only exists on PyTorch's own package index, not PyPI, and can't be resolved
 # by a plain pip install -r. Install ONE of the following, matching your
 # machine (not both):
+
 pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124   # GPU dev machine
 # pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu     # CPU-only / no GPU
+
+pip install -r requirements.txt --break-system-packages   # if needed, e.g. on Debian/Ubuntu
 
 ollama pull embeddinggemma                                  # one-time, before first run
 
@@ -258,7 +267,7 @@ ollama pull embeddinggemma                                  # one-time, before f
 # so the model must already be cached locally before the server can load it.
 python scripts/setup/reranker_downloader.py
 
-uvicorn backend.main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
 `GET /health` returns service status and the resolved CORS origin list, a useful first smoke test once the server is up.
@@ -267,14 +276,14 @@ To run just the test suite without the full ML stack (torch, ChromaDB, etc. are 
 
 ```bash
 pip install --break-system-packages fastapi pydantic pydantic-settings pytest httpx python-jose passlib argon2-cffi python-multipart langgraph langchain-core pypdf
-pytest backend/tests -c backend/Pytest.ini
+pytest
 ```
 
 ---
 
 ## Database Schema
 
-All tables live in Supabase/Postgres, under `public`, defined in `supabase_schema.sql` at the repository root. Most tables have RLS enabled (see [Row Level Security](#row-level-security)); the backend bypasses it entirely via the service role key regardless.
+All tables live in Supabase/Postgres, under `public`, defined in `backend/supabase_schema.sql`. Most tables have RLS enabled (see [Row Level Security](#row-level-security)), the backend bypasses it entirely via the service role key regardless.
 
 | Table | Purpose | Key columns |
 |---|---|---|
@@ -296,10 +305,10 @@ All tables live in Supabase/Postgres, under `public`, defined in `supabase_schem
 - A collection has no type of its own: it can hold any mix of PDF, TXT, or URL items. `collection_items.source_type` is derived per-item, from the uploaded file's extension or `"url"` for manually added or search-sourced links.
 - `collection_items.is_active` controls whether that item's chunks are included in RAG retrieval, toggled from the UI, applied via a bulk PATCH endpoint that batches many toggles into one request rather than one per checkbox.
 - `collection_items.status` starts at `"processing"` the instant a row is inserted (file upload, URL add, or search-result add) and flips to `"ready"`/`"error"` once its background task finishes, see [Document & URL Ingestion Pipeline](#document--url-ingestion-pipeline).
-- `collection_items.storage_path` is set once the original file bytes are safely stored (PDF/TXT uploads only); it stays `null` for URL items and for any upload where the storage write itself failed, see [Original File Storage & Preview](#original-file-storage--preview).
+- `collection_items.storage_path` is set once the original file bytes are safely stored (PDF/TXT uploads only), it stays `null` for URL items and for any upload where the storage write itself failed, see [Original File Storage & Preview](#original-file-storage--preview).
 - `notes`/`note_items` let a user curate specific chat messages, with their citations intact, into a separate reference list per project, independent of the chat they came from.
 - `search_usage.credits`: Tavily's `advanced` search depth costs roughly twice a normal call, so it's logged as 2 credits; everything else (other Tavily depths, all Exa calls) is 1 credit.
-- `llm_usage.created_at` is also what daily quota enforcement sums against (`total_tokens` since UTC midnight for a given `user_id`); no separate quota-tracking table exists.
+- `llm_usage.created_at` is also what daily quota enforcement sums against (`total_tokens` since UTC midnight for a given `user_id`), no separate quota-tracking table exists.
 - ChromaDB mirrors `collections`: one Chroma collection per Supabase `collections.id`. Each chunk inside it is tagged with `item_id` in its metadata (plus `bm25_indices`/`bm25_values`, JSON-serialized sparse vector fields used by keyword/hybrid retrieval), so toggling or deleting a single file or URL never requires touching other items' chunks.
 
 ---
@@ -314,16 +323,16 @@ All tables live in Supabase/Postgres, under `public`, defined in `supabase_schem
 6. Passwords are hashed with Argon2id (`argon2-cffi`), not bcrypt, since bcrypt raises on passwords over 72 bytes and Argon2 has no such limit.
 7. `POST /auth/logout` clears the cookie server-side.
 
-**Role hierarchy** (`backend/config/auth.py`): both `require_admin` and `require_superadmin` are built from one factory, `_require_role(*allowed_roles, message)`, which extracts and decodes the token the same way `get_current_user` does, then checks role membership:
+**Role hierarchy** (`config/auth.py`): both `require_admin` and `require_superadmin` are built from one factory, `_require_role(*allowed_roles, message)`, which extracts and decodes the token the same way `get_current_user` does, then checks role membership:
 
 ```python
 require_admin = _require_role("admin", "superadmin", message="Admin access required.")
 require_superadmin = _require_role("superadmin", message="Super admin access required.")
 ```
 
-- **`user`** — no admin access.
-- **`admin`** — can approve/delete regular user accounts and edit their daily token limits, and can see login logs/stats/usage scoped to regular users only. Cannot see other admins, the superadmin, or themselves in any of those views. Cannot promote, demote, or delete another admin.
-- **`superadmin`** — sees every account except their own (both `user` and `admin` rows), can promote/demote between `user` and `admin` (`require_superadmin`-gated), can delete `user` or `admin` accounts (never another superadmin, never themselves), and can edit the daily token limit for `user`-role accounts only, since token quotas don't apply to admin accounts. A `superadmin`'s own role can never be changed or deleted through the API.
+- **`user`** no admin access.
+- **`admin`** can approve/delete regular user accounts and edit their daily token limits, and can see login logs/stats/usage scoped to regular users only. Cannot see other admins, the superadmin, or themselves in any of those views. Cannot promote, demote, or delete another admin.
+- **`superadmin`** sees every account except their own (both `user` and `admin` rows), can promote/demote between `user` and `admin` (`require_superadmin` gated), can delete `user` or `admin` accounts (never another superadmin, never themselves), and can edit the daily token limit for `user` role accounts only, since token quotas don't apply to admin accounts. A `superadmin`'s own role can never be changed or deleted through the API.
 
 This scoping is enforced at the route level in `routes/admin/*.py`: each handler filters query results by the requester's role and excludes the requester's own `user_id`, rather than relying on the frontend to hide anything.
 
@@ -344,13 +353,13 @@ All routes are prefixed at the app root except `/admin/*`, which has its own rou
 ### Admin (requires `role in ("admin", "superadmin")` unless noted)
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/admin/users` | `?pending_only=true` to filter; results scoped by requester's role, see [Authentication & Roles](#authentication--roles) |
+| GET | `/admin/users` | `?pending_only=true` to filter, results scoped by requester's role, see [Authentication & Roles](#authentication--roles) |
 | PUT | `/admin/users/{id}/approve` | |
-| PUT | `/admin/users/{id}/role` | `require_superadmin` only. `?new_role=admin\|user`; can't change your own role or a superadmin's role |
+| PUT | `/admin/users/{id}/role` | `require_superadmin` only. `?new_role=admin\|user` can't change your own role or a superadmin's role |
 | PUT | `/admin/users/{id}/token-limit` | Target must be `role == "user"` |
-| DELETE | `/admin/users/{id}` | Can't delete your own account or a superadmin; a plain admin can only delete `user`-role accounts |
+| DELETE | `/admin/users/{id}` | Can't delete your own account or a superadmin, a plain admin can only delete `user`-role accounts |
 | GET | `/admin/logs` | Paginated login history, `?username=` filter, scoped by role |
-| GET | `/admin/stats` | Aggregate counts + 7 most recent logins, scoped by role; superadmin responses include an `admin_users` count |
+| GET | `/admin/stats` | Aggregate counts + 7 most recent logins, scoped by role, superadmin responses include an `admin_users` count |
 | GET | `/admin/usage/llm` | Per-user token usage, aggregated in Python from `llm_usage` |
 | GET | `/admin/usage/search` | Per-user search credits, aggregated in Python from `search_usage` |
 
@@ -372,7 +381,7 @@ All routes are prefixed at the app root except `/admin/*`, which has its own rou
 ### Collections
 | Method | Path | Notes |
 |---|---|---|
-| GET / POST | `/projects/{project_id}/collections` | Creation only requires a name; a collection accepts any mix of source types |
+| GET / POST | `/projects/{project_id}/collections` | Creation only requires a name, a collection accepts any mix of source types |
 | DELETE | `/collections/{collection_id}` | Also deletes its ChromaDB collection |
 | GET | `/collections/{collection_id}/items` | |
 | POST | `/collections/{collection_id}/items` | Multipart upload of one or more PDF/TXT files. Returns immediately with `status="processing"` rows; extraction/chunk/embed/store-original-file run per file as background tasks |
@@ -407,14 +416,14 @@ Built with LangGraph. Given a user query, the recent chat history, and a chosen 
 
 ### Flow
 
-1. **`router`** (`decide_retrieval`) — one LLM call decides `RETRIEVE` or `DIRECT`. `DIRECT` for greetings, small talk, or anything answerable from the visible chat history alone. `RETRIEVE` for anything needing facts from the project's sources, or an explicit "search my documents" request.
+1. **`router`** (`decide_retrieval`): one LLM call decides `RETRIEVE` or `DIRECT`. `DIRECT` for greetings, small talk, or anything answerable from the visible chat history alone. `RETRIEVE` for anything needing facts from the project's sources, or an explicit "search my documents" request.
 2. **`DIRECT`** → skips straight to `generate`.
-3. **`RETRIEVE`** → **`refine_query`** — rewrites the raw message into a standalone search query using history to resolve references (e.g. "what is it?" → "what is an LLM?").
-4. **`retrieve`** (`retrieve_pool`, `backend/services/rag_retrieval.py`) — fetches a wide candidate pool (`retrieval_pool_size`, default 50) for the current round's query, using whichever retrieval mode (semantic/keyword/hybrid) the request specified. The first round searches for the refined query; a retry round searches for the validator's `missing_query` instead, a deliberately different, more targeted query rather than more results from the same original search.
-5. **`rerank`** (`rerank_node`) — re-scores that round's pool against the same query with the `BAAI/bge-reranker-base` cross-encoder, keeps the top `rerank_top_k` (default 5), and merges them into whatever context chunks were already accepted from earlier rounds, deduplicated by `(collection_id, item_id, content)` so the same chunk never counts twice.
-6. **`validate`** (`validate_context`) — one LLM call judges whether the accumulated `context_chunks` can answer the original query (not the retry query). Returns `SUFFICIENT`, or `INSUFFICIENT: <follow-up query>` describing exactly what's still missing. Skipped, auto-passed, only on a truly empty first attempt with no sources at all; if a later retry's pool comes back empty but earlier rounds already found something, validation still runs normally against what's been accumulated so far.
+3. **`RETRIEVE`** → **`refine_query`**: rewrites the raw message into a standalone search query using history to resolve references (e.g. "what is it?" → "what is an LLM?").
+4. **`retrieve`** (`retrieve_pool`, `services/rag_retrieval.py`): fetches a wide candidate pool (`retrieval_pool_size`, default 50) for the current round's query, using whichever retrieval mode (semantic/keyword/hybrid) the request specified. The first round searches for the refined query; a retry round searches for the validator's `missing_query` instead, a deliberately different, more targeted query rather than more results from the same original search.
+5. **`rerank`** (`rerank_node`): re-scores that round's pool against the same query with the `BAAI/bge-reranker-base` cross-encoder, keeps the top `rerank_top_k` (default 5), and merges them into whatever context chunks were already accepted from earlier rounds, deduplicated by `(collection_id, item_id, content)` so the same chunk never counts twice.
+6. **`validate`** (`validate_context`): one LLM call judges whether the accumulated `context_chunks` can answer the original query (not the retry query). Returns `SUFFICIENT`, or `INSUFFICIENT: <follow-up query>` describing exactly what's still missing. Skipped, auto-passed, only on a truly empty first attempt with no sources at all; if a later retry's pool comes back empty but earlier rounds already found something, validation still runs normally against what's been accumulated so far.
 7. **Conditional**: `SUFFICIENT` → `generate`. `INSUFFICIENT` and `retrieval_attempts < MAX_RETRIEVAL_ATTEMPTS` (3) → back to `retrieve`, now targeting the missing-info query. Attempts exhausted → `generate` anyway, with whatever context exists; the system always answers rather than refusing outright.
-8. **`generate`** (`generate_answer`) — if retrieval was needed but zero context chunks were ever found (no active sources in the project, or all toggled off), returns a fixed message telling the user to add or activate sources, without calling the LLM at all. Otherwise, the retrieved context and question are folded into one final "user" turn appended after the real chat history (so role alternation stays valid for Gemini), then sent to `get_gemini_response`.
+8. **`generate`** (`generate_answer`): if retrieval was needed but zero context chunks were ever found (no active sources in the project, or all toggled off), returns a fixed message telling the user to add or activate sources, without calling the LLM at all. Otherwise, the retrieved context and question are folded into one final "user" turn appended after the real chat history (so role alternation stays valid for Gemini), then sent to `get_gemini_response`.
 
 ### State (`backend/graph/state.py`)
 
@@ -422,14 +431,15 @@ Built with LangGraph. Given a user query, the recent chat history, and a chosen 
 class _RAGStateRequired(TypedDict):
     project_id: str
     chat_id: str
-    user_id: str              # for usage attribution
-    query: str                # original message
-    history: list[dict]       # prior messages, excludes the new query
-    retrieval_mode: str       # "semantic" | "keyword" | "hybrid"
+    user_id: str  # for usage attribution
+    query: str  # original message
+    history: list[dict]  # prior messages, excludes the new query
+    retrieval_mode: str  # "semantic" | "keyword" | "hybrid"
+
 
 class RAGState(_RAGStateRequired, total=False):
     refined_query: str
-    missing_query: str        # validator's "what's missing" follow-up query, set on a retry
+    missing_query: str  # validator's "what's missing" follow-up query, set on a retry
     needs_retrieval: bool
     retrieved_pool: list[dict]
     context_chunks: list[dict]
@@ -438,11 +448,11 @@ class RAGState(_RAGStateRequired, total=False):
     answer: str
 ```
 
-Split deliberately into required vs. optional fields; the required set is always provided by `backend/routes/chat/send.py` when the graph is invoked, so nodes can safely do `state["query"]` instead of `state.get("query")` for those fields.
+Split deliberately into required vs. optional fields; the required set is always provided by `routes/chat/send.py` when the graph is invoked, so nodes can safely do `state["query"]` instead of `state.get("query")` for those fields.
 
 ### Prompts
 
-All four prompt templates live in `backend/config/prompts.py`: `ROUTER_PROMPT`, `REFINE_QUERY_PROMPT`, `VALIDATION_PROMPT`, `GENERATION_PROMPT`. The router prompt forces a single-word response (`RETRIEVE`/`DIRECT`). The validation prompt forces either the single word `SUFFICIENT`, or `INSUFFICIENT: <query>`, parsed by splitting on the first colon only so a colon inside the missing-info text itself doesn't get cut off; it falls back to the original query if the model doesn't follow the expected format.
+All four prompt templates live in `config/prompts.py`: `ROUTER_PROMPT`, `REFINE_QUERY_PROMPT`, `VALIDATION_PROMPT`, `GENERATION_PROMPT`. The router prompt forces a single-word response (`RETRIEVE`/`DIRECT`). The validation prompt forces either the single word `SUFFICIENT`, or `INSUFFICIENT: <query>`, parsed by splitting on the first colon only so a colon inside the missing-info text itself doesn't get cut off; it falls back to the original query if the model doesn't follow the expected format.
 
 ### Debugging
 
@@ -452,13 +462,13 @@ Every node logs a `[RAG] ...` line as it runs (which node, pool size, rerank cou
 
 ## Retrieval Modes: Semantic, Keyword, Hybrid
 
-`backend/services/rag_retrieval.py`'s `retrieve_pool(project_id, query, pool_size, mode)` dispatches to one of three strategies:
+`services/rag_retrieval.py`'s `retrieve_pool(project_id, query, pool_size, mode)` dispatches to one of three strategies:
 
-- **`semantic`** (default) — the original dense-vector approach: embeds the query once via `embeddinggemma`, queries every ChromaDB collection with at least one active item in the project, merges results across collections, sorts globally by distance, keeps the top `pool_size`.
-- **`keyword`** — BM25 lexical scoring. Chroma ships a local BM25 sparse-embedding function (`ChromaBm25EmbeddingFunction`, `backend/services/bm25.py`) that runs entirely offline via `snowballstemmer`, no Chroma Cloud dependency. What is Chroma-Cloud-only is the managed ranking/fusion layer on top of it (`Search()`/`Knn()`/`Rrf()`); since this project runs a local, self-hosted `PersistentClient`, that layer isn't available. Instead, every active chunk in the project is fetched via a plain `collection.get()`, not a vector search, and scored against the query's BM25 sparse vector via a manual sparse dot product (`sparse_dot`). Chunks with zero shared terms are filtered out entirely rather than ranked last.
-- **`hybrid`** — Reciprocal Rank Fusion (RRF) of the semantic and keyword rankings, each pulling a wider candidate pool (`pool_size * 2`) than the final result needs. `RRF_K = 60`, matching Chroma's own default constant for the same fusion strategy. Each ranking contributes `1/(RRF_K + rank + 1)` per chunk; a chunk found by both rankings scores higher than one found by only one.
+- **`semantic`** (default): the original dense-vector approach: embeds the query once via `embeddinggemma`, queries every ChromaDB collection with at least one active item in the project, merges results across collections, sorts globally by distance, keeps the top `pool_size`.
+- **`keyword`**: BM25 lexical scoring. Chroma ships a local BM25 sparse-embedding function (`ChromaBm25EmbeddingFunction`, `services/bm25.py`) that runs entirely offline via `snowballstemmer`, no Chroma Cloud dependency. What is Chroma-Cloud-only is the managed ranking/fusion layer on top of it (`Search()`/`Knn()`/`Rrf()`); since this project runs a local, self-hosted `PersistentClient`, that layer isn't available. Instead, every active chunk in the project is fetched via a plain `collection.get()`, not a vector search, and scored against the query's BM25 sparse vector via a manual sparse dot product (`sparse_dot`). Chunks with zero shared terms are filtered out entirely rather than ranked last.
+- **`hybrid`**: Reciprocal Rank Fusion (RRF) of the semantic and keyword rankings, each pulling a wider candidate pool (`pool_size * 2`) than the final result needs. `RRF_K = 60`, matching Chroma's own default constant for the same fusion strategy. Each ranking contributes `1/(RRF_K + rank + 1)` per chunk, a chunk found by both rankings scores higher than one found by only one.
 
-**BM25 vectors are computed at ingestion time**, not query time, and stored as two JSON-string fields on each chunk's Chroma metadata (`bm25_indices`, `bm25_values`, `backend/services/bm25.py`'s `sparse_vector_to_metadata`/`sparse_vector_from_metadata`), since Chroma metadata values must be `str`/`int`/`float`/`bool`, not lists. `backend/database/chroma_client.py`'s `add_item_chunks` computes and attaches these alongside the dense embedding for every new chunk. Chunks added before this feature existed have no `bm25_*` fields; `backend/scripts/backfill_bm25.py` is a one-off, safe-to-rerun script that backfills them for every existing chunk across every collection.
+**BM25 vectors are computed at ingestion time**, not query time, and stored as two JSON-string fields on each chunk's Chroma metadata (`bm25_indices`, `bm25_values`, `services/bm25.py`'s `sparse_vector_to_metadata`/`sparse_vector_from_metadata`), since Chroma metadata values must be `str`/`int`/`float`/`bool`, not lists. `database/chroma_client.py`'s `add_item_chunks` computes and attaches these alongside the dense embedding for every new chunk. Chunks added before this feature existed have no `bm25_*` fields; `scripts/backfill_bm25.py` is a one-off, safe-to-rerun script that backfills them for every existing chunk across every collection.
 
 All three modes return chunks in the same shape (`content`, `source_name`, `collection_id`, `item_id`, `distance`), with `distance` normalized so "lower = more relevant" holds regardless of which mode produced it: semantic keeps Chroma's raw distance, keyword/hybrid negate their score so higher relevance still sorts first.
 
@@ -466,10 +476,10 @@ All three modes return chunks in the same shape (`content`, `source_name`, `coll
 
 ## Reranking
 
-`backend/services/reranker.py` wraps `BAAI/bge-reranker-base` as a `sentence-transformers` `CrossEncoder`.
+`services/reranker.py` wraps `BAAI/bge-reranker-base` as a `sentence-transformers` `CrossEncoder`.
 
 - `warm_up_reranker()` runs in `main.py`'s lifespan (alongside `warm_up_embedding_model()`), selecting a device via `_select_device()` (`cuda` → `mps` → `cpu`, in that order of preference) and running one dummy `.predict()` call to force the weights onto that device before the first real request arrives.
-- The model itself is not fetched at warmup time. `scripts/setup/reranker_downloader.py` (at the repository root, outside the `backend` package) must be run once beforehand to cache it under `HF_HOME`, since the app runs with `HF_HUB_OFFLINE=1` and will fail to load the model if it isn't already present locally.
+- The model itself is not fetched at warmup time. `backend/scripts/setup/reranker_downloader.py` must be run once beforehand to cache it under `HF_HOME`, since the app runs with `HF_HUB_OFFLINE=1` and will fail to load the model if it isn't already present locally.
 - `rerank(query, chunks, top_k)` builds `(query, chunk_content)` pairs, scores them all in one `model.predict()` call, and returns the `top_k` highest-scoring chunks with a `rerank_score` field attached.
 - If warm-up hasn't run yet, for example a script importing this module directly rather than through the FastAPI app, `_get_model()` lazily calls `warm_up_reranker()` on first use instead of failing.
 
@@ -527,9 +537,9 @@ If the process restarts while a task is mid-flight, that in-process task is simp
 Alongside the RAG chunks, the original bytes of every uploaded PDF or TXT file are stored in a Supabase Storage bucket (`collection_files_bucket`, default `collection-files`) so the frontend can show the exact source document rather than a reconstruction from chunks.
 
 `backend/services/file_storage.py` wraps three operations against that bucket:
-- **`upload_collection_file(path, data, content_type)`** — called once per successful upload, at path `{collection_id}/{item_id}/{filename}`, with `upsert=true`.
-- **`download_collection_file(path)`** — used by `GET /collections/{id}/items/{item_id}/content`, which streams the file back with the right `Content-Type` for the browser to render inline (PDF) or display as text (TXT).
-- **`delete_collection_file(path)`** — best-effort; wrapped in a try/except so a storage hiccup never blocks deleting the item's database row or its Chroma chunks.
+- **`upload_collection_file(path, data, content_type)`**, called once per successful upload, at path `{collection_id}/{item_id}/{filename}`, with `upsert=true`.
+- **`download_collection_file(path)`**, used by `GET /collections/{id}/items/{item_id}/content`, which streams the file back with the right `Content-Type` for the browser to render inline (PDF) or display as text (TXT).
+- **`delete_collection_file(path)`**, best-effort; wrapped in a try/except so a storage hiccup never blocks deleting the item's database row or its Chroma chunks.
 
 If the storage write fails during ingestion, the item still finishes as `"ready"` (its chunks are safely in ChromaDB either way), but `storage_path` is left `null`, and the preview endpoint returns a 404 asking the user to re-upload rather than pretending a preview exists. URL items never have a `storage_path`; the frontend opens those directly in a new tab instead of requesting a preview.
 
@@ -560,29 +570,35 @@ echo "$SUPABASE_SERVICE_KEY" | cut -d. -f2 | base64 -d | python3 -m json.tool
 
 ## Testing
 
-`backend/tests/` is a `pytest` suite of 427 test functions across 30 files, split between pure unit tests (services, graph nodes, config, model validation, utils) and route-level integration tests (via `fastapi.testclient.TestClient` against a fully in-memory fake database and RAG graph).
+`backend/tests/` is a `pytest` suite of 425 test functions across 29 files, split into `tests/unit/` (17 files, pure unit tests for services, graph nodes, config, model validation, utils) and `tests/integration/` (12 files, route-level tests via `fastapi.testclient.TestClient` against a fully in-memory fake database and RAG graph). Shared fixtures and fakes live in `tests/setup/`, imported by `conftest.py` rather than repeated per file.
 
-**Configuration** (`backend/Pytest.ini`):
+**Configuration** (`backend/pytest.ini`):
 ```ini
 [pytest]
-testpaths = tests
+testpaths =
+    tests/unit
+    tests/integration
+
+norecursedirs = tests/setup .pytest_cache __pycache__
+
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
 addopts = -v --tb=short
 ```
 
-**`conftest.py`** does three things before any test runs:
+`norecursedirs` keeps pytest from trying to collect the `tests/setup/` helper modules as test files themselves, since they contain no `test_*` functions of their own.
 
-1. **Sets fake env vars** (`SUPABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, etc.) so `Settings()` can construct without real credentials.
-2. **Stubs out heavy/native modules entirely** via `sys.modules.setdefault(name, MagicMock())`: `chromadb` (including `chromadb.errors`, mocked with a real `Exception` subclass so it can be used in an `except` clause), `google.genai`, `supabase`, `ollama`, `exa_py`, `tavily`, `torch` (and its `cuda`/`backends`/`backends.mps` submodules), `sentence_transformers`. This means the test suite never actually loads ChromaDB, torch, or any real ML dependency; imports of those libraries resolve to mocks immediately.
-3. **Provides fixtures** for the two testing styles used throughout the suite:
+**`conftest.py`** imports three `tests/setup/` modules that together do everything needed before any test runs:
 
-   - **`app` fixture** — yields `(TestClient, FakeDB)`. Patches `get_supabase` in every route/service module that imported it directly (`_patch_all_get_supabase`, since `from x import get_supabase` binds a local reference that patching the source module alone wouldn't reach), replaces `get_gemini_response` with a stub, and replaces the compiled RAG graph (`backend.routes.chat.send.get_rag_graph`) with a configurable `FakeRAGGraph`. Used by every `test_routes_*.py` file for full-stack integration tests that never touch a real network call.
-   - **`user_headers` / `admin_headers` / `superadmin_headers`** — pre-built `Authorization` headers from `make_token()`/`make_admin_token()`/`make_superadmin_token()`, JWTs signed with the real `create_access_token()` against the test's fake `JWT_SECRET`.
-   - **`FakeDB`** — a stand-in for the Supabase client. `.add_result(data=..., count=...)` queues a `FakeResult`; `.table(name)` pops the next queued result off a FIFO queue regardless of which table/filters were actually requested, via `FakeQuery`, whose `__getattr__` makes every chained method (`.select()`, `.eq()`, `.order()`, etc.) a no-op that returns itself until `.execute()` is called.
-   - **`FakeRAGGraph`** — stands in for the compiled LangGraph pipeline; `.answer` and `.raise_exc` are configurable per test to control what `/message` and `/message/stream` return.
-   - Row-builder helpers (`project_row`, `collection_row`, `chat_row`, `message_row`, `user_row`) build minimally-valid dict rows matching each table's shape, so individual tests don't repeat that boilerplate.
+1. **`tests/setup/mock_modules.py`** sets fake env vars (`SUPABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, etc.) so `Settings()` can construct without real credentials, then stubs out heavy/native modules entirely via `sys.modules.setdefault(name, MagicMock())`: `chromadb` (including `chromadb.errors`, mocked with a real `Exception` subclass so it can be used in an `except` clause), `google.genai`, `supabase`, `postgrest`, `ollama`, `exa_py`, `tavily`, `torch` (and its `cuda`/`backends`/`backends.mps` submodules), `sentence_transformers`. This means the test suite never actually loads ChromaDB, torch, or any real ML dependency; imports of those libraries resolve to mocks immediately. It's imported purely for this side effect, never referenced by name, hence the `F401` per-file ignore for `tests/conftest.py` in `pyproject.toml`.
+2. **`conftest.py` itself** defines the fixtures for the two testing styles used throughout the suite, built on classes and helpers imported from `tests/setup/`:
+
+   - **`app` fixture**, yields `(TestClient, FakeDB)`. Patches `get_supabase` in every route/service module that imported it directly (`tests/setup/patches.py`'s `patch_all_get_supabase`, since `from x import get_supabase` binds a local reference that patching the source module alone wouldn't reach), replaces `get_gemini_response` with a stub, and replaces the compiled RAG graph (`routes.chat.send.get_rag_graph`) with a configurable `FakeRAGGraph`. Used by every `test_routes_*.py` file for full-stack integration tests that never touch a real network call.
+   - **`user_headers` / `admin_headers` / `superadmin_headers`**, pre-built `Authorization` headers from `tests/setup/tokens.py`'s `make_token()`/`make_admin_token()`/`make_superadmin_token()`, JWTs signed with the real `create_access_token()` against the test's fake `JWT_SECRET`.
+   - **`FakeDB`** (`tests/setup/fakes.py`), a stand-in for the Supabase client. `.add_result(data=..., count=...)` queues a `FakeResult`; `.table(name)` pops the next queued result off a FIFO queue regardless of which table/filters were actually requested, via `FakeQuery`, whose `__getattr__` makes every chained method (`.select()`, `.eq()`, `.order()`, etc.) a no-op that returns itself until `.execute()` is called.
+   - **`FakeRAGGraph`** (`tests/setup/fakes.py`), stands in for the compiled LangGraph pipeline; `.answer` and `.raise_exc` are configurable per test to control what `/message` and `/message/stream` return.
+   - **Row-builder helpers** (`tests/setup/factories.py`: `project_row`, `collection_row`, `chat_row`, `message_row`, `note_row`, `note_item_row`, `user_row`) build minimally-valid dict rows matching each table's shape, so individual tests don't repeat that boilerplate.
 
 **Unit test files** (no `app` fixture, no HTTP layer, call functions directly with `monkeypatch`):
 

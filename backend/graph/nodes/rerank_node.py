@@ -1,8 +1,8 @@
 import logging
 
-from backend.config.settings import get_settings
-from backend.graph.state import RAGState
-from backend.services.reranker import rerank
+from config.settings import get_settings
+from graph.state import RAGState
+from services.reranker import rerank
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,8 @@ def rerank_node(state: RAGState) -> dict:
     is_retry = bool(state.get("missing_query"))
     logger.info(
         "rerank_node: reranking %d candidate(s) for the %s query",
-        len(pool), "follow-up" if is_retry else "initial",
+        len(pool),
+        "follow-up" if is_retry else "initial",
     )
 
     top_chunks = rerank(query, pool, top_k=settings.rerank_top_k)
@@ -49,6 +50,8 @@ def rerank_node(state: RAGState) -> dict:
 
     logger.info(
         "rerank_node: kept %d new chunk(s) (of %d reranked), total context now %d",
-        added, len(top_chunks), len(merged),
+        added,
+        len(top_chunks),
+        len(merged),
     )
     return {"context_chunks": merged}

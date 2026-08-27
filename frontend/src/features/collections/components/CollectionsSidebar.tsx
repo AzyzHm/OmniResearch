@@ -34,9 +34,7 @@ function CollectionsSidebar({
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
-    null
-  )
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
 
   const createMutation = useMutation({
     mutationFn: (payload: { name: string }) => createCollection(projectId, payload),
@@ -61,15 +59,13 @@ function CollectionsSidebar({
     },
     onSuccess: (_data, collectionId) => {
       queryClient.setQueryData<Collection[]>(queryKey, (old) =>
-        old ? old.filter((c) => c.id !== collectionId) : old
+        old ? old.filter((c) => c.id !== collectionId) : old,
       )
       queryClient.invalidateQueries({ queryKey })
       if (collectionId === selectedCollectionId) onSelect(null)
     },
     onError: (err) => {
-      setDeleteError(
-        err instanceof ApiError ? err.message : "Couldn't delete the collection."
-      )
+      setDeleteError(err instanceof ApiError ? err.message : "Couldn't delete the collection.")
     },
     onSettled: () => setConfirmingDeleteId(null),
   })
@@ -91,19 +87,13 @@ function CollectionsSidebar({
         </Button>
       </div>
 
-      {isLoading && (
-        <p className="px-1 text-sm text-muted-foreground">Loading...</p>
-      )}
+      {isLoading && <p className="px-1 text-sm text-muted-foreground">Loading...</p>}
 
       {!isLoading && collections?.length === 0 && (
-        <p className="px-1 text-sm text-muted-foreground">
-          No collections yet.
-        </p>
+        <p className="px-1 text-sm text-muted-foreground">No collections yet.</p>
       )}
 
-      {deleteError && (
-        <p className="px-1 text-sm text-destructive">{deleteError}</p>
-      )}
+      {deleteError && <p className="px-1 text-sm text-destructive">{deleteError}</p>}
 
       <div className="flex flex-col gap-1 overflow-y-auto">
         {collections?.map((collection) => {
@@ -115,9 +105,7 @@ function CollectionsSidebar({
               key={collection.id}
               className={cn(
                 "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                selected
-                  ? "bg-teal/10 text-teal"
-                  : "text-ink hover:bg-muted"
+                selected ? "bg-teal/10 text-teal" : "text-ink hover:bg-muted",
               )}
             >
               <button

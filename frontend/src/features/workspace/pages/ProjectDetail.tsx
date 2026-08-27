@@ -62,22 +62,12 @@ function ProjectDetail() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setNotesOpen(true)}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={() => setNotesOpen(true)}>
             <NotebookText className="size-3.5" data-icon="inline-start" />
             <span className="hidden sm:inline">Notes</span>
           </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setSourcesOpen(true)}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={() => setSourcesOpen(true)}>
             <Library className="size-3.5" data-icon="inline-start" />
             <span className="hidden sm:inline">Sources</span>
           </Button>

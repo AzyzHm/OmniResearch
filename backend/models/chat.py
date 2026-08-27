@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
@@ -35,9 +35,9 @@ class ChatOut(BaseModel):
 class Source(BaseModel):
     index: int
     source_name: str
-    collection_id: Optional[str] = None
-    item_id: Optional[str] = None
-    content: Optional[str] = None
+    collection_id: str | None = None
+    item_id: str | None = None
+    content: str | None = None
 
 
 class MessageOut(BaseModel):
@@ -46,7 +46,7 @@ class MessageOut(BaseModel):
     role: str
     content: str
     created_at: datetime
-    sources: Optional[list[Source]] = None
+    sources: list[Source] | None = None
 
 
 class ChatMessageRequest(BaseModel):
