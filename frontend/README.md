@@ -74,7 +74,9 @@ src/
 │   │   ├── AssistantBot.tsx     # Landing/marketing illustration
 │   │   └── RagPipelineIllustration.tsx
 │   ├── context/
-│   │   └── ThemeContext.tsx     # Theme preference, resolution, persistence
+│   │   ├── ThemeContext.tsx     # ThemeProvider, resolution, persistence
+│   │   ├── theme-context.ts     # Context object + type, split out for react-refresh
+│   │   └── useTheme.ts          # useTheme() hook, split out for react-refresh
 │   ├── lib/
 │   │   ├── apiClient.ts         # fetch wrapper: ApiError, credentials, no-store cache
 │   │   ├── shortenUrl.ts        # URL truncation for compact table/citation display
