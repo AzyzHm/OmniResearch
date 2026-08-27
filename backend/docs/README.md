@@ -108,8 +108,15 @@ backend/
 ├── utils/
 │   └── naming.py                # next_unique_name() auto-suffixes duplicate collection/note names
 ├── scripts/
-│   └── backfill_bm25.py         # one-off: adds BM25 vectors to chunks stored before that feature existed
-└── tests/                       # pytest suite
+│   ├── backfill_bm25.py         # one-off: adds BM25 vectors to chunks stored before that feature existed
+│   └── setup/
+│       ├── reranker_downloader.py   # one-time reranker model cache, see Getting Started
+│       ├── gen_password_hash.py     # Argon2 hash generator, for the bootstrap superadmin row
+│       └── secret_generator.py      # random JWT_SECRET generator
+└── tests/
+    ├── unit/                    # 17 files, no HTTP layer, call functions directly
+    ├── integration/             # 12 files, via app fixture + TestClient
+    └── setup/                   # shared fixtures/fakes imported by conftest.py, see Testing
 ```
 
 **`routes/admin/`** (prefix `/admin`, tags `Administration`):
@@ -213,7 +220,7 @@ TAVILY_API_KEY=...
 EXA_API_KEY=...
 ```
 
-An `.env.example` at the repository root lists the values that must actually be filled in; `CORS_ORIGINS` and `COOKIE_SECURE` are not in it because their code defaults already work for local development.
+`backend/.env.example` lists the values that must actually be filled in; `CORS_ORIGINS` and `COOKIE_SECURE` are not in it because their code defaults already work for local development.
 
 **Ollama** must be running locally with `embeddinggemma` pulled (`ollama pull embeddinggemma`) before starting the backend `warm_up_embedding_model()` runs at startup and logs a warning, not a crash, if Ollama isn't reachable yet.
 
@@ -225,11 +232,11 @@ An `.env.example` at the repository root lists the values that must actually be 
 
 ## Getting Started
 
-Steps to run the backend from a clean clone (from the repository root):
+Steps to run the backend from a clean clone. `backend/` is the working root for all of these, so `cd backend` first:
 
 ```bash
 # 1. Create a Supabase project (https://supabase.com), then apply the schema.
-#    supabase_schema.sql (repository root) creates every table, index, and
+#    backend/supabase_schema.sql creates every table, index, and
 #    trigger, enables RLS on the tables listed under "Row Level Security"
 #    below, creates the "collection-files" storage bucket used for original
 #    file previews; and inserts one bootstrap superadmin row with
@@ -269,14 +276,14 @@ To run just the test suite without the full ML stack (torch, ChromaDB, etc. are 
 
 ```bash
 pip install --break-system-packages fastapi pydantic pydantic-settings pytest httpx python-jose passlib argon2-cffi python-multipart langgraph langchain-core pypdf
-pytest tests -c Pytest.ini
+pytest
 ```
 
 ---
 
 ## Database Schema
 
-All tables live in Supabase/Postgres, under `public`, defined in `supabase_schema.sql` at the repository root. Most tables have RLS enabled (see [Row Level Security](#row-level-security)), the backend bypasses it entirely via the service role key regardless.
+All tables live in Supabase/Postgres, under `public`, defined in `backend/supabase_schema.sql`. Most tables have RLS enabled (see [Row Level Security](#row-level-security)), the backend bypasses it entirely via the service role key regardless.
 
 | Table | Purpose | Key columns |
 |---|---|---|
@@ -472,7 +479,7 @@ All three modes return chunks in the same shape (`content`, `source_name`, `coll
 `services/reranker.py` wraps `BAAI/bge-reranker-base` as a `sentence-transformers` `CrossEncoder`.
 
 - `warm_up_reranker()` runs in `main.py`'s lifespan (alongside `warm_up_embedding_model()`), selecting a device via `_select_device()` (`cuda` → `mps` → `cpu`, in that order of preference) and running one dummy `.predict()` call to force the weights onto that device before the first real request arrives.
-- The model itself is not fetched at warmup time. `scripts/setup/reranker_downloader.py` (at the repository root, outside the `backend` package) must be run once beforehand to cache it under `HF_HOME`, since the app runs with `HF_HUB_OFFLINE=1` and will fail to load the model if it isn't already present locally.
+- The model itself is not fetched at warmup time. `backend/scripts/setup/reranker_downloader.py` must be run once beforehand to cache it under `HF_HOME`, since the app runs with `HF_HUB_OFFLINE=1` and will fail to load the model if it isn't already present locally.
 - `rerank(query, chunks, top_k)` builds `(query, chunk_content)` pairs, scores them all in one `model.predict()` call, and returns the `top_k` highest-scoring chunks with a `rerank_score` field attached.
 - If warm-up hasn't run yet, for example a script importing this module directly rather than through the FastAPI app, `_get_model()` lazily calls `warm_up_reranker()` on first use instead of failing.
 
@@ -530,9 +537,9 @@ If the process restarts while a task is mid-flight, that in-process task is simp
 Alongside the RAG chunks, the original bytes of every uploaded PDF or TXT file are stored in a Supabase Storage bucket (`collection_files_bucket`, default `collection-files`) so the frontend can show the exact source document rather than a reconstruction from chunks.
 
 `backend/services/file_storage.py` wraps three operations against that bucket:
-- **`upload_collection_file(path, data, content_type)`** — called once per successful upload, at path `{collection_id}/{item_id}/{filename}`, with `upsert=true`.
-- **`download_collection_file(path)`** — used by `GET /collections/{id}/items/{item_id}/content`, which streams the file back with the right `Content-Type` for the browser to render inline (PDF) or display as text (TXT).
-- **`delete_collection_file(path)`** — best-effort; wrapped in a try/except so a storage hiccup never blocks deleting the item's database row or its Chroma chunks.
+- **`upload_collection_file(path, data, content_type)`**, called once per successful upload, at path `{collection_id}/{item_id}/{filename}`, with `upsert=true`.
+- **`download_collection_file(path)`**, used by `GET /collections/{id}/items/{item_id}/content`, which streams the file back with the right `Content-Type` for the browser to render inline (PDF) or display as text (TXT).
+- **`delete_collection_file(path)`**, best-effort; wrapped in a try/except so a storage hiccup never blocks deleting the item's database row or its Chroma chunks.
 
 If the storage write fails during ingestion, the item still finishes as `"ready"` (its chunks are safely in ChromaDB either way), but `storage_path` is left `null`, and the preview endpoint returns a 404 asking the user to re-upload rather than pretending a preview exists. URL items never have a `storage_path`; the frontend opens those directly in a new tab instead of requesting a preview.
 
@@ -563,29 +570,35 @@ echo "$SUPABASE_SERVICE_KEY" | cut -d. -f2 | base64 -d | python3 -m json.tool
 
 ## Testing
 
-`backend/tests/` is a `pytest` suite of 427 test functions across 30 files, split between pure unit tests (services, graph nodes, config, model validation, utils) and route-level integration tests (via `fastapi.testclient.TestClient` against a fully in-memory fake database and RAG graph).
+`backend/tests/` is a `pytest` suite of 425 test functions across 29 files, split into `tests/unit/` (17 files, pure unit tests for services, graph nodes, config, model validation, utils) and `tests/integration/` (12 files, route-level tests via `fastapi.testclient.TestClient` against a fully in-memory fake database and RAG graph). Shared fixtures and fakes live in `tests/setup/`, imported by `conftest.py` rather than repeated per file.
 
-**Configuration** (`backend/Pytest.ini`):
+**Configuration** (`backend/pytest.ini`):
 ```ini
 [pytest]
-testpaths = tests
+testpaths =
+    tests/unit
+    tests/integration
+
+norecursedirs = tests/setup .pytest_cache __pycache__
+
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
 addopts = -v --tb=short
 ```
 
-**`conftest.py`** does three things before any test runs:
+`norecursedirs` keeps pytest from trying to collect the `tests/setup/` helper modules as test files themselves, since they contain no `test_*` functions of their own.
 
-1. **Sets fake env vars** (`SUPABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, etc.) so `Settings()` can construct without real credentials.
-2. **Stubs out heavy/native modules entirely** via `sys.modules.setdefault(name, MagicMock())`: `chromadb` (including `chromadb.errors`, mocked with a real `Exception` subclass so it can be used in an `except` clause), `google.genai`, `supabase`, `ollama`, `exa_py`, `tavily`, `torch` (and its `cuda`/`backends`/`backends.mps` submodules), `sentence_transformers`. This means the test suite never actually loads ChromaDB, torch, or any real ML dependency; imports of those libraries resolve to mocks immediately.
-3. **Provides fixtures** for the two testing styles used throughout the suite:
+**`conftest.py`** imports three `tests/setup/` modules that together do everything needed before any test runs:
 
-   - **`app` fixture** — yields `(TestClient, FakeDB)`. Patches `get_supabase` in every route/service module that imported it directly (`_patch_all_get_supabase`, since `from x import get_supabase` binds a local reference that patching the source module alone wouldn't reach), replaces `get_gemini_response` with a stub, and replaces the compiled RAG graph (`backend.routes.chat.send.get_rag_graph`) with a configurable `FakeRAGGraph`. Used by every `test_routes_*.py` file for full-stack integration tests that never touch a real network call.
-   - **`user_headers` / `admin_headers` / `superadmin_headers`** — pre-built `Authorization` headers from `make_token()`/`make_admin_token()`/`make_superadmin_token()`, JWTs signed with the real `create_access_token()` against the test's fake `JWT_SECRET`.
-   - **`FakeDB`** — a stand-in for the Supabase client. `.add_result(data=..., count=...)` queues a `FakeResult`; `.table(name)` pops the next queued result off a FIFO queue regardless of which table/filters were actually requested, via `FakeQuery`, whose `__getattr__` makes every chained method (`.select()`, `.eq()`, `.order()`, etc.) a no-op that returns itself until `.execute()` is called.
-   - **`FakeRAGGraph`** — stands in for the compiled LangGraph pipeline; `.answer` and `.raise_exc` are configurable per test to control what `/message` and `/message/stream` return.
-   - Row-builder helpers (`project_row`, `collection_row`, `chat_row`, `message_row`, `user_row`) build minimally-valid dict rows matching each table's shape, so individual tests don't repeat that boilerplate.
+1. **`tests/setup/mock_modules.py`** sets fake env vars (`SUPABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, etc.) so `Settings()` can construct without real credentials, then stubs out heavy/native modules entirely via `sys.modules.setdefault(name, MagicMock())`: `chromadb` (including `chromadb.errors`, mocked with a real `Exception` subclass so it can be used in an `except` clause), `google.genai`, `supabase`, `postgrest`, `ollama`, `exa_py`, `tavily`, `torch` (and its `cuda`/`backends`/`backends.mps` submodules), `sentence_transformers`. This means the test suite never actually loads ChromaDB, torch, or any real ML dependency; imports of those libraries resolve to mocks immediately. It's imported purely for this side effect, never referenced by name, hence the `F401` per-file ignore for `tests/conftest.py` in `pyproject.toml`.
+2. **`conftest.py` itself** defines the fixtures for the two testing styles used throughout the suite, built on classes and helpers imported from `tests/setup/`:
+
+   - **`app` fixture**, yields `(TestClient, FakeDB)`. Patches `get_supabase` in every route/service module that imported it directly (`tests/setup/patches.py`'s `patch_all_get_supabase`, since `from x import get_supabase` binds a local reference that patching the source module alone wouldn't reach), replaces `get_gemini_response` with a stub, and replaces the compiled RAG graph (`routes.chat.send.get_rag_graph`) with a configurable `FakeRAGGraph`. Used by every `test_routes_*.py` file for full-stack integration tests that never touch a real network call.
+   - **`user_headers` / `admin_headers` / `superadmin_headers`**, pre-built `Authorization` headers from `tests/setup/tokens.py`'s `make_token()`/`make_admin_token()`/`make_superadmin_token()`, JWTs signed with the real `create_access_token()` against the test's fake `JWT_SECRET`.
+   - **`FakeDB`** (`tests/setup/fakes.py`), a stand-in for the Supabase client. `.add_result(data=..., count=...)` queues a `FakeResult`; `.table(name)` pops the next queued result off a FIFO queue regardless of which table/filters were actually requested, via `FakeQuery`, whose `__getattr__` makes every chained method (`.select()`, `.eq()`, `.order()`, etc.) a no-op that returns itself until `.execute()` is called.
+   - **`FakeRAGGraph`** (`tests/setup/fakes.py`), stands in for the compiled LangGraph pipeline; `.answer` and `.raise_exc` are configurable per test to control what `/message` and `/message/stream` return.
+   - **Row-builder helpers** (`tests/setup/factories.py`: `project_row`, `collection_row`, `chat_row`, `message_row`, `note_row`, `note_item_row`, `user_row`) build minimally-valid dict rows matching each table's shape, so individual tests don't repeat that boilerplate.
 
 **Unit test files** (no `app` fixture, no HTTP layer, call functions directly with `monkeypatch`):
 
