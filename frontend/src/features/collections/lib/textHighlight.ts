@@ -33,7 +33,7 @@ function normalizeWithMap(text: string): NormalizedText {
 
 export function findHighlightRange(
   haystack: string,
-  needle: string | null | undefined,
+  needle: string | null | undefined
 ): { start: number; end: number } | null {
   const needleTrimmed = needle?.trim()
   if (!needleTrimmed) return null
@@ -58,7 +58,7 @@ export interface TextLayerItemLike {
 
 export function computeItemHighlights(
   items: ReadonlyArray<TextLayerItemLike>,
-  needle: string | null | undefined,
+  needle: string | null | undefined
 ): Map<number, [number, number]> | null {
   if (!needle?.trim()) return null
 

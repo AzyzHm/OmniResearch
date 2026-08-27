@@ -1,10 +1,9 @@
 import logging
-from typing import Any, cast
 
 import torch
 from sentence_transformers import CrossEncoder
 
-from config.settings import get_settings
+from backend.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +56,11 @@ def rerank(query: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
 
     model = _get_model()
     pairs = [(query, chunk["content"]) for chunk in chunks]
-    scores = model.predict(cast(Any, pairs))
+    scores = model.predict(pairs)
 
-    scored = [{**chunk, "rerank_score": float(score)} for chunk, score in zip(chunks, scores, strict=True)]
+    scored = [
+        {**chunk, "rerank_score": float(score)}
+        for chunk, score in zip(chunks, scores)
+    ]
     scored.sort(key=lambda c: c["rerank_score"], reverse=True)
     return scored[:top_k]

@@ -18,8 +18,8 @@ function renderWithProviders(items: CollectionItem[]) {
       new Response(JSON.stringify(items), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
-    ),
+      })
+    )
   ) as unknown as typeof fetch
 
   const queryClient = new QueryClient({
@@ -28,7 +28,7 @@ function renderWithProviders(items: CollectionItem[]) {
   return render(
     <QueryClientProvider client={queryClient}>
       <CollectionItemsPanel collection={collection} />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
 }
 
@@ -59,7 +59,6 @@ describe("CollectionItemsPanel", () => {
         chunk_count: 4,
         page_count: 12,
         word_count: null,
-        storage_path: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -73,7 +72,6 @@ describe("CollectionItemsPanel", () => {
         chunk_count: 2,
         page_count: null,
         word_count: null,
-        storage_path: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -97,7 +95,6 @@ describe("CollectionItemsPanel", () => {
         chunk_count: 4,
         page_count: 12,
         word_count: null,
-        storage_path: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -120,7 +117,6 @@ describe("CollectionItemsPanel", () => {
         chunk_count: 1,
         page_count: null,
         word_count: 2000,
-        storage_path: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -143,7 +139,6 @@ describe("CollectionItemsPanel", () => {
         chunk_count: 2,
         page_count: null,
         word_count: null,
-        storage_path: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },
@@ -166,7 +161,6 @@ describe("CollectionItemsPanel", () => {
         chunk_count: 0,
         page_count: null,
         word_count: null,
-        storage_path: null,
         error_message: null,
         created_at: "2026-01-01T00:00:00Z",
       },

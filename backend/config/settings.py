@@ -1,20 +1,8 @@
 from functools import lru_cache
-
+from typing import List
 from pydantic_settings import BaseSettings
 
-from config.env import (
-    exa_api_key,
-    force_mistral,
-    gemini_api_key,
-    gemini_model,
-    jina_api_key,
-    jwt_secret,
-    mistral_api_key,
-    mistral_model,
-    supabase_service_key,
-    supabase_url,
-    tavily_api_key,
-)
+from backend.config.env import supabase_url, supabase_service_key, jwt_secret, gemini_api_key, gemini_model, jina_api_key, tavily_api_key, exa_api_key, mistral_api_key, mistral_model, force_mistral
 
 
 class Settings(BaseSettings):
@@ -54,10 +42,13 @@ class Settings(BaseSettings):
     mistral_model: str = mistral_model
     force_mistral: bool = force_mistral.lower() == "true"
 
+
+
     @property
-    def cors_origins_list(self) -> list[str]:
+    def cors_origins_list(self) -> List[str]:
         """Parse the comma-separated CORS_ORIGINS string into a clean list."""
         return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
+    
 
 
 @lru_cache(maxsize=1)

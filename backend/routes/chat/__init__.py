@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from routes.chat import crud, messages, send
+from backend.routes.chat import crud, messages, send
 
 router = APIRouter(tags=["Chats"])
 

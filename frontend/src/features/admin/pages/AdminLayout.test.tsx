@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from "vitest"
 
 import AdminLayout from "@/features/admin/pages/AdminLayout"
 
-vi.mock("@/features/auth/context/useAuth", () => ({
+vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: vi.fn(() => ({
     user: { user_id: "u1", username: "Azyz", role: "admin" },
     isLoading: false,
@@ -23,7 +23,7 @@ describe("AdminLayout — leaving admin without logging out", () => {
     render(
       <MemoryRouter>
         <AdminLayout />
-      </MemoryRouter>,
+      </MemoryRouter>
     )
 
     const backLink = screen.getByRole("link", { name: /Back to projects/ })

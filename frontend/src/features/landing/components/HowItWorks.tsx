@@ -48,7 +48,9 @@ function HowItWorks() {
       />
 
       <div className="relative max-w-2xl mx-auto">
-        <h2 className="font-display text-2xl md:text-3xl text-ink mb-16">How it works</h2>
+        <h2 className="font-display text-2xl md:text-3xl text-ink mb-16">
+          How it works
+        </h2>
 
         <div ref={ref} className="relative">
           <div className="absolute left-6 top-6 bottom-6 w-px bg-[color-mix(in_srgb,var(--color-ink)_15%,transparent)]" />
@@ -62,7 +64,9 @@ function HowItWorks() {
               style={{ transitionDelay: `${i * 180}ms` }}
             >
               <div className="relative z-10 size-12 rounded-full bg-sand border border-[color-mix(in_srgb,var(--color-ink)_20%,transparent)] flex items-center justify-center shrink-0">
-                <span className="font-mono text-sm text-amber font-semibold">{number}</span>
+                <span className="font-mono text-sm text-amber font-semibold">
+                  {number}
+                </span>
               </div>
               <div className="pt-2">
                 <h3 className="font-display text-xl text-ink">{title}</h3>

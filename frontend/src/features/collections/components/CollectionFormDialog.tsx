@@ -43,8 +43,8 @@ function CollectionFormDialog({
           <DialogHeader>
             <DialogTitle>New collection</DialogTitle>
             <DialogDescription>
-              Collections group related sources together for retrieval. Add PDFs, text files, and
-              URLs to any collection.
+              Collections group related sources together for retrieval. Add
+              PDFs, text files, and URLs to any collection.
             </DialogDescription>
           </DialogHeader>
 

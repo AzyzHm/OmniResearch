@@ -1,6 +1,14 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import { getLogs } from "@/features/admin/api"
 import { Button } from "@/shared/components/ui/button"
@@ -39,7 +47,9 @@ function LogsTab() {
 
   return (
     <div>
-      <h2 className="mb-4 font-display text-base font-medium text-ink">Login Activity Log</h2>
+      <h2 className="mb-4 font-display text-base font-medium text-ink">
+        Login Activity Log
+      </h2>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Input
@@ -67,11 +77,17 @@ function LogsTab() {
       </div>
 
       {!loaded && (
-        <p className="text-sm text-muted-foreground">Choose your filters and click "Load Logs".</p>
+        <p className="text-sm text-muted-foreground">
+          Choose your filters and click "Load Logs".
+        </p>
       )}
 
-      {loaded && isLoading && <p className="text-sm text-muted-foreground">Loading logs...</p>}
-      {loaded && isError && <p className="text-sm text-destructive">Failed to load logs.</p>}
+      {loaded && isLoading && (
+        <p className="text-sm text-muted-foreground">Loading logs...</p>
+      )}
+      {loaded && isError && (
+        <p className="text-sm text-destructive">Failed to load logs.</p>
+      )}
 
       {loaded && data && (
         <>

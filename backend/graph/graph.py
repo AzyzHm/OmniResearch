@@ -1,12 +1,12 @@
 from langgraph.graph import END, StateGraph
 
-from graph.nodes.generate_node import generate_node
-from graph.nodes.refine_query_node import refine_query_node
-from graph.nodes.rerank_node import rerank_node
-from graph.nodes.retrieve_node import retrieve_node
-from graph.nodes.router_node import router_node
-from graph.nodes.validation_node import validation_node
-from graph.state import RAGState
+from backend.graph.nodes.generate_node import generate_node
+from backend.graph.nodes.refine_query_node import refine_query_node
+from backend.graph.nodes.rerank_node import rerank_node
+from backend.graph.nodes.retrieve_node import retrieve_node
+from backend.graph.nodes.router_node import router_node
+from backend.graph.nodes.validation_node import validation_node
+from backend.graph.state import RAGState
 
 MAX_RETRIEVAL_ATTEMPTS = 3
 

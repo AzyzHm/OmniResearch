@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 class _RAGStateRequired(TypedDict):
     project_id: str
     chat_id: str
-    user_id: str
+    user_id: str             
     query: str
     history: list[dict[str, Any]]
     retrieval_mode: str

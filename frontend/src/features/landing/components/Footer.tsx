@@ -20,7 +20,9 @@ function Footer() {
       >
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
           <div>
-            <span className="font-display italic text-xl text-ink">OmniResearch</span>
+            <span className="font-display italic text-xl text-ink">
+              OmniResearch
+            </span>
             <p className="mt-3 text-sm text-muted-foreground max-w-xs">
               A personal research workspace for grounded, sourced answers.
             </p>

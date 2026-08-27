@@ -1,10 +1,6 @@
 import { describe, it, expect } from "vitest"
 
-import {
-  findHighlightRange,
-  computeItemHighlights,
-  escapeHtml,
-} from "@/features/collections/lib/textHighlight"
+import { findHighlightRange, computeItemHighlights, escapeHtml } from "@/features/collections/lib/textHighlight"
 
 describe("findHighlightRange", () => {
   it("finds an exact match and returns the original-coordinate range", () => {
@@ -19,7 +15,7 @@ describe("findHighlightRange", () => {
     const range = findHighlightRange(haystack, "Revenue grew 12% year over year.")
     expect(range).not.toBeNull()
     expect(haystack.slice(range!.start, range!.end).replace(/\s+/g, " ")).toBe(
-      "Revenue   grew\n12%\nyear over year.".replace(/\s+/g, " "),
+      "Revenue   grew\n12%\nyear over year.".replace(/\s+/g, " ")
     )
   })
 

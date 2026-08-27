@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom"
 import { LogOut, Settings } from "lucide-react"
 
 import { logout } from "@/features/auth/api"
-import { useAuth } from "@/features/auth/context/useAuth"
+import { useAuth } from "@/features/auth/context/AuthContext"
 import { Button } from "@/shared/components/ui/button"
 import ThemeToggle from "@/shared/components/ThemeToggle"
 import appLogo from "@/assets/app-logo.svg"
@@ -59,7 +59,9 @@ function Workspace() {
             disabled={loggingOut}
           >
             <LogOut className="size-3.5" data-icon="inline-start" />
-            <span className="hidden sm:inline">{loggingOut ? "Logging out..." : "Log out"}</span>
+            <span className="hidden sm:inline">
+              {loggingOut ? "Logging out..." : "Log out"}
+            </span>
           </Button>
         </div>
       </header>

@@ -1,5 +1,5 @@
 import re
-from collections.abc import Iterable
+from typing import Iterable
 
 _SUFFIX_RE = re.compile(r"^(.*) \((\d+)\)$")
 

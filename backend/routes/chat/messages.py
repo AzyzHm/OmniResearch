@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 
-from config.auth import get_current_user
-from config.settings import get_settings
-from database.db import get_supabase
-from models.chat import MessageOut
-from routes.chat._shared import _own_chat
+from backend.config.auth import get_current_user
+from backend.config.settings import get_settings
+from backend.database.db import get_supabase
+from backend.models.chat import MessageOut
+from backend.routes.chat._shared import _own_chat
 
 router = APIRouter()
 

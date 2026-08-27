@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config.settings import get_settings
+from backend.config.settings import get_settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,18 +16,11 @@ the Gemini SDK (google-genai) and its native dependencies (grpc/protobuf); loadi
 process with an access violation (0xC0000005) on Windows. Loading torch first avoids it confirmed by isolated reproduction during debugging.
 Do not reorder these two import blocks without re-testing on Windows."""
 
-from services.embeddings import warm_up_embedding_model
-from services.reranker import warm_up_reranker
-from services.ingestion_recovery import recover_stuck_processing_items
-from routes import (
-    admin_router,
-    auth_router,
-    chats_router,
-    collections_router,
-    notes_router,
-    projects_router,
-    search_router,
-)
+from backend.services.embeddings import warm_up_embedding_model
+from backend.services.reranker import warm_up_reranker
+from backend.services.ingestion_recovery import recover_stuck_processing_items
+
+from backend.routes import auth_router, admin_router, projects_router, chats_router, collections_router, notes_router, search_router
 
 settings = get_settings()
 
@@ -43,7 +36,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="OmniResearch API",
     description="Authentication & Administration backend for OmniResearch",
-    version="2.0.1",
+    version="2.0.0",
     lifespan=lifespan,
 )
 

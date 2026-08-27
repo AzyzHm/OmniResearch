@@ -1,11 +1,11 @@
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from config.auth import get_current_user
-from database.db import get_supabase
-from models.note import NoteItemCreate, NoteItemOut
-from routes.notes._shared import _own_message_in_project, _own_note
+from backend.config.auth import get_current_user
+from backend.database.db import get_supabase
+from backend.models.note import NoteItemCreate, NoteItemOut
+from backend.routes.notes._shared import _own_message_in_project, _own_note
 
 router = APIRouter()
 
@@ -39,7 +39,7 @@ async def list_note_items(
         .order("created_at", desc=False)
         .execute()
     )
-    return [_flatten_item(row) for row in cast(list[dict[str, Any]], result.data)]
+    return [_flatten_item(row) for row in result.data]  # type: ignore
 
 
 @router.post(
@@ -57,14 +57,22 @@ async def create_note_item(
     message = _own_message_in_project(body.message_id, note["project_id"])
     db = get_supabase()
 
-    existing = db.table("note_items").select("id").eq("note_id", note_id).eq("message_id", body.message_id).execute()
+    existing = (
+        db.table("note_items")
+        .select("id")
+        .eq("note_id", note_id)
+        .eq("message_id", body.message_id)
+        .execute()
+    )
     if existing.data:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This message is already saved to this note.",
         )
 
-    result = db.table("note_items").insert({"note_id": note_id, "message_id": body.message_id}).execute()
+    result = db.table("note_items").insert(
+        {"note_id": note_id, "message_id": body.message_id}
+    ).execute()
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to save message to note.")
 

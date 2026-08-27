@@ -1,13 +1,19 @@
-from typing import Any, cast
+from typing import Any
 
 from fastapi import HTTPException, status
 
-from database.db import get_supabase
+from backend.database.db import get_supabase
 
 
 def _verify_project_owner(project_id: str, user_id: str) -> None:
     db = get_supabase()
-    result = db.table("projects").select("id").eq("id", project_id).eq("user_id", user_id).execute()
+    result = (
+        db.table("projects")
+        .select("id")
+        .eq("id", project_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found.")
 
@@ -15,7 +21,12 @@ def _verify_project_owner(project_id: str, user_id: str) -> None:
 def _own_collection(collection_id: str, user_id: str) -> dict:
     """Fetch a collection and verify ownership through its project."""
     db = get_supabase()
-    result = db.table("collections").select("*, projects(user_id)").eq("id", collection_id).execute()
+    result = (
+        db.table("collections")
+        .select("*, projects(user_id)")
+        .eq("id", collection_id)
+        .execute()
+    )
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found.")
     row: Any = result.data[0]
@@ -35,4 +46,4 @@ def _existing_urls(collection_id: str) -> set[str]:
         .eq("source_type", "url")
         .execute()
     )
-    return {row["name"] for row in cast(list[dict[str, Any]], result.data)}
+    return {row["name"] for row in result.data} # type: ignore

@@ -57,7 +57,9 @@ function ChatMessageBubble({
       <div
         className={cn(
           "group/bubble relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-          isUser ? "bg-teal text-white" : "bg-surface text-ink border border-border",
+          isUser
+            ? "bg-teal text-white"
+            : "bg-surface text-ink border border-border"
         )}
       >
         {canSave && (
@@ -91,7 +93,7 @@ function ChatMessageBubble({
                 "[&_a]:text-teal [&_a]:underline [&_a]:underline-offset-2",
                 "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs",
                 "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-ink [&_pre]:p-3 [&_pre]:text-xs [&_pre]:text-paper",
-                "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+                "[&_pre_code]:bg-transparent [&_pre_code]:p-0"
               )}
             >
               <ReactMarkdown>{content}</ReactMarkdown>
@@ -105,7 +107,9 @@ function ChatMessageBubble({
                 <ul className="space-y-1">
                   {sources.map((s) => (
                     <li key={s.index} className="flex items-start gap-1.5 text-xs">
-                      <span className="shrink-0 font-mono text-muted-foreground">[{s.index}]</span>
+                      <span className="shrink-0 font-mono text-muted-foreground">
+                        [{s.index}]
+                      </span>
                       {isUrl(s.source_name) ? (
                         <a
                           href={s.source_name}
@@ -127,7 +131,9 @@ function ChatMessageBubble({
                           {s.source_name}
                         </button>
                       ) : (
-                        <span className="truncate text-muted-foreground">{s.source_name}</span>
+                        <span className="truncate text-muted-foreground">
+                          {s.source_name}
+                        </span>
                       )}
                     </li>
                   ))}

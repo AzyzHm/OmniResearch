@@ -1,7 +1,7 @@
 import logging
 
-from graph.state import RAGState
-from services.rag_llm import refine_query
+from backend.graph.state import RAGState
+from backend.services.rag_llm import refine_query
 
 logger = logging.getLogger(__name__)
 

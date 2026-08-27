@@ -1,5 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import { getLlmUsage, getSearchUsage } from "@/features/admin/api"
 import { Button } from "@/shared/components/ui/button"
@@ -27,21 +35,35 @@ function UsageTab() {
     <div className="flex flex-col gap-10">
       <section>
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="font-display text-base font-medium text-ink">LLM Token Usage</h2>
-          <Button type="button" variant="outline" size="sm" onClick={() => llmQuery.refetch()}>
+          <h2 className="font-display text-base font-medium text-ink">
+            LLM Token Usage
+          </h2>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => llmQuery.refetch()}
+          >
             Refresh
           </Button>
         </div>
         <p className="mb-4 text-xs text-muted-foreground">
-          Each user has a daily token quota (default 80,000, resets at UTC midnight), editable
-          per-user in User Management. This view shows all-time totals, not remaining quota.
+          Each user has a daily token quota (default 80,000, resets at UTC
+          midnight), editable per-user in User Management. This view shows
+          all-time totals, not remaining quota.
         </p>
 
-        {llmQuery.isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
-        {llmQuery.isError && <p className="text-sm text-destructive">Failed to load LLM usage.</p>}
+        {llmQuery.isLoading && (
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        )}
+        {llmQuery.isError && (
+          <p className="text-sm text-destructive">Failed to load LLM usage.</p>
+        )}
 
         {!llmQuery.isLoading && !llmQuery.isError && llmRows.length === 0 && (
-          <p className="text-sm text-muted-foreground">No LLM usage recorded yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No LLM usage recorded yet.
+          </p>
         )}
 
         {llmRows.length > 0 && (
@@ -126,23 +148,35 @@ function UsageTab() {
 
       <section>
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="font-display text-base font-medium text-ink">Search Engine Usage</h2>
-          <Button type="button" variant="outline" size="sm" onClick={() => searchQuery.refetch()}>
+          <h2 className="font-display text-base font-medium text-ink">
+            Search Engine Usage
+          </h2>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => searchQuery.refetch()}
+          >
             Refresh
           </Button>
         </div>
         <p className="mb-4 text-xs text-muted-foreground">
-          Tracked in credits, not raw call counts. Tavily's "advanced" search depth costs 2 credits
-          per call, everything else (Tavily basic/fast/ultra-fast, all Exa calls) is 1 credit.
+          Tracked in credits, not raw call counts — Tavily's "advanced" search
+          depth costs 2 credits per call; everything else (Tavily
+          basic/fast/ultra-fast, all Exa calls) is 1 credit.
         </p>
 
-        {searchQuery.isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+        {searchQuery.isLoading && (
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        )}
         {searchQuery.isError && (
           <p className="text-sm text-destructive">Failed to load search usage.</p>
         )}
 
         {!searchQuery.isLoading && !searchQuery.isError && searchRows.length === 0 && (
-          <p className="text-sm text-muted-foreground">No search usage recorded yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No search usage recorded yet.
+          </p>
         )}
 
         {searchRows.length > 0 && (
@@ -188,7 +222,9 @@ function UsageTab() {
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={[...searchRows].sort((a, b) => a.total_credits - b.total_credits)}
+                  data={[...searchRows].sort(
+                    (a, b) => a.total_credits - b.total_credits
+                  )}
                   layout="vertical"
                   margin={{ left: 24 }}
                 >

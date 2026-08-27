@@ -13,7 +13,9 @@ function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  )
 }
 
 describe("ChatMessageBubble save-to-note button", () => {
@@ -29,7 +31,7 @@ describe("ChatMessageBubble save-to-note button", () => {
         content="What was Q3 revenue?"
         messageId="msg-1"
         projectId="proj-1"
-      />,
+      />
     )
     expect(screen.queryByRole("button", { name: "Save to note" })).not.toBeInTheDocument()
   })
@@ -41,7 +43,7 @@ describe("ChatMessageBubble save-to-note button", () => {
         content="Revenue grew 12%."
         messageId="msg-1"
         projectId="proj-1"
-      />,
+      />
     )
     expect(screen.getByRole("button", { name: "Save to note" })).toBeInTheDocument()
   })
@@ -58,8 +60,10 @@ describe("ChatMessageBubble", () => {
       <ChatMessageBubble
         role="assistant"
         content="Revenue grew 12% [1]."
-        sources={[{ index: 1, source_name: "q3-report.pdf", collection_id: "c1", item_id: "i1" }]}
-      />,
+        sources={[
+          { index: 1, source_name: "q3-report.pdf", collection_id: "c1", item_id: "i1" },
+        ]}
+      />
     )
     expect(screen.getByText("Sources")).toBeInTheDocument()
     expect(screen.getByText("[1]")).toBeInTheDocument()
@@ -79,7 +83,7 @@ describe("ChatMessageBubble", () => {
             item_id: "i1",
           },
         ]}
-      />,
+      />
     )
     const link = screen.getByRole("link")
     expect(link).toHaveAttribute("href", "https://www.example.com/blog/announcement")
@@ -102,7 +106,7 @@ describe("ChatMessageBubble", () => {
             content: "Revenue grew 12% year over year.",
           },
         ]}
-      />,
+      />
     )
     const sourceButton = screen.getByRole("button", { name: "q3-report.pdf" })
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
@@ -118,8 +122,10 @@ describe("ChatMessageBubble", () => {
       <ChatMessageBubble
         role="assistant"
         content="Revenue grew 12% [1]."
-        sources={[{ index: 1, source_name: "q3-report.pdf", collection_id: null, item_id: null }]}
-      />,
+        sources={[
+          { index: 1, source_name: "q3-report.pdf", collection_id: null, item_id: null },
+        ]}
+      />
     )
     expect(screen.queryByRole("button", { name: "q3-report.pdf" })).not.toBeInTheDocument()
     expect(screen.getByText("q3-report.pdf")).toBeInTheDocument()
@@ -130,8 +136,10 @@ describe("ChatMessageBubble", () => {
       <ChatMessageBubble
         role="user"
         content="What was Q3 revenue?"
-        sources={[{ index: 1, source_name: "q3-report.pdf", collection_id: "c1", item_id: "i1" }]}
-      />,
+        sources={[
+          { index: 1, source_name: "q3-report.pdf", collection_id: "c1", item_id: "i1" },
+        ]}
+      />
     )
     expect(screen.queryByText("Sources")).not.toBeInTheDocument()
   })

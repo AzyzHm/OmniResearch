@@ -1,10 +1,13 @@
 import logging
 
-from database.db import get_supabase
+from backend.database.db import get_supabase
 
 logger = logging.getLogger(__name__)
 
-STUCK_PROCESSING_MESSAGE = "Interrupted by a server restart before ingestion finished. Please re-add this item."
+STUCK_PROCESSING_MESSAGE = (
+    "Interrupted by a server restart before ingestion finished. "
+    "Please re-add this item."
+)
 
 
 def recover_stuck_processing_items() -> int:
@@ -29,17 +32,10 @@ def recover_stuck_processing_items() -> int:
     """
     db = get_supabase()
     try:
-        result = (
-            db.table("collection_items")
-            .update(
-                {
-                    "status": "error",
-                    "error_message": STUCK_PROCESSING_MESSAGE,
-                }
-            )
-            .eq("status", "processing")
-            .execute()
-        )
+        result = db.table("collection_items").update({
+            "status": "error",
+            "error_message": STUCK_PROCESSING_MESSAGE,
+        }).eq("status", "processing").execute()
     except Exception as exc:
         logger.error("Failed to sweep stuck 'processing' collection items: %s", exc)
         return 0

@@ -35,7 +35,7 @@ function NoteItemsPanel({ note, onJumpToChat }: NoteItemsPanelProps) {
     onMutate: async (itemId) => {
       await queryClient.cancelQueries({ queryKey })
       queryClient.setQueryData<NoteItem[]>(queryKey, (old) =>
-        old ? old.filter((i) => i.id !== itemId) : old,
+        old ? old.filter((i) => i.id !== itemId) : old
       )
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
@@ -64,14 +64,18 @@ function NoteItemsPanel({ note, onJumpToChat }: NoteItemsPanelProps) {
         <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
           <MessageSquareText className="size-6" />
           <p className="text-sm">
-            No messages saved yet. Use the save button on any chat reply to add it here.
+            No messages saved yet. Use the save button on any chat reply to
+            add it here.
           </p>
         </div>
       )}
 
       <div className="flex flex-col gap-3">
         {items?.map((item) => (
-          <div key={item.id} className="rounded-xl border border-border p-3 text-sm">
+          <div
+            key={item.id}
+            className="rounded-xl border border-border p-3 text-sm"
+          >
             <div className="mb-2 flex items-start justify-between gap-2">
               <span className="font-mono text-[0.65rem] tracking-wide text-muted-foreground uppercase">
                 {item.role === "user" ? "You" : "Assistant"}
@@ -118,7 +122,9 @@ function NoteItemsPanel({ note, onJumpToChat }: NoteItemsPanelProps) {
                 <ul className="space-y-1">
                   {item.sources.map((s) => (
                     <li key={s.index} className="flex items-start gap-1.5 text-xs">
-                      <span className="shrink-0 font-mono text-muted-foreground">[{s.index}]</span>
+                      <span className="shrink-0 font-mono text-muted-foreground">
+                        [{s.index}]
+                      </span>
                       {isUrl(s.source_name) ? (
                         <a
                           href={s.source_name}
@@ -131,7 +137,9 @@ function NoteItemsPanel({ note, onJumpToChat }: NoteItemsPanelProps) {
                           <ExternalLink className="size-2.5 shrink-0" />
                         </a>
                       ) : (
-                        <span className="truncate text-muted-foreground">{s.source_name}</span>
+                        <span className="truncate text-muted-foreground">
+                          {s.source_name}
+                        </span>
                       )}
                     </li>
                   ))}
