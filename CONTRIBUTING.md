@@ -6,16 +6,13 @@ Thanks for taking the time to contribute. OmniResearch is licensed under the [Ap
 
 Before opening a new issue, please search existing issues to avoid duplicates.
 
-Please use the [**Bug / Feature / Docs** issue template](.github/ISSUE_TEMPLATE/bug_feature_docs.md), it's applied automatically whenever you click "New Issue" in this repository, since it's the only template configured. It asks for:
+Clicking "New Issue" in this repository offers three forms, pick whichever matches:
 
-- **Title:** `[Bug/Feature/Docs] Short, descriptive title`
-- **Description:** a clear description of the issue, bug, or feature request
-- **Steps to Reproduce** (bugs only): the exact steps needed to see the problem
-- **Expected vs. Actual Result:** what should happen, versus what actually happens
-- **Environment** (if applicable): OS, version, and any other relevant setup detail
-- **How to Solve** (optional): a proposed fix or approach, if you have one
+- **Bug Report:** description, steps to reproduce, expected vs. actual result, environment, and an optional proposed fix.
+- **Feature Request:** the problem or motivation, your proposed solution, and any alternatives you considered.
+- **Documentation:** the file or section affected, what's wrong or missing, and an optional suggested fix.
 
-Filling in every section that applies makes it much faster to triage and fix. Leave a section blank if it genuinely doesn't apply (a feature request has no "Steps to Reproduce", for instance).
+Each form asks which area it affects (backend, frontend, or both) so it reaches the right people faster. Filling in every field that applies makes it much faster to triage and fix.
 
 **Security vulnerabilities should not be reported as public issues.** See [`SECURITY.md`](SECURITY.md) instead.
 
