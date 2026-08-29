@@ -412,7 +412,7 @@ All routes are prefixed at the app root except `/admin/*`, which has its own rou
 
 Built with LangGraph. Given a user query, the recent chat history, and a chosen retrieval mode, the graph decides for itself whether it needs to search the project's sources at all. If it does, it retrieves a wide candidate pool, reranks it down to the best few chunks, and, if that still isn't enough, retries with a validator-generated follow-up query targeting specifically what's missing, up to a bounded number of attempts, before answering regardless.
 
-![RAG graph workflow](src/rag_graph_workflow.svg)
+![RAG graph workflow](src/rag_graph_workflow.png)
 
 ### Flow
 
